@@ -1,6 +1,5 @@
-import { Navigate, Outlet } from 'react-router-dom'
+import { Link, Navigate, Outlet } from 'react-router-dom'
 import { ArcadeLoadingScreen, isDevQuestEnabled } from '@gestalt/dev-quest'
-import { getPortfolioOrigin } from '@gestalt/auth'
 import { useAuth } from '../context/AuthContext'
 
 export default function ProtectedRoute() {
@@ -28,18 +27,18 @@ export default function ProtectedRoute() {
 }
 
 export function NoAccessRedirect() {
-  const portfolioOrigin = getPortfolioOrigin()
   return (
     <div className="loading-screen">
       <h1>Sem acesso ao Deviante</h1>
       <p className="muted">
         Sua conta Google está autenticada, mas este produto ainda não foi liberado para você.
+        Peça ao owner para liberar o acesso.
       </p>
       <p>
-        <a href={`${portfolioOrigin}/request-access`}>Solicitar acesso no portfolio</a>
+        <Link to="/">Voltar ao início</Link>
       </p>
       <p>
-        <a href={`${portfolioOrigin}/apps`}>Voltar aos apps</a>
+        <Link to="/login">Tentar outra conta</Link>
       </p>
     </div>
   )

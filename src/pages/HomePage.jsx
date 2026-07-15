@@ -1,7 +1,6 @@
 'use client'
 
 import { Link } from 'react-router-dom'
-import { getPortfolioOrigin, getProductArticlesUrl } from '@gestalt/auth'
 import { useAuth } from '../context/AuthContext'
 
 const features = [
@@ -23,7 +22,6 @@ const features = [
 ]
 
 export default function HomePage() {
-  const portfolioOrigin = getPortfolioOrigin()
   const { isAuthenticated, hasAccess, loading } = useAuth()
 
   return (
@@ -38,12 +36,6 @@ export default function HomePage() {
         </Link>
 
         <nav className="home-header__nav">
-          <a href={getProductArticlesUrl('deviante')} className="button button--ghost">
-            Artigos
-          </a>
-          <a href={`${portfolioOrigin}/apps`} className="button button--ghost">
-            Gestalt apps
-          </a>
           {!loading && isAuthenticated && hasAccess ? (
             <Link to="/dashboard" className="button button--primary">
               Ir ao painel
@@ -69,9 +61,6 @@ export default function HomePage() {
               <Link to="/login" className="button button--primary">
                 Experimentar o app
               </Link>
-              <a href={getProductArticlesUrl('deviante')} className="button button--secondary">
-                Ler artigos
-              </a>
             </div>
           </div>
 
@@ -116,10 +105,7 @@ export default function HomePage() {
       </main>
 
       <footer className="home-footer">
-        <p>Deviante — Gestalt · Alander Brands and Products</p>
-        <p>
-          <a href={portfolioOrigin}>alander.io</a>
-        </p>
+        <p>Deviante · Alander Brands and Products</p>
       </footer>
     </div>
   )
