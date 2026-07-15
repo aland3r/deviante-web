@@ -48,12 +48,28 @@ function productOrigin(product) {
 
 export function getProductAppUrl(productCode) {
   const product = getProductByCode(productCode)
-  if (!product) return 'https://alander.io/products'
+  if (!product) return `${getPortfolioOrigin()}/apps`
   return `${productOrigin(product)}${product.dashboardPath}`
 }
 
 export function getProductLandingUrl(productCode) {
-  return getProductAppUrl(productCode)
+  const product = getProductByCode(productCode)
+  if (!product) return `${getPortfolioOrigin()}/apps`
+  const path = product.landingPath ?? '/'
+  return `${productOrigin(product)}${path}`
+}
+
+export function getProductTryUrl(productCode) {
+  const product = getProductByCode(productCode)
+  if (!product) return `${getPortfolioOrigin()}/apps`
+  return `${productOrigin(product)}/login`
+}
+
+export function getProductArticlesUrl(productCode) {
+  const product = getProductByCode(productCode)
+  const origin = getPortfolioOrigin()
+  if (!product) return `${origin}/projects`
+  return `${origin}/projects?product=${encodeURIComponent(productCode)}`
 }
 
 export function getPortfolioOrigin() {

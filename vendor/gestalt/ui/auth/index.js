@@ -16,6 +16,8 @@ export {
   getProductByCode,
   getProductAppUrl,
   getProductLandingUrl,
+  getProductTryUrl,
+  getProductArticlesUrl,
   getPortfolioOrigin,
   getAuthCallbackUrl,
   isOAuthReturn,

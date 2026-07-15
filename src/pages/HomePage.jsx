@@ -1,7 +1,7 @@
 'use client'
 
 import { Link } from 'react-router-dom'
-import { getPortfolioOrigin } from '@gestalt/auth'
+import { getPortfolioOrigin, getProductArticlesUrl } from '@gestalt/auth'
 import { useAuth } from '../context/AuthContext'
 
 const features = [
@@ -38,6 +38,9 @@ export default function HomePage() {
         </Link>
 
         <nav className="home-header__nav">
+          <a href={getProductArticlesUrl('deviante')} className="button button--ghost">
+            Artigos
+          </a>
           <a href={`${portfolioOrigin}/apps`} className="button button--ghost">
             Gestalt apps
           </a>
@@ -66,8 +69,8 @@ export default function HomePage() {
               <Link to="/login" className="button button--primary">
                 Experimentar o app
               </Link>
-              <a href={`${portfolioOrigin}/projects`} className="button button--secondary">
-                Ver projetos
+              <a href={getProductArticlesUrl('deviante')} className="button button--secondary">
+                Ler artigos
               </a>
             </div>
           </div>
