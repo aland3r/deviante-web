@@ -1,0 +1,9 @@
+# Python venv — não versionar
+ambientevev/
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Datasets grandes
+*.rar
