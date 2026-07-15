@@ -24,6 +24,26 @@ Design system: [design-system/README.md](../../design-system/README.md) · Figma
 
 Responsive type tokens share the same property names across breakpoints (mobile · tablet 768px · desktop 1024px): `--type-body-*`, `--type-h1-*`, `--type-h2-*`, etc.
 
+## Deploy (Vercel)
+
+1. [vercel.com/new](https://vercel.com/new) → import **`aland3r/deviante-web`**
+2. Framework preset: **Vite** (build `npm run build`, output `dist`)
+3. Environment variables (Production + Preview):
+
+   | Name | Value |
+   |------|--------|
+   | `VITE_SUPABASE_URL` | Supabase → Project Settings → API |
+   | `VITE_SUPABASE_ANON_KEY` | publishable / anon key |
+
+4. Deploy → **Settings → Domains** → add `deviante.alander.io`
+5. DNS at your registrar: `CNAME deviante` → `cname.vercel-dns.com` (Vercel shows the exact target)
+6. **Supabase** → Redirect URLs: `https://deviante.alander.io/**` (keep Site URL = `https://alander.io`)
+7. **Google OAuth** → JavaScript origins: `https://deviante.alander.io`
+
+`vercel.json` rewrites all routes to `index.html` for React Router.
+
+Shared Gestalt packages live in `vendor/gestalt/` so CI builds without the monorepo checkout.
+
 ## Development
 
 ```bash

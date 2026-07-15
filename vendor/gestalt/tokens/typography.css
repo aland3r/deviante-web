@@ -1,0 +1,126 @@
+@font-face {
+  font-family: 'GT Planar';
+  src: url('./fonts/GT-Planar-VF.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/*
+  GT Planar VF spans Retalic → Upright → Italic on the slnt axis.
+  Mobile WebKit may pick a non-zero slant unless pinned to 0 (upright).
+*/
+:root {
+  --font-sans: 'GT Planar', system-ui, sans-serif;
+  --font-heading: 'GT Planar', system-ui, sans-serif;
+  --font-mono: ui-monospace, Consolas, monospace;
+  --planar-slnt: 0;
+
+  font-synthesis: none;
+
+  --bp-tablet: 768px;
+  --bp-desktop: 1024px;
+
+  /* Body */
+  --type-body-size: 1rem;
+  --type-body-line-height: 1.6;
+  --type-body-weight: 400;
+  --type-body-letter-spacing: 0.01em;
+
+  /* Eyebrow / label */
+  --type-eyebrow-size: 0.72rem;
+  --type-eyebrow-line-height: 1.2;
+  --type-eyebrow-weight: 700;
+  --type-eyebrow-letter-spacing: 0.08em;
+
+  /* Small / caption */
+  --type-small-size: 0.82rem;
+  --type-small-line-height: 1.4;
+  --type-small-weight: 400;
+  --type-small-letter-spacing: 0;
+
+  /* H1 */
+  --type-h1-size: 2rem;
+  --type-h1-line-height: 1.08;
+  --type-h1-weight: 700;
+  --type-h1-letter-spacing: -0.02em;
+
+  /* H2 */
+  --type-h2-size: 1.35rem;
+  --type-h2-line-height: 1.15;
+  --type-h2-weight: 600;
+  --type-h2-letter-spacing: -0.01em;
+
+  /* H3 */
+  --type-h3-size: 1rem;
+  --type-h3-line-height: 1.25;
+  --type-h3-weight: 600;
+  --type-h3-letter-spacing: 0;
+
+  /* Lead (hero subtitle) */
+  --type-lead-size: 1.05rem;
+  --type-lead-line-height: 1.7;
+  --type-lead-weight: 400;
+  --type-lead-letter-spacing: 0;
+
+  /* Button */
+  --type-button-size: 0.95rem;
+  --type-button-line-height: 1;
+  --type-button-weight: 600;
+  --type-button-letter-spacing: 0.01em;
+}
+
+html {
+  font-synthesis: none;
+}
+
+body,
+button,
+input,
+select,
+textarea,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-style: normal;
+  font-variation-settings: 'slnt' var(--planar-slnt);
+}
+
+@media (min-width: 768px) {
+  :root {
+    --type-body-size: 1.0625rem;
+
+    --type-eyebrow-size: 0.75rem;
+
+    --type-small-size: 0.86rem;
+
+    --type-h1-size: 2.5rem;
+    --type-h2-size: 1.5rem;
+    --type-h3-size: 1.1rem;
+
+    --type-lead-size: 1.125rem;
+
+    --type-button-size: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --type-body-size: 1.125rem;
+
+    --type-eyebrow-size: 0.78rem;
+
+    --type-small-size: 0.9rem;
+
+    --type-h1-size: 3rem;
+    --type-h2-size: 1.75rem;
+    --type-h3-size: 1.2rem;
+
+    --type-lead-size: 1.2rem;
+
+    --type-button-size: 1.05rem;
+  }
+}

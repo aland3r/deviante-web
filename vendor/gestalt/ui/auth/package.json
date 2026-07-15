@@ -1,0 +1,8 @@
+{
+  "name": "@gestalt/auth",
+  "private": true,
+  "type": "module",
+  "peerDependencies": {
+    "@supabase/supabase-js": "^2.110.0"
+  }
+}

@@ -1,0 +1,298 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+.dev-quest-loading-screen,
+.loading-screen.arcade-loading {
+  min-height: 50vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+}
+
+.arcade-loading {
+  background:
+    radial-gradient(circle at center, rgba(15, 108, 189, 0.18), transparent 55%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(16, 33, 58, 0.04) 0,
+      rgba(16, 33, 58, 0.04) 2px,
+      transparent 2px,
+      transparent 4px
+    ),
+    #0b1220;
+  color: #e8f3ff;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.arcade-loading__panel {
+  width: min(92vw, 28rem);
+  padding: 1.5rem;
+  border: 3px solid #3dd6ff;
+  box-shadow:
+    0 0 0 3px #10213a,
+    0 0 24px rgba(61, 214, 255, 0.35);
+  background: rgba(8, 16, 32, 0.92);
+  text-align: center;
+}
+
+.arcade-loading__tag,
+.dev-quest-hud__eyebrow,
+.dev-quest-stamp__stage {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  color: #ffd447;
+}
+
+.arcade-loading__title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(0.85rem, 2.5vw, 1rem);
+  line-height: 1.6;
+  color: #ffffff;
+  margin: 1rem 0 0.75rem;
+}
+
+.arcade-loading__line {
+  font-family: ui-monospace, monospace;
+  font-size: 0.82rem;
+  color: #8fdcff;
+  min-height: 1.25rem;
+}
+
+.arcade-loading__quest {
+  display: grid;
+  gap: 0.35rem;
+  margin: 1rem 0;
+  padding: 0.75rem;
+  border: 1px dashed rgba(61, 214, 255, 0.45);
+  font-size: 0.82rem;
+}
+
+.arcade-loading__quest-id {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  color: #ffd447;
+}
+
+.arcade-loading__bar {
+  height: 0.65rem;
+  margin: 1rem 0 0.75rem;
+  border: 2px solid #3dd6ff;
+  background: #10213a;
+  overflow: hidden;
+}
+
+.arcade-loading__bar-fill {
+  display: block;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(90deg, #0f6cbd, #3dd6ff);
+  animation: dev-quest-bar 1.1s ease-in-out infinite alternate;
+}
+
+@keyframes dev-quest-bar {
+  from { width: 18%; margin-left: 0; }
+  to { width: 72%; margin-left: 28%; }
+}
+
+.arcade-loading__stage {
+  margin: 0;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  color: #ffd447;
+}
+
+.dev-quest-stamp {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  margin-top: 2rem;
+  padding: 0.65rem 0.85rem;
+  border: 2px solid rgba(255, 212, 71, 0.45);
+  background: rgba(16, 33, 58, 0.04);
+  font-family: ui-monospace, monospace;
+  font-size: 0.72rem;
+  color: var(--text-strong, #10213a);
+}
+
+.dev-quest-stamp__coin {
+  color: #ffd447;
+  font-size: 0.85rem;
+}
+
+.dev-quest-stamp__sep,
+.dev-quest-stamp__xp {
+  opacity: 0.72;
+}
+
+.dev-quest-stamp__quest {
+  flex: 1 1 12rem;
+}
+
+.dev-quest-hud {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 9999;
+  max-width: min(92vw, 24rem);
+}
+
+.dev-quest-hud__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  border: 3px solid #10213a;
+  background: #ffd447;
+  color: #10213a;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  cursor: pointer;
+  box-shadow: 0 8px 0 #10213a;
+}
+
+.dev-quest-hud__toggle:active {
+  transform: translateY(4px);
+  box-shadow: 0 4px 0 #10213a;
+}
+
+.dev-quest-hud__toggle-xp {
+  padding: 0.15rem 0.35rem;
+  background: #10213a;
+  color: #ffd447;
+}
+
+.dev-quest-hud__panel {
+  margin-bottom: 0.75rem;
+  max-height: min(70vh, 32rem);
+  overflow: auto;
+  padding: 1rem;
+  border: 3px solid #3dd6ff;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 18px 40px rgba(16, 33, 58, 0.08);
+}
+
+.dev-quest-hud__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.dev-quest-hud__header h3 {
+  font-size: 1rem;
+  margin: 0.35rem 0 0;
+  color: var(--text-strong, #10213a);
+}
+
+.dev-quest-hud__score {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  color: var(--accent-strong, #0b4f91);
+  white-space: nowrap;
+}
+
+.dev-quest-hud__xp {
+  height: 0.55rem;
+  margin-bottom: 1rem;
+  background: var(--surface-muted, #eef3f9);
+  border: 1px solid var(--border, #d7e0ec);
+}
+
+.dev-quest-hud__xp-fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent, #0f6cbd), #3dd6ff);
+}
+
+.dev-quest-hud__phase + .dev-quest-hud__phase {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border, #d7e0ec);
+}
+
+.dev-quest-hud__phase h4 {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.82rem;
+  margin: 0 0 0.5rem;
+  color: var(--text-strong, #10213a);
+}
+
+.dev-quest-hud__phase h4 span {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  color: #ffd447;
+}
+
+.dev-quest-hud__phase h4 small {
+  font-weight: 400;
+  color: var(--text, #526079);
+}
+
+.dev-quest-hud__phase ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.dev-quest-hud__quest {
+  display: grid;
+  grid-template-columns: auto auto auto 1fr;
+  gap: 0.35rem 0.5rem;
+  align-items: start;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.dev-quest-hud__quest--done {
+  opacity: 0.72;
+}
+
+.dev-quest-hud__quest--done .dev-quest-hud__label {
+  text-decoration: line-through;
+}
+
+.dev-quest-hud__quest--active .dev-quest-hud__label {
+  color: var(--accent-strong, #0b4f91);
+  font-weight: 600;
+}
+
+.dev-quest-hud__quest--locked {
+  opacity: 0.55;
+}
+
+.dev-quest-hud__icon {
+  width: 1rem;
+  text-align: center;
+  color: #ffd447;
+}
+
+.dev-quest-hud__quest-id {
+  font-family: ui-monospace, monospace;
+  color: var(--text-strong, #10213a);
+}
+
+.dev-quest-hud__uc {
+  font-size: 0.65rem;
+  padding: 0.1rem 0.35rem;
+  border: 1px solid var(--border, #d7e0ec);
+  border-radius: 999px;
+  color: var(--accent-strong, #0b4f91);
+}
+
+.dev-quest-hud__hint {
+  margin: 1rem 0 0;
+  font-size: 0.72rem;
+  color: var(--text, #526079);
+  line-height: 1.5;
+}
+
+.dev-quest-hud__hint code {
+  font-size: 0.68rem;
+}
