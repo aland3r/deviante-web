@@ -40,6 +40,8 @@ Responsive type tokens share the same property names across breakpoints (mobile 
 6. **Supabase** → Redirect URLs: `https://deviante.alander.io/**` (keep Site URL = `https://alander.io`)
 7. **Google OAuth** → JavaScript origins: `https://deviante.alander.io`
 
+**Staging (before custom domain):** also add `https://deviante-web.vercel.app/**` in Supabase and `https://deviante-web.vercel.app` in Google OAuth origins.
+
 `vercel.json` rewrites all routes to `index.html` for React Router.
 
 Shared Gestalt packages live in `vendor/gestalt/` so CI builds without the monorepo checkout.
