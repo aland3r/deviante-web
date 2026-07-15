@@ -1,4 +1,5 @@
 import { Link, NavLink, Outlet } from 'react-router-dom'
+import DevQuestStamp from '@gestalt/dev-quest/DevQuestStamp.jsx'
 import { useAuth } from '../../context/AuthContext'
 
 export default function AppLayout() {
@@ -38,6 +39,7 @@ export default function AppLayout() {
 
       <main className="app-main">
         <Outlet />
+        <DevQuestStamp />
       </main>
     </div>
   )

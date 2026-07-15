@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import SocialLoginButton from '../components/auth/SocialLoginButton'
 import AuthSplitLayout from '../components/layout/AuthSplitLayout'
 import Alert from '../components/ui/Alert'
@@ -11,12 +11,37 @@ import { validateEmail } from '../lib/validation'
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { login, loginWithGoogle, isAuthenticated, hasAccess, loading } = useAuth()
   const [step, setStep] = useState('email')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (loading) return
+    if (isAuthenticated && hasAccess) {
+      navigate('/dashboard', { replace: true })
+    } else if (isAuthenticated) {
+      navigate('/no-access', { replace: true })
+    }
+  }, [loading, isAuthenticated, hasAccess, navigate])
+
+  async function handleGoogleLogin() {
+    setSubmitting(true)
+    setError('')
+
+    try {
+      await loginWithGoogle()
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message)
+      } else {
+        setError('Não foi possível iniciar o login com Google.')
+      }
+      setSubmitting(false)
+    }
+  }
 
   function handleEmailContinue(event) {
     event.preventDefault()
@@ -57,19 +82,13 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthSplitLayout
-      footer={
-        <p>
-          Primeiro acesso? <Link to="/register">Criar conta</Link>
-        </p>
-      }
-    >
+    <AuthSplitLayout>
       <div className="auth-split__social">
-        <SocialLoginButton />
+        <SocialLoginButton disabled={submitting} onClick={handleGoogleLogin} />
       </div>
 
       <p className="auth-split__divider">
-        Ou informe seu e-mail para entrar ou criar uma conta.
+        Ou informe seu e-mail para entrar.
       </p>
 
       {error ? <Alert className="auth-split__alert">{error}</Alert> : null}

@@ -11,8 +11,10 @@
   },
   "dependencies": {
     "@rive-app/react-canvas": "^4.29.3",
+    "@supabase/supabase-js": "^2.110.5",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "react-router-dom": "^7.18.1"
   },
   "devDependencies": {
     "@types/react": "^19.2.17",

@@ -1,4 +1,11 @@
 import {
+  getCurrentAuthUser,
+  loginWithGoogle,
+  loginWithPassword,
+  logoutAuth,
+  updateAuthAccount,
+} from './auth'
+import {
   getProcesses,
   getSession,
   getUsers,
@@ -6,6 +13,7 @@ import {
   saveSession,
   saveUsers,
 } from './storage'
+import { isSupabaseConfigured } from './supabase'
 import {
   validateEmail,
   validatePassword,
@@ -15,16 +23,9 @@ import {
   validateBasedIn,
   validateRequired,
 } from './validation'
+import { ApiError } from './errors'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '/api'
-
-class ApiError extends Error {
-  constructor(message, fieldErrors = {}) {
-    super(message)
-    this.name = 'ApiError'
-    this.fieldErrors = fieldErrors
-  }
-}
 
 function createId() {
   return crypto.randomUUID()
@@ -92,32 +93,6 @@ const mockApi = {
 
     const session = { userId: user.id, createdAt: new Date().toISOString() }
     saveSession(session)
-    return { user: sanitizeUser(user) }
-  },
-
-  async register(data) {
-    const fieldErrors = validateRegistration(data)
-    if (Object.keys(fieldErrors).length > 0) {
-      throw new ApiError('Corrija os campos destacados.', fieldErrors)
-    }
-
-    const user = {
-      id: createId(),
-      fullName: data.fullName.trim(),
-      email: data.email.trim().toLowerCase(),
-      password: data.password,
-      firstLanguage: data.firstLanguage.trim(),
-      targetLanguage: data.targetLanguage.trim(),
-      locationEnabled: Boolean(data.locationEnabled),
-      basedIn: data.locationEnabled ? data.basedIn?.trim() ?? '' : '',
-      createdAt: new Date().toISOString(),
-    }
-
-    const users = getUsers()
-    users.push(user)
-    saveUsers(users)
-    saveSession({ userId: user.id, createdAt: new Date().toISOString() })
-
     return { user: sanitizeUser(user) }
   },
 
@@ -254,11 +229,32 @@ async function request(path, options = {}) {
 }
 
 export const api = {
-  login: (credentials) => isRemoteApiEnabled() ? request('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }) : mockApi.login(credentials),
-  register: (data) => isRemoteApiEnabled() ? request('/auth/register', { method: 'POST', body: JSON.stringify(data) }) : mockApi.register(data),
-  getCurrentUser: () => isRemoteApiEnabled() ? request('/auth/me') : mockApi.getCurrentUser(),
-  updateAccount: (data) => isRemoteApiEnabled() ? request('/auth/account', { method: 'PUT', body: JSON.stringify(data) }) : mockApi.updateAccount(data),
-  logout: () => isRemoteApiEnabled() ? request('/auth/logout', { method: 'POST' }) : mockApi.logout(),
+  login: (credentials) => {
+    if (isSupabaseConfigured()) return loginWithPassword(credentials)
+    if (isRemoteApiEnabled()) return request('/auth/login', { method: 'POST', body: JSON.stringify(credentials) })
+    return mockApi.login(credentials)
+  },
+  loginWithGoogle: () => {
+    if (!isSupabaseConfigured()) {
+      return Promise.reject(new ApiError('Login com Google indisponível.'))
+    }
+    return loginWithGoogle()
+  },
+  getCurrentUser: () => {
+    if (isSupabaseConfigured()) return getCurrentAuthUser()
+    if (isRemoteApiEnabled()) return request('/auth/me')
+    return mockApi.getCurrentUser()
+  },
+  updateAccount: (data) => {
+    if (isSupabaseConfigured()) return updateAuthAccount(data)
+    if (isRemoteApiEnabled()) return request('/auth/account', { method: 'PUT', body: JSON.stringify(data) })
+    return mockApi.updateAccount(data)
+  },
+  logout: () => {
+    if (isSupabaseConfigured()) return logoutAuth()
+    if (isRemoteApiEnabled()) return request('/auth/logout', { method: 'POST' })
+    return mockApi.logout()
+  },
   listProcesses: () => isRemoteApiEnabled() ? request('/processes') : mockApi.listProcesses(),
   createProcess: () => isRemoteApiEnabled() ? request('/processes', { method: 'POST' }) : mockApi.createProcess(),
   getProcess: (id) => isRemoteApiEnabled() ? request(`/processes/${id}`) : mockApi.getProcess(id),
@@ -266,7 +262,7 @@ export const api = {
   deleteProcess: (id) => isRemoteApiEnabled() ? request(`/processes/${id}`, { method: 'DELETE' }) : mockApi.deleteProcess(id),
 }
 
-export { ApiError }
+export { ApiError } from './errors'
 
 function isRemoteApiEnabled() {
   return import.meta.env.VITE_USE_REMOTE_API === 'true'
