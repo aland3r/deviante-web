@@ -202,7 +202,23 @@ export async function ensureOwnerBootstrap(user) {
     return existing
   }
 
-  const { error: userError } = await supabase
+  const { data: byEmail, error: emailLookupError } = await supabase
+    .schema('portfolio')
+    .from('users')
+    .select('id, role')
+    .eq('email', email)
+    .maybeSingle()
+
+  if (emailLookupError) throw new Error(emailLookupError.message)
+
+  if (byEmail && byEmail.id !== user.id) {
+    throw new Error(
+      `Owner ${email} está ligado a outro login no banco. `
+      + `Atualize portfolio.users com id = ${user.id} (Authentication → Users).`,
+    )
+  }
+
+  const { data: inserted, error: userError } = await supabase
     .schema('portfolio')
     .from('users')
     .upsert({
@@ -210,8 +226,15 @@ export async function ensureOwnerBootstrap(user) {
       email,
       role: 'owner',
     }, { onConflict: 'id' })
+    .select('id, role')
+    .maybeSingle()
 
   if (userError) throw new Error(userError.message)
+  if (!inserted) {
+    throw new Error(
+      'Bootstrap owner bloqueado (RLS). Rode data/seed/portfolio/owner_users.sql no Supabase SQL Editor.',
+    )
+  }
 
   const products = ['deviante', 'milebrick']
   for (const productCode of products) {

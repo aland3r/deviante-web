@@ -26,11 +26,10 @@ export function resolveDevianteOAuthCallbackUrl() {
   if (protocol === 'http:' && /^192\.168\./.test(hostname)) {
     return `${origin}/auth/callback`
   }
-  // Staging on Vercel — stay on vercel.app until Squarespace DNS points to Vercel.
-  if (hostname.endsWith('.vercel.app')) {
-    return `${origin}/auth/callback`
+  if (hostname === 'deviante.alander.io') {
+    return `${DEVIANTE_PRODUCTION_ORIGIN}/auth/callback`
   }
-  return `${DEVIANTE_PRODUCTION_ORIGIN}/auth/callback`
+  return `${origin}/auth/callback`
 }
 
 function mapAuthError(message) {
