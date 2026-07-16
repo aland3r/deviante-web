@@ -7,7 +7,7 @@ import { isOAuthReturn } from '../lib/auth'
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate()
-  const { isAuthenticated, hasAccess, loading } = useAuth()
+  const { isAuthenticated, hasAccess, authReady } = useAuth()
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -19,7 +19,7 @@ export default function AuthCallbackPage() {
   }, [])
 
   useEffect(() => {
-    if (loading || error) return
+    if (!authReady || error) return
 
     if (isAuthenticated) {
       navigate(hasAccess ? '/dashboard' : '/no-access', { replace: true })
@@ -29,10 +29,10 @@ export default function AuthCallbackPage() {
     if (!isOAuthReturn()) {
       navigate('/login', { replace: true })
     }
-  }, [error, isAuthenticated, hasAccess, loading, navigate])
+  }, [error, isAuthenticated, hasAccess, authReady, navigate])
 
   useEffect(() => {
-    if (loading || error || isAuthenticated) return
+    if (!authReady || error || isAuthenticated) return
     if (!isOAuthReturn()) return
 
     const timeout = window.setTimeout(() => {
@@ -40,7 +40,7 @@ export default function AuthCallbackPage() {
     }, 8000)
 
     return () => window.clearTimeout(timeout)
-  }, [error, isAuthenticated, loading])
+  }, [error, isAuthenticated, authReady])
 
   if (error) {
     return (

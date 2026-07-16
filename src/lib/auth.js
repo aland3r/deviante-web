@@ -11,6 +11,23 @@ import {
 import { getSupabase } from './supabase'
 
 const PRODUCT_CODE = 'deviante'
+const DEVIANTE_PRODUCTION_ORIGIN = 'https://deviante.alander.io'
+
+/** OAuth must return to the live product host (whitelisted in Supabase), not vercel.app. */
+export function resolveDevianteOAuthCallbackUrl() {
+  if (typeof window === 'undefined') {
+    return `${DEVIANTE_PRODUCTION_ORIGIN}/auth/callback`
+  }
+
+  const { hostname, origin, protocol } = window.location
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return `${origin}/auth/callback`
+  }
+  if (protocol === 'http:' && /^192\.168\./.test(hostname)) {
+    return `${origin}/auth/callback`
+  }
+  return `${DEVIANTE_PRODUCTION_ORIGIN}/auth/callback`
+}
 
 function mapAuthError(message) {
   const normalized = message?.toLowerCase() ?? ''
@@ -121,7 +138,7 @@ export async function loginWithPassword({ email, password }) {
 
 export async function loginWithGoogle() {
   try {
-    await sharedLoginWithGoogle(`${window.location.origin}/auth/callback`)
+    await sharedLoginWithGoogle(resolveDevianteOAuthCallbackUrl())
   } catch (error) {
     throw new ApiError(mapAuthError(error instanceof Error ? error.message : undefined))
   }

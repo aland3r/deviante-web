@@ -11,7 +11,7 @@ import { validateEmail } from '../lib/validation'
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { login, loginWithGoogle, isAuthenticated, hasAccess, loading } = useAuth()
+  const { login, loginWithGoogle, isAuthenticated, hasAccess, authReady } = useAuth()
   const [step, setStep] = useState('email')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -19,13 +19,13 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    if (loading) return
+    if (!authReady) return
     if (isAuthenticated && hasAccess) {
       navigate('/dashboard', { replace: true })
     } else if (isAuthenticated) {
       navigate('/no-access', { replace: true })
     }
-  }, [loading, isAuthenticated, hasAccess, navigate])
+  }, [authReady, isAuthenticated, hasAccess, navigate])
 
   async function handleGoogleLogin() {
     setSubmitting(true)

@@ -1,6 +1,7 @@
 'use client'
 
-import { Link } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const features = [
@@ -22,7 +23,14 @@ const features = [
 ]
 
 export default function HomePage() {
-  const { isAuthenticated, hasAccess, loading } = useAuth()
+  const navigate = useNavigate()
+  const { isAuthenticated, hasAccess, authReady } = useAuth()
+
+  useEffect(() => {
+    if (authReady && isAuthenticated && hasAccess) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [authReady, isAuthenticated, hasAccess, navigate])
 
   return (
     <div className="home">
@@ -36,7 +44,7 @@ export default function HomePage() {
         </Link>
 
         <nav className="home-header__nav">
-          {!loading && isAuthenticated && hasAccess ? (
+          {authReady && isAuthenticated && hasAccess ? (
             <Link to="/dashboard" className="button button--primary">
               Ir ao painel
             </Link>

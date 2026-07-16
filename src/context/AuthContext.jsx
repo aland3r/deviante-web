@@ -16,24 +16,35 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [hasAccess, setHasAccess] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [accessReady, setAccessReady] = useState(false)
+  const [sessionAuthenticated, setSessionAuthenticated] = useState(false)
 
   async function syncAccess(sessionUser, mappedUser) {
+    setAccessReady(false)
+
     if (!sessionUser) {
       setHasAccess(false)
+      setAccessReady(true)
       return
     }
 
-    await ensureOwnerBootstrap(sessionUser)
+    try {
+      await ensureOwnerBootstrap(sessionUser)
 
-    const allowed = await checkDevianteAccess(sessionUser.id)
-    setHasAccess(allowed)
+      const allowed = await checkDevianteAccess(sessionUser.id)
+      setHasAccess(allowed)
 
-    if (allowed) {
-      await ensureDevianteAccess(sessionUser)
-      if (!mappedUser) {
-        const current = await api.getCurrentUser()
-        setUser(current)
+      if (allowed) {
+        await ensureDevianteAccess(sessionUser)
+        if (!mappedUser) {
+          const current = await api.getCurrentUser()
+          setUser(current)
+        }
       }
+    } catch {
+      setHasAccess(false)
+    } finally {
+      setAccessReady(true)
     }
   }
 
@@ -47,9 +58,12 @@ export function AuthProvider({ children }) {
 
         try {
           const sessionUser = await getAuthSessionUser()
+          setSessionAuthenticated(Boolean(sessionUser))
           await syncAccess(sessionUser, currentUser)
         } catch {
+          setSessionAuthenticated(false)
           setHasAccess(false)
+          setAccessReady(true)
         }
 
         if (SESSION_EVENTS.has(event)) {
@@ -72,7 +86,9 @@ export function AuthProvider({ children }) {
       .then((currentUser) => {
         if (active) {
           setUser(currentUser)
+          setSessionAuthenticated(Boolean(currentUser))
           setHasAccess(Boolean(currentUser))
+          setAccessReady(true)
         }
       })
       .finally(() => {
@@ -84,14 +100,19 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
+  const authReady = !loading && accessReady
+
   const value = useMemo(() => ({
     user,
     loading,
+    accessReady,
+    authReady,
     hasAccess,
-    isAuthenticated: Boolean(user),
+    isAuthenticated: sessionAuthenticated,
     async login(credentials) {
       const result = await api.login(credentials)
       setUser(result.user)
+      setSessionAuthenticated(true)
       const sessionUser = await getAuthSessionUser()
       await syncAccess(sessionUser, result.user)
       return result.user
@@ -107,9 +128,11 @@ export function AuthProvider({ children }) {
     async logout() {
       await api.logout()
       setUser(null)
+      setSessionAuthenticated(false)
       setHasAccess(false)
+      setAccessReady(true)
     },
-  }), [user, loading, hasAccess])
+  }), [user, loading, accessReady, authReady, hasAccess, sessionAuthenticated])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

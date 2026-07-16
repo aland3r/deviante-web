@@ -3,9 +3,9 @@ import { ArcadeLoadingScreen, isDevQuestEnabled } from '@gestalt/dev-quest'
 import { useAuth } from '../context/AuthContext'
 
 export default function ProtectedRoute() {
-  const { isAuthenticated, hasAccess, loading } = useAuth()
+  const { isAuthenticated, hasAccess, authReady } = useAuth()
 
-  if (loading) {
+  if (!authReady) {
     return isDevQuestEnabled()
       ? <ArcadeLoadingScreen label="SESSION" />
       : (

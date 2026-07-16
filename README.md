@@ -36,11 +36,11 @@ Responsive type tokens share the same property names across breakpoints (mobile 
    | `VITE_SUPABASE_ANON_KEY` | publishable / anon key |
 
 4. Deploy → **Settings → Domains** → add `deviante.alander.io`
-5. DNS at your registrar: `CNAME deviante` → `cname.vercel-dns.com` (Vercel shows the exact target)
+5. DNS at your registrar: `CNAME deviante` → Vercel target (shown in dashboard)
 6. **Supabase** → Redirect URLs: `https://deviante.alander.io/**` (keep Site URL = `https://alander.io`)
 7. **Google OAuth** → JavaScript origins: `https://deviante.alander.io`
 
-**Staging (before custom domain):** also add `https://deviante-web.vercel.app/**` in Supabase and `https://deviante-web.vercel.app` in Google OAuth origins.
+Google login from `deviante-web.vercel.app` returns to `deviante.alander.io/auth/callback` so the session lands on the product host (dashboard), not the portfolio hub.
 
 `vercel.json` rewrites all routes to `index.html` for React Router.
 
