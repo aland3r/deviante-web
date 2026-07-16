@@ -2,7 +2,7 @@ import { ApiError } from './errors'
 import {
   ensureProductAccess,
   getAuthSessionUser,
-  hasProductAccess,
+  hasGestaltProductAccess,
   isOAuthReturn,
   loginWithGoogle as sharedLoginWithGoogle,
   logoutAuth as sharedLogoutAuth,
@@ -107,8 +107,9 @@ export async function getCurrentAuthUser() {
   return mapSessionUser(sessionUser)
 }
 
-export async function checkDevianteAccess(userId) {
-  return hasProductAccess(userId, PRODUCT_CODE)
+export async function checkDevianteAccess(sessionUser) {
+  if (!sessionUser?.id) return false
+  return hasGestaltProductAccess(sessionUser, PRODUCT_CODE)
 }
 
 export async function ensureDevianteAccess(sessionUser) {

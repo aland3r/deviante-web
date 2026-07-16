@@ -29,9 +29,13 @@ export function AuthProvider({ children }) {
     }
 
     try {
-      await ensureOwnerBootstrap(sessionUser)
+      try {
+        await ensureOwnerBootstrap(sessionUser)
+      } catch {
+        // Bootstrap may need SQL seed; owner e-mail still grants access below.
+      }
 
-      const allowed = await checkDevianteAccess(sessionUser.id)
+      const allowed = await checkDevianteAccess(sessionUser)
       setHasAccess(allowed)
 
       if (allowed) {
