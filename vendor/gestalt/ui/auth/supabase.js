@@ -20,12 +20,32 @@ export function isSupabaseConfigured(env = import.meta.env) {
   return Boolean(url && publishableKey)
 }
 
-export function getGestaltOwnerEmail(env = import.meta.env) {
-  return (
-    env.VITE_GESTALT_OWNER_EMAIL
+const DEFAULT_OWNER_EMAILS = ['design@alander.io', 'alanderavila@gmail.com']
+
+export function getGestaltOwnerEmails(env = import.meta.env) {
+  const raw =
+    env.VITE_GESTALT_OWNER_EMAILS
+    ?? env.NEXT_PUBLIC_GESTALT_OWNER_EMAILS
+    ?? env.VITE_GESTALT_OWNER_EMAIL
     ?? env.NEXT_PUBLIC_GESTALT_OWNER_EMAIL
     ?? ''
-  ).trim().toLowerCase()
+
+  const fromEnv = String(raw)
+    .split(',')
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean)
+
+  return [...new Set([...DEFAULT_OWNER_EMAILS, ...fromEnv])]
+}
+
+export function getGestaltOwnerEmail(env = import.meta.env) {
+  return getGestaltOwnerEmails(env)[0] ?? ''
+}
+
+export function isGestaltOwnerEmail(email, env = import.meta.env) {
+  const normalized = email?.trim().toLowerCase()
+  if (!normalized) return false
+  return getGestaltOwnerEmails(env).includes(normalized)
 }
 
 export function getSupabase(env = import.meta.env) {
@@ -37,6 +57,7 @@ export function getSupabase(env = import.meta.env) {
   if (!client) {
     client = createClient(url, publishableKey, {
       auth: {
+        flowType: 'pkce',
         storage: createGestaltAuthStorage(),
         persistSession: true,
         autoRefreshToken: true,

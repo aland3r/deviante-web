@@ -8,6 +8,8 @@ export {
   isSupabaseConfigured,
   readSupabaseEnv,
   getGestaltOwnerEmail,
+  getGestaltOwnerEmails,
+  isGestaltOwnerEmail,
   resetSupabaseClient,
 } from './supabase.js'
 

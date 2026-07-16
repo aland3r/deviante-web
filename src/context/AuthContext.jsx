@@ -5,7 +5,7 @@ import {
   ensureDevianteAccess,
   subscribeToAuthChanges,
 } from '../lib/auth'
-import { getAuthSessionUser } from '@gestalt/auth'
+import { ensureOwnerBootstrap, getAuthSessionUser } from '@gestalt/auth'
 import { isSupabaseConfigured } from '../lib/supabase'
 
 const SESSION_EVENTS = new Set(['INITIAL_SESSION', 'SIGNED_IN', 'SIGNED_OUT'])
@@ -22,6 +22,8 @@ export function AuthProvider({ children }) {
       setHasAccess(false)
       return
     }
+
+    await ensureOwnerBootstrap(sessionUser)
 
     const allowed = await checkDevianteAccess(sessionUser.id)
     setHasAccess(allowed)

@@ -1,4 +1,4 @@
-import { getGestaltOwnerEmail, getSupabase } from './supabase.js'
+import { getSupabase, isGestaltOwnerEmail } from './supabase.js'
 import { getProductByCode } from './products.js'
 
 function mapAuthError(message) {
@@ -193,9 +193,8 @@ export async function grantProductAccess({ userId, productCode, role = 'member',
 }
 
 export async function ensureOwnerBootstrap(user) {
-  const ownerEmail = getGestaltOwnerEmail()
   const email = user.email?.toLowerCase() ?? ''
-  if (!ownerEmail || email !== ownerEmail) return fetchPortfolioUser(user.id)
+  if (!isGestaltOwnerEmail(email)) return fetchPortfolioUser(user.id)
 
   const supabase = getSupabase()
   const existing = await fetchPortfolioUser(user.id)
