@@ -37,10 +37,14 @@ Responsive type tokens share the same property names across breakpoints (mobile 
 
 4. Deploy → **Settings → Domains** → add `deviante.alander.io`
 5. DNS at your registrar: `CNAME deviante` → Vercel target (shown in dashboard)
-6. **Supabase** → Redirect URLs: `https://deviante.alander.io/**` (keep Site URL = `https://alander.io`)
-7. **Google OAuth** → JavaScript origins: `https://deviante.alander.io`
+6. **Supabase** → Redirect URLs:
+   - `https://deviante.alander.io/**`
+   - `https://deviante-web.vercel.app/**` (staging until DNS propagates)
+7. **Google OAuth** → JavaScript origins: `https://deviante.alander.io`, `https://deviante-web.vercel.app`
 
-Google login from `deviante-web.vercel.app` returns to `deviante.alander.io/auth/callback` so the session lands on the product host (dashboard), not the portfolio hub.
+**DNS (Squarespace):** CNAME `deviante` must point to the Vercel target (e.g. `3a9861361d13a082.vercel-dns-017.com`), **not** `*.cfargotunnel.com`. An old tunnel CNAME causes `ERR_NAME_NOT_RESOLVED` on the OAuth callback.
+
+Google login from `deviante-web.vercel.app` returns to the same Vercel host. From `deviante.alander.io` it returns to the product subdomain.
 
 `vercel.json` rewrites all routes to `index.html` for React Router.
 

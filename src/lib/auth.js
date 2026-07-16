@@ -13,7 +13,7 @@ import { getSupabase } from './supabase'
 const PRODUCT_CODE = 'deviante'
 const DEVIANTE_PRODUCTION_ORIGIN = 'https://deviante.alander.io'
 
-/** OAuth must return to the live product host (whitelisted in Supabase), not vercel.app. */
+/** OAuth callback host: production subdomain, or current origin on staging/dev. */
 export function resolveDevianteOAuthCallbackUrl() {
   if (typeof window === 'undefined') {
     return `${DEVIANTE_PRODUCTION_ORIGIN}/auth/callback`
@@ -24,6 +24,10 @@ export function resolveDevianteOAuthCallbackUrl() {
     return `${origin}/auth/callback`
   }
   if (protocol === 'http:' && /^192\.168\./.test(hostname)) {
+    return `${origin}/auth/callback`
+  }
+  // Staging on Vercel — stay on vercel.app until Squarespace DNS points to Vercel.
+  if (hostname.endsWith('.vercel.app')) {
     return `${origin}/auth/callback`
   }
   return `${DEVIANTE_PRODUCTION_ORIGIN}/auth/callback`
