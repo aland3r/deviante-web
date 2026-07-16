@@ -52,16 +52,16 @@ export function AuthProvider({ children }) {
     let active = true
 
     if (isSupabaseConfigured()) {
-      const unsubscribe = subscribeToAuthChanges(async (currentUser, event) => {
+      const unsubscribe = subscribeToAuthChanges(async (currentUser, event, sessionUser) => {
         if (!active) return
+
+        const activeSession = sessionUser ?? await getAuthSessionUser()
+        setSessionAuthenticated(Boolean(activeSession))
         setUser(currentUser)
 
         try {
-          const sessionUser = await getAuthSessionUser()
-          setSessionAuthenticated(Boolean(sessionUser))
-          await syncAccess(sessionUser, currentUser)
+          await syncAccess(activeSession, currentUser)
         } catch {
-          setSessionAuthenticated(false)
           setHasAccess(false)
           setAccessReady(true)
         }

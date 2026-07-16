@@ -119,10 +119,31 @@ export async function ensureDevianteAccess(sessionUser) {
 
 export { isOAuthReturn }
 
+/** Exchange PKCE ?code= on /auth/callback (mobile browsers often miss detectSessionInUrl). */
+export async function completeOAuthCallback() {
+  const params = new URLSearchParams(window.location.search)
+  const code = params.get('code')
+  if (!code) return { session: null, error: null }
+
+  const supabase = getSupabase()
+  const { data: existing, error: existingError } = await supabase.auth.getSession()
+  if (existingError) return { session: null, error: existingError }
+  if (existing.session) return { session: existing.session, error: null }
+
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+  if (error) return { session: null, error }
+
+  // Drop ?code= from the URL so refresh does not retry a consumed code.
+  const cleanUrl = `${window.location.origin}${window.location.pathname}`
+  window.history.replaceState({}, document.title, cleanUrl)
+
+  return { session: data.session, error: null }
+}
+
 export function subscribeToAuthChanges(callback) {
   return sharedSubscribeToAuthChanges(async (sessionUser, event) => {
     const user = await mapSessionUser(sessionUser)
-    callback(user, event)
+    callback(user, event, sessionUser)
   })
 }
 
