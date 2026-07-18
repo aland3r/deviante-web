@@ -145,37 +145,6 @@ async function provisionDevianteUser(user) {
   }
 }
 
-async function provisionDevianteUser(user) {
-  const supabase = getSupabase()
-  const email = user.email?.toLowerCase() ?? ''
-  const fullName = user.user_metadata?.full_name
-    ?? user.user_metadata?.name
-    ?? email.split('@')[0]
-    ?? 'Usuário'
-
-  const { data: existingManager, error: lookupError } = await supabase
-    .schema('deviante')
-    .from('managers')
-    .select('id')
-    .eq('user_id', user.id)
-    .maybeSingle()
-
-  if (lookupError) throw new Error(lookupError.message)
-
-  if (!existingManager) {
-    const { error: insertError } = await supabase
-      .schema('deviante')
-      .from('managers')
-      .insert({
-        user_id: user.id,
-        full_name: fullName,
-        location_enabled: false,
-      })
-
-    if (insertError) throw new Error(insertError.message)
-  }
-}
-
 async function provisionMilebrickUser(user, role = 'member') {
   const supabase = getSupabase()
   const email = user.email?.toLowerCase() ?? ''
