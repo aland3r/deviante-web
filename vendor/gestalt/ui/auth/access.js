@@ -85,6 +85,35 @@ export async function hasProductAccess(userId, productCode) {
   return Boolean(data)
 }
 
+export async function hasGestaltProductAccess(user, productCode) {
+  if (!user?.id) return false
+
+  const email = user.email?.toLowerCase() ?? ''
+  if (isGestaltOwnerEmail(email)) return true
+
+  const profile = await fetchPortfolioUser(user.id)
+  if (profile?.role === 'owner') return true
+
+  return hasProductAccess(user.id, productCode)
+}
+
+async function ensureOwnerProductAccess(user) {
+  const products = ['deviante', 'milebrick']
+  for (const productCode of products) {
+    try {
+      await grantProductAccess({
+        userId: user.id,
+        productCode,
+        role: 'owner',
+        grantedBy: user.id,
+      })
+      await provisionProductUser(user, productCode, 'owner')
+    } catch {
+      // Best-effort — SQL seed or RLS may already satisfy access.
+    }
+  }
+}
+
 async function provisionDevianteUser(user) {
   const supabase = getSupabase()
   const email = user.email?.toLowerCase() ?? ''
@@ -93,21 +122,28 @@ async function provisionDevianteUser(user) {
     ?? email.split('@')[0]
     ?? 'Usuário'
 
-  const { data: existingUser } = await supabase
+  const { data: existingManager, error: lookupError } = await supabase
     .schema('deviante')
-    .from('users')
+    .from('managers')
     .select('id')
-    .eq('id', user.id)
+    .eq('user_id', user.id)
     .maybeSingle()
 
-  if (!existingUser) {
-    const { error: userError } = await supabase
-      .schema('deviante')
-      .from('users')
-      .insert({ id: user.id, email, password_hash: null })
+  if (lookupError) throw new Error(lookupError.message)
 
-    if (userError) throw new Error(userError.message)
+  if (!existingManager) {
+    const { error: insertError } = await supabase
+      .schema('deviante')
+      .from('managers')
+      .insert({
+        user_id: user.id,
+        full_name: fullName,
+        location_enabled: false,
+      })
+
+    if (insertError) throw new Error(insertError.message)
   }
+}
 
   const { data: existingManager } = await supabase
     .schema('deviante')
@@ -199,6 +235,7 @@ export async function ensureOwnerBootstrap(user) {
   const supabase = getSupabase()
   const existing = await fetchPortfolioUser(user.id)
   if (existing?.role === 'owner') {
+    await ensureOwnerProductAccess(user)
     return existing
   }
 
@@ -236,16 +273,7 @@ export async function ensureOwnerBootstrap(user) {
     )
   }
 
-  const products = ['deviante', 'milebrick']
-  for (const productCode of products) {
-    await grantProductAccess({
-      userId: user.id,
-      productCode,
-      role: 'owner',
-      grantedBy: user.id,
-    })
-    await provisionProductUser(user, productCode, 'owner')
-  }
+  await ensureOwnerProductAccess(user)
 
   return fetchPortfolioUser(user.id)
 }
@@ -356,7 +384,17 @@ export async function searchAuthUsersByEmail(emailQuery) {
 }
 
 export async function ensureProductAccess(user, productCode) {
-  const allowed = await hasProductAccess(user.id, productCode)
+  if (!user?.id) return false
+
+  if (isGestaltOwnerEmail(user.email)) {
+    try {
+      await ensureOwnerBootstrap(user)
+    } catch {
+      // RLS may still block bootstrap — owner e-mail is allowed below.
+    }
+  }
+
+  const allowed = await hasGestaltProductAccess(user, productCode)
   if (!allowed) return false
   await provisionProductUser(user, productCode)
   return true
