@@ -109,7 +109,9 @@ export async function getCurrentAuthUser() {
 
 export async function checkDevianteAccess(sessionUser) {
   if (!sessionUser?.id) return false
-  return hasGestaltProductAccess(sessionUser, PRODUCT_CODE)
+  const result = await hasGestaltProductAccess(sessionUser, PRODUCT_CODE)
+  console.log('[checkDevianteAccess]', { sessionUserId: sessionUser.id, PRODUCT_CODE, result })
+  return result
 }
 
 export async function ensureDevianteAccess(sessionUser) {
@@ -204,3 +206,4 @@ export async function updateAuthAccount(data) {
   if (!user) throw new ApiError('Conta não encontrada.')
   return { user }
 }
+
