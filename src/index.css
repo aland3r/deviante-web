@@ -726,13 +726,14 @@ h3 {
   }
 }
 
-/* ── Auth split layout (login) — neutral / grayscale ── */
+/* ── Auth split layout (login) — dark/red theme, same as the rest of Deviante
+   (superseded the prior neutral/grayscale treatment, owner 21/07) ── */
 
 .auth-split {
   min-height: 100vh;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  background: #ffffff;
+  background: var(--bg);
 }
 
 .auth-split__form {
@@ -753,7 +754,7 @@ h3 {
   display: inline-flex;
   align-items: center;
   gap: 0.65rem;
-  color: #111111;
+  color: var(--text-strong);
   text-decoration: none;
   margin-bottom: 0.5rem;
 }
@@ -767,9 +768,9 @@ h3 {
   height: 36px;
   display: grid;
   place-items: center;
-  border: 1px solid #d4d4d4;
-  background: #f5f5f5;
-  color: #111111;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: #ffffff;
   font-weight: 700;
   font-size: 0.85rem;
 }
@@ -778,7 +779,7 @@ h3 {
   font-family: var(--font-heading);
   font-size: 1.1rem;
   font-weight: 600;
-  color: #111111;
+  color: var(--text-strong);
 }
 
 .auth-split__social {
@@ -794,14 +795,18 @@ h3 {
   justify-content: center;
   gap: 0.65rem;
   padding: 0.75rem 1rem;
-  border: 1px solid #d4d4d4;
+  border: 1px solid var(--border);
   border-radius: var(--radius-cta);
-  background: #ffffff;
-  color: #333333;
+  background: var(--input-background);
+  color: var(--text-strong);
   font: inherit;
   font-size: var(--type-small-size);
   font-weight: 500;
   cursor: pointer;
+}
+
+.social-login-button:hover:not(:disabled) {
+  border-color: var(--accent);
 }
 
 .social-login-button:disabled {
@@ -813,7 +818,7 @@ h3 {
   text-align: center;
   font-size: var(--type-small-size);
   line-height: 1.5;
-  color: #666666;
+  color: var(--text);
   margin: 0.25rem 0;
 }
 
@@ -827,19 +832,19 @@ h3 {
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  border: 1px solid #d4d4d4;
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 0 0.9rem;
-  background: #fafafa;
+  background: var(--input-background);
 }
 
 .auth-email-field:focus-within {
-  border-color: #888888;
-  outline: 1px solid #cccccc;
+  border-color: var(--accent);
+  outline: 2px solid rgba(220, 38, 38, 0.18);
 }
 
 .auth-email-field__icon {
-  color: #888888;
+  color: var(--text);
   display: flex;
   flex-shrink: 0;
 }
@@ -850,7 +855,7 @@ h3 {
   background: transparent;
   padding: 0.85rem 0;
   font: inherit;
-  color: #111111;
+  color: var(--text-strong);
 }
 
 .auth-email-field__input:focus {
@@ -858,29 +863,30 @@ h3 {
 }
 
 .auth-email-field__input::placeholder {
-  color: #999999;
+  color: var(--text);
+  opacity: 0.6;
 }
 
 .auth-split__legal {
   font-size: var(--type-small-size);
   line-height: 1.5;
-  color: #666666;
+  color: var(--text);
   margin: 0;
 }
 
 .auth-split__legal a {
-  color: #333333;
+  color: var(--accent);
   text-decoration: underline;
 }
 
 .auth-split__continue {
   width: 100%;
-  background: #111111 !important;
+  background: var(--accent) !important;
   color: #ffffff !important;
 }
 
 .auth-split__continue:hover:not(:disabled) {
-  background: #333333 !important;
+  background: var(--accent-strong) !important;
 }
 
 .auth-split__email-summary {
@@ -889,16 +895,16 @@ h3 {
   align-items: center;
   gap: 1rem;
   padding: 0.75rem 0.9rem;
-  border: 1px solid #e0e0e0;
-  background: #f5f5f5;
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
   font-size: var(--type-small-size);
-  color: #333333;
+  color: var(--text-strong);
 }
 
 .auth-split__change-email {
   border: 0;
   background: transparent;
-  color: #555555;
+  color: var(--text);
   font: inherit;
   font-size: var(--type-small-size);
   text-decoration: underline;
@@ -911,28 +917,30 @@ h3 {
 }
 
 .auth-split .form-field__input:focus {
-  outline: 2px solid rgba(0, 0, 0, 0.12);
-  border-color: #888888;
+  outline: 2px solid rgba(220, 38, 38, 0.18);
+  border-color: var(--accent);
 }
 
 .auth-split .alert--error {
-  background: #f0f0f0;
-  color: #333333;
-  border: 1px solid #d4d4d4;
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid var(--border);
 }
 
 .auth-split__footer {
   text-align: center;
   font-size: var(--type-small-size);
-  color: #666666;
+  color: var(--text);
 }
 
 .auth-split__footer a {
-  color: #333333;
+  color: var(--accent);
 }
 
 .auth-split__hero {
-  background: #111111;
+  background:
+    radial-gradient(circle at top left, rgba(220, 38, 38, 0.16), transparent 32%),
+    linear-gradient(180deg, #10141d 0%, var(--bg) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -950,7 +958,7 @@ h3 {
   font-weight: var(--type-eyebrow-weight);
   letter-spacing: var(--type-eyebrow-letter-spacing);
   text-transform: uppercase;
-  color: #aaaaaa;
+  color: var(--accent);
   margin: 0 0 1rem;
 }
 
@@ -959,7 +967,7 @@ h3 {
   font-size: clamp(1.75rem, 3vw, 2.5rem);
   line-height: 1.15;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-strong);
   margin: 0;
 }
 

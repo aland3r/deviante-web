@@ -13,7 +13,7 @@ import {
   saveSession,
   saveUsers,
 } from './storage'
-import { isSupabaseConfigured } from './supabase'
+import { getSupabase, isSupabaseConfigured } from './supabase'
 import {
   validateEmail,
   validatePassword,
@@ -210,10 +210,20 @@ function sanitizeUser(user) {
   return safeUser
 }
 
+/** Process endpoints are Kotlin-owned persistence — attach the Supabase
+ * session token when we have one, so the API can identify the Manager. */
+async function authHeader() {
+  if (!isSupabaseConfigured()) return {}
+  const { data } = await getSupabase().auth.getSession()
+  const token = data.session?.access_token
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {
     headers: {
       'Content-Type': 'application/json',
+      ...(await authHeader()),
       ...(options.headers ?? {}),
     },
     ...options,
@@ -255,15 +265,23 @@ export const api = {
     if (isRemoteApiEnabled()) return request('/auth/logout', { method: 'POST' })
     return mockApi.logout()
   },
-  listProcesses: () => isRemoteApiEnabled() ? request('/processes') : mockApi.listProcesses(),
-  createProcess: () => isRemoteApiEnabled() ? request('/processes', { method: 'POST' }) : mockApi.createProcess(),
-  getProcess: (id) => isRemoteApiEnabled() ? request(`/processes/${id}`) : mockApi.getProcess(id),
-  updateProcess: (id, data) => isRemoteApiEnabled() ? request(`/processes/${id}`, { method: 'PUT', body: JSON.stringify(data) }) : mockApi.updateProcess(id, data),
-  deleteProcess: (id) => isRemoteApiEnabled() ? request(`/processes/${id}`, { method: 'DELETE' }) : mockApi.deleteProcess(id),
+  listProcesses: () => useRemoteProcesses() ? request('/processes') : mockApi.listProcesses(),
+  createProcess: () => useRemoteProcesses() ? request('/processes', { method: 'POST' }) : mockApi.createProcess(),
+  getProcess: (id) => useRemoteProcesses() ? request(`/processes/${id}`) : mockApi.getProcess(id),
+  updateProcess: (id, data) => useRemoteProcesses()
+    ? request(`/processes/${id}`, { method: 'PUT', body: JSON.stringify({ name: data.name, companyName: data.companyName, description: data.description, sector: data.sector }) })
+    : mockApi.updateProcess(id, data),
+  deleteProcess: (id) => useRemoteProcesses() ? request(`/processes/${id}`, { method: 'DELETE' }) : mockApi.deleteProcess(id),
 }
 
 export { ApiError } from './errors'
 
 function isRemoteApiEnabled() {
   return import.meta.env.VITE_USE_REMOTE_API === 'true'
+}
+
+/** Processes are Kotlin-owned persistence: use the real API whenever we
+ * have a real identity to attach (Supabase) or the explicit remote flag. */
+function useRemoteProcesses() {
+  return isSupabaseConfigured() || isRemoteApiEnabled()
 }

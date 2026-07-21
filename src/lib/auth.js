@@ -12,6 +12,35 @@ import { getSupabase } from './supabase'
 
 const PRODUCT_CODE = 'deviante'
 const DEVIANTE_PRODUCTION_ORIGIN = 'https://deviante.alander.io'
+const API_BASE = import.meta.env.VITE_API_URL ?? '/api'
+
+/**
+ * Manager profile (deviante.managers) is Kotlin-owned persistence — the web
+ * app calls the API with the Supabase access token, it never queries
+ * Postgres directly. See gestalt-kit/partials/system-requirements.md SR2.
+ */
+async function apiFetch(path, options = {}) {
+  const supabase = getSupabase()
+  const { data: sessionData } = await supabase.auth.getSession()
+  const token = sessionData.session?.access_token
+  if (!token) throw new ApiError('Você precisa estar autenticado.')
+
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      ...(options.headers ?? {}),
+    },
+  })
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}))
+    throw new ApiError(payload.message ?? 'Falha na requisição.', payload.fieldErrors ?? {})
+  }
+  if (response.status === 204) return null
+  return response.json()
+}
 
 /** OAuth callback host: production subdomain, or current origin on staging/dev. */
 export function resolveDevianteOAuthCallbackUrl() {
@@ -63,31 +92,30 @@ function metadataFromProfile(data) {
   }
 }
 
-async function loadManagerProfile(userId) {
-  const supabase = getSupabase()
-
-  const { data, error } = await supabase
-    .schema('deviante')
-    .from('managers')
-    .select('full_name, first_language, target_language, location_enabled, based_in')
-    .eq('user_id', userId)
-    .maybeSingle()
-
-  if (error || !data) return null
-
-  return {
-    fullName: data.full_name,
-    firstLanguage: data.first_language,
-    targetLanguage: data.target_language,
-    locationEnabled: data.location_enabled,
-    basedIn: data.based_in ?? '',
+/**
+ * Loads (and lazily creates, server-side) the Manager profile through the
+ * Kotlin API — never queries `deviante.managers` directly from the browser.
+ */
+async function loadManagerProfile() {
+  try {
+    const manager = await apiFetch('/manager/me')
+    return {
+      fullName: manager.fullName,
+      firstLanguage: manager.firstLanguage,
+      targetLanguage: manager.targetLanguage,
+      locationEnabled: manager.locationEnabled,
+      basedIn: manager.basedIn ?? '',
+    }
+  } catch (err) {
+    console.error('[loadManagerProfile] failed:', err)
+    return null
   }
 }
 
 async function mapSessionUser(sessionUser) {
   if (!sessionUser) return null
 
-  const fromDb = await loadManagerProfile(sessionUser.id)
+  const fromDb = await loadManagerProfile()
   const fromMeta = profileFromMetadata(sessionUser.user_metadata)
   const email = sessionUser.email ?? ''
 
@@ -201,6 +229,19 @@ export async function updateAuthAccount(data) {
 
   const { data: updated, error } = await supabase.auth.updateUser(payload)
   if (error) throw new ApiError(mapAuthError(error.message))
+
+  // Manager profile (languages, location) is Kotlin-owned persistence —
+  // Supabase Auth metadata above is a mirror, not the source of truth.
+  await apiFetch('/manager/me', {
+    method: 'PUT',
+    body: JSON.stringify({
+      fullName: data.fullName?.trim() ?? '',
+      firstLanguage: data.firstLanguage?.trim() ?? 'pt',
+      targetLanguage: data.targetLanguage?.trim() ?? 'en',
+      locationEnabled: Boolean(data.locationEnabled),
+      basedIn: data.locationEnabled ? data.basedIn?.trim() ?? '' : '',
+    }),
+  })
 
   const user = await mapSessionUser(updated.user)
   if (!user) throw new ApiError('Conta não encontrada.')
