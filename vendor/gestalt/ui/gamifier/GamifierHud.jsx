@@ -83,8 +83,14 @@ export default function GamifierHud({ products, label = 'QUEST LOG', gestaltVers
 
   if (!products.length) return null
 
-  const done = products.reduce((sum, product) => sum + product.done, 0)
-  const total = products.reduce((sum, product) => sum + product.total, 0)
+  // Score/percent reflect active scope only (io/deviante) — MB/HA quests
+  // exist in the data but are out of scope this sprint and shouldn't
+  // dilute or inflate the headline number. Matches gestalt_version's own
+  // scoping (data/schema/portfolio/gestalt_version.sql).
+  const scopedProducts = products.filter((product) => V1_GATE_CODES.includes(product.code))
+  const scoreProducts = scopedProducts.length > 0 ? scopedProducts : products
+  const done = scoreProducts.reduce((sum, product) => sum + product.done, 0)
+  const total = scoreProducts.reduce((sum, product) => sum + product.total, 0)
   const percent = total === 0 ? 0 : Math.round((done / total) * 100)
   const versionLabel = formatVersionLabel(gestaltVersion, products)
 
