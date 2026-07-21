@@ -47,4 +47,5 @@ export {
 export {
   fetchAllQuests,
   fetchProductsMeta,
+  fetchGestaltVersion,
 } from './quests.js'
