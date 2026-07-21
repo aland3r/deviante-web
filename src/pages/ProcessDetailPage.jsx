@@ -154,6 +154,10 @@ export default function ProcessDetailPage() {
             Enviar log de eventos
           </Button>
 
+          <Link to={`/processes/${processId}/mining`} className="button button--ghost">
+            Ver grafo do processo (prévia)
+          </Link>
+
           <div className="danger-zone">
             <h3>Excluir processo</h3>
             <p className="muted">

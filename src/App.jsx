@@ -15,6 +15,7 @@ import DashboardPage from './pages/DashboardPage'
 import LoginPage from './pages/LoginPage'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import ProcessDetailPage from './pages/ProcessDetailPage'
+import ProcessMiningPreviewPage from './pages/ProcessMiningPreviewPage'
 import ProtectedRoute, { NoAccessRedirect } from './routes/ProtectedRoute'
 import { LOADING_LINES, ROADMAP_PHASES } from './lib/roadmap'
 
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="/no-access" element={<NoAccessRedirect />} />
 
             <Route element={<ProtectedRoute />}>
+              <Route path="/processes/:processId/mining" element={<ProcessMiningPreviewPage />} />
               <Route element={<AppLayout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/account" element={<AccountSettingsPage />} />
