@@ -33,3 +33,22 @@ export async function fetchProductsMeta() {
   if (error) throw new Error(error.message)
   return data ?? []
 }
+
+/**
+ * Persistent Gestalt version (trigger-maintained in portfolio.gestalt_version)
+ * — gradual 0.xx toward 1.0, never computed client-side. Returns null if the
+ * row is missing (table not migrated yet) so callers can fall back.
+ */
+export async function fetchGestaltVersion() {
+  if (!isSupabaseConfigured()) return null
+
+  const { data, error } = await getSupabase()
+    .schema('portfolio')
+    .from('gestalt_version')
+    .select('version, done_quests, total_quests, approved')
+    .eq('id', true)
+    .maybeSingle()
+
+  if (error) throw new Error(error.message)
+  return data ?? null
+}

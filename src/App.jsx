@@ -19,7 +19,7 @@ import ProtectedRoute, { NoAccessRedirect } from './routes/ProtectedRoute'
 import { LOADING_LINES, ROADMAP_PHASES } from './lib/roadmap'
 
 export default function App() {
-  const gamifierProducts = useGamifierProducts()
+  const { products: gamifierProducts, gestaltVersion } = useGamifierProducts()
 
   return (
     <DevQuestProvider
@@ -49,7 +49,7 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           <DevQuestHud />
-          <GamifierHud products={gamifierProducts} />
+          <GamifierHud products={gamifierProducts} gestaltVersion={gestaltVersion} />
         </BrowserRouter>
       </AuthProvider>
     </DevQuestProvider>

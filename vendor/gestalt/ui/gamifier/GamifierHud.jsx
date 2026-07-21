@@ -11,11 +11,17 @@ const STATUS_ICON = {
 const V1_GATE_CODES = ['io', 'deviante']
 
 /**
- * v1 is never inferred from quest completion alone — it needs
- * `metadata.v1_approved_at` set on every in-scope product, which only
- * happens after explicit owner + manager sign-off. Absent → pre-v1.
+ * Prefer the persistent, trigger-maintained value from
+ * portfolio.gestalt_version (gradual 0.xx toward 1.0 — see
+ * data/schema/portfolio/gestalt_version.sql). Falls back to a coarse
+ * pré-v1/v1 label only if that row hasn't loaded yet (first paint, or
+ * Supabase unreachable) — never computed as the primary source.
  */
-function computeVersionLabel(products) {
+function formatVersionLabel(gestaltVersion, products) {
+  if (gestaltVersion) {
+    const value = Number(gestaltVersion.version)
+    return value >= 1 ? 'v1.0' : `v${value.toFixed(2)}`
+  }
   const scoped = products.filter((product) => V1_GATE_CODES.includes(product.code))
   if (scoped.length === 0) return 'pré-v1'
   return scoped.every((product) => product.v1ApprovedAt) ? 'v1' : 'pré-v1'
@@ -71,7 +77,7 @@ function ProductSection({ product, open, onToggle }) {
  * `@gestalt/dev-quest`'s `DevQuestHud`. Never gated: this is meant to be
  * seen by owner and visitors alike, on every Gestalt product site.
  */
-export default function GamifierHud({ products, label = 'QUEST LOG' }) {
+export default function GamifierHud({ products, label = 'QUEST LOG', gestaltVersion = null }) {
   const [open, setOpen] = useState(false)
   const [openProduct, setOpenProduct] = useState(products[0]?.code ?? null)
 
@@ -80,7 +86,7 @@ export default function GamifierHud({ products, label = 'QUEST LOG' }) {
   const done = products.reduce((sum, product) => sum + product.done, 0)
   const total = products.reduce((sum, product) => sum + product.total, 0)
   const percent = total === 0 ? 0 : Math.round((done / total) * 100)
-  const versionLabel = computeVersionLabel(products)
+  const versionLabel = formatVersionLabel(gestaltVersion, products)
 
   return (
     <div className={`gamifier-hud${open ? ' gamifier-hud--open' : ''}`}>
