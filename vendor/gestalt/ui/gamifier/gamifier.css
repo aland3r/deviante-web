@@ -66,6 +66,10 @@
   margin: 0;
 }
 
+.gamifier-hud__version {
+  opacity: 0.65;
+}
+
 .gamifier-hud__header h3 {
   font-size: 1rem;
   margin: 0.35rem 0 0;

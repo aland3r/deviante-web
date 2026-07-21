@@ -7,6 +7,20 @@ const STATUS_ICON = {
   [QUEST_STATUS.LOCKED]: '·',
 }
 
+/** Active scope only (partials/active-scope.md) — MB/HA never gate the version. */
+const V1_GATE_CODES = ['io', 'deviante']
+
+/**
+ * v1 is never inferred from quest completion alone — it needs
+ * `metadata.v1_approved_at` set on every in-scope product, which only
+ * happens after explicit owner + manager sign-off. Absent → pre-v1.
+ */
+function computeVersionLabel(products) {
+  const scoped = products.filter((product) => V1_GATE_CODES.includes(product.code))
+  if (scoped.length === 0) return 'pré-v1'
+  return scoped.every((product) => product.v1ApprovedAt) ? 'v1' : 'pré-v1'
+}
+
 function ProductSection({ product, open, onToggle }) {
   return (
     <section className="gamifier-hud__product">
@@ -66,6 +80,7 @@ export default function GamifierHud({ products, label = 'QUEST LOG' }) {
   const done = products.reduce((sum, product) => sum + product.done, 0)
   const total = products.reduce((sum, product) => sum + product.total, 0)
   const percent = total === 0 ? 0 : Math.round((done / total) * 100)
+  const versionLabel = computeVersionLabel(products)
 
   return (
     <div className={`gamifier-hud${open ? ' gamifier-hud--open' : ''}`}>
@@ -84,7 +99,9 @@ export default function GamifierHud({ products, label = 'QUEST LOG' }) {
         <div className="gamifier-hud__panel">
           <header className="gamifier-hud__header">
             <div>
-              <p className="gamifier-hud__eyebrow">GESTALT</p>
+              <p className="gamifier-hud__eyebrow">
+                GESTALT <span className="gamifier-hud__version">{versionLabel}</span>
+              </p>
               <h3>Progressão dos produtos</h3>
             </div>
             <p className="gamifier-hud__score">{done}/{total} quests</p>

@@ -21,14 +21,14 @@ export async function fetchAllQuests() {
   return data ?? []
 }
 
-/** Product name + lifecycle (`status`), used to label roadmap phases. */
+/** Product name + lifecycle (`status`) + metadata (v1 gate), used to label roadmap phases. */
 export async function fetchProductsMeta() {
   if (!isSupabaseConfigured()) return null
 
   const { data, error } = await getSupabase()
     .schema('portfolio')
     .from('products')
-    .select('code, name, status')
+    .select('code, name, status, metadata')
 
   if (error) throw new Error(error.message)
   return data ?? []

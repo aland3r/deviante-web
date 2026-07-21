@@ -1,4 +1,4 @@
-# Dev Quest HUD (arcade dev mode)
+﻿# Dev Quest HUD (arcade dev mode)
 
 Shared React package for Gestalt products: **Quest Log** checklist, **page stamp**, and **arcade loading screen**. Visible only in `npm run dev` (hidden in production builds).
 
@@ -108,9 +108,9 @@ Portfolio (Next.js) — not wired yet; reuse CSS + pattern when needed.
 
 ## Agent skill
 
-See [doc/agents/dev-quest-hud.md](../../doc/agents/dev-quest-hud.md).
+See [gestalt-kit/skills/dev-quest-hud/reference.md](../../gestalt-kit/skills/dev-quest-hud/reference.md).
 
 ## Related
 
 - [deviante/docs/roadmap.md](../../deviante/docs/roadmap.md) — Deviante quest content
-- [gestalt-context.md](../../doc/agents/gestalt-context.md) — no clutter in production
+- [gestalt-context.md](../../gestalt-kit/skills/gestalt-context/reference.md) — no clutter in production

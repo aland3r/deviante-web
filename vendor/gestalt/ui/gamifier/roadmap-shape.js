@@ -57,6 +57,7 @@ export function buildGamifierProducts(questRows = [], productRows = []) {
         done,
         total,
         percent,
+        v1ApprovedAt: metaByCode.get(code)?.metadata?.v1_approved_at ?? null,
       }
     })
 }

@@ -1,4 +1,4 @@
-# Gamifier (public quest log HUD)
+﻿# Gamifier (public quest log HUD)
 
 Shared React package: a **floating, always-visible** quest log widget for
 Gestalt product sites. Public counterpart to `ui/dev-quest`'s `DevQuestHud` —
@@ -33,7 +33,7 @@ import '@gestalt/gamifier/gamifier.css'
 
 ## Agent skill
 
-See [doc/agents/gamifier.md](../../doc/agents/gamifier.md) — owns this widget, the UC→quest transform, and the auto-sync trigger.
+See [gestalt-kit/skills/gamifier/reference.md](../../gestalt-kit/skills/gamifier/reference.md) — owns this widget, the UC→quest transform, and the auto-sync trigger.
 
 ## Related
 
