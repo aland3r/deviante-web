@@ -48,7 +48,7 @@ Google login from `deviante-web.vercel.app` returns to the same Vercel host. Fro
 
 `vercel.json` rewrites all routes to `index.html` for React Router.
 
-Shared Gestalt packages live in `vendor/gestalt/` so CI builds without the monorepo checkout.
+Shared Gestalt packages live in `vendor/gestalt/` so CI builds without the monorepo checkout. `npm run dev`/`npm run build` auto-sync `vendor/gestalt/` from the monorepo (`ui/auth`, `ui/dev-quest`, `ui/gamifier`, `tokens`) via `predev`/`prebuild` hooks (`scripts/sync-vendor.mjs`) — a no-op when the monorepo isn't checked out next to `deviante/` (e.g. on Vercel). Run `npm run sync:vendor` manually to refresh vendor without starting a build.
 
 ## Development
 

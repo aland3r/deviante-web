@@ -12,6 +12,7 @@ export function gestaltDevQuest(webRootDir, gestaltRoot = path.resolve(webRootDi
       alias: {
         '@gestalt/auth': path.resolve(gestaltRoot, 'ui/auth'),
         '@gestalt/dev-quest': path.resolve(gestaltRoot, 'ui/dev-quest'),
+        '@gestalt/gamifier': path.resolve(gestaltRoot, 'ui/gamifier'),
         '@supabase/supabase-js': path.resolve(webRootDir, 'node_modules/@supabase/supabase-js'),
         react: path.resolve(webRootDir, 'node_modules/react'),
         'react-dom': path.resolve(webRootDir, 'node_modules/react-dom'),

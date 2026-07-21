@@ -23,7 +23,6 @@ export {
   getPortfolioOrigin,
   getAuthCallbackUrl,
   isOAuthReturn,
-  isProductLive,
 } from './products.js'
 
 export {
@@ -46,39 +45,6 @@ export {
 } from './access.js'
 
 export {
-  resolveArtifactHref,
-  mapArtifactRow,
-  fetchPublicArtifacts,
-  fetchArtifactsByProduct,
-  fetchAllArtifacts,
-} from './artifacts.js'
-
-export {
-  mapTrackRow,
-  mapJsonTrack,
-  fetchPublicTracks,
-  fetchAllTracks,
-} from './tracks.js'
-
-export {
-  pickLocaleField,
-  normalizePublicationBody,
-  mapPublicationRow,
-  fetchPublicPublications,
-  fetchPublicationBySlug,
-  fetchPublicationsCatalog,
-  fetchPublicationDetail,
-} from './publications.js'
-
-export {
-  USE_CASE_PRODUCTS,
-  mapUseCaseRow,
-  fetchUseCasesByProduct,
-  fetchAllUseCases,
-  fetchUseCaseBySlug,
-  reorderUseCases,
-  deleteUseCase,
-  buildDefaultUseCase,
-  createUseCase,
-  updateUseCase,
-} from './use-cases.js'
+  fetchAllQuests,
+  fetchProductsMeta,
+} from './quests.js'

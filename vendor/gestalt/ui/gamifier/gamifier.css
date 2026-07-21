@@ -1,0 +1,207 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/**
+ * Public counterpart to @gestalt/dev-quest's arcade look — same font,
+ * palette and HUD shape, but this one ships to production on purpose.
+ */
+
+.gamifier-hud {
+  position: fixed;
+  /* Left, not right: in dev builds DevQuestHud also docks bottom-right —
+     keeping this on the opposite side avoids the two HUDs overlapping. */
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 9999;
+  max-width: min(92vw, 24rem);
+}
+
+.gamifier-hud__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  border: 3px solid #10213a;
+  background: #ffd447;
+  color: #10213a;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  cursor: pointer;
+  box-shadow: 0 8px 0 #10213a;
+}
+
+.gamifier-hud__toggle:active {
+  transform: translateY(4px);
+  box-shadow: 0 4px 0 #10213a;
+}
+
+.gamifier-hud__toggle-xp {
+  padding: 0.15rem 0.35rem;
+  background: #10213a;
+  color: #ffd447;
+}
+
+.gamifier-hud__panel {
+  margin-bottom: 0.75rem;
+  max-height: min(70vh, 32rem);
+  overflow: auto;
+  padding: 1rem;
+  border: 3px solid #3dd6ff;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 18px 40px rgba(16, 33, 58, 0.08);
+}
+
+.gamifier-hud__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.gamifier-hud__eyebrow {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  color: #ffd447;
+  margin: 0;
+}
+
+.gamifier-hud__header h3 {
+  font-size: 1rem;
+  margin: 0.35rem 0 0;
+  color: var(--text-strong, #10213a);
+}
+
+.gamifier-hud__score {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  color: var(--accent-strong, #0b4f91);
+  white-space: nowrap;
+}
+
+.gamifier-hud__xp {
+  height: 0.55rem;
+  margin-bottom: 1rem;
+  background: var(--surface-muted, #eef3f9);
+  border: 1px solid var(--border, #d7e0ec);
+}
+
+.gamifier-hud__xp-fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent, #0f6cbd), #3dd6ff);
+}
+
+.gamifier-hud__products {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.gamifier-hud__product + .gamifier-hud__product {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border, #d7e0ec);
+}
+
+.gamifier-hud__product-toggle {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--text-strong, #10213a);
+}
+
+.gamifier-hud__product-name {
+  font-weight: 600;
+}
+
+.gamifier-hud__product-score {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  color: var(--accent-strong, #0b4f91);
+  white-space: nowrap;
+}
+
+.gamifier-hud__phases {
+  margin-top: 0.5rem;
+}
+
+.gamifier-hud__phase + .gamifier-hud__phase {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--border, #d7e0ec);
+}
+
+.gamifier-hud__phase h4 {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.82rem;
+  margin: 0 0 0.5rem;
+  color: var(--text-strong, #10213a);
+}
+
+.gamifier-hud__phase h4 span {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  color: #ffd447;
+}
+
+.gamifier-hud__phase h4 small {
+  font-weight: 400;
+  color: var(--text, #526079);
+}
+
+.gamifier-hud__phase ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.gamifier-hud__quest {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 0.35rem 0.5rem;
+  align-items: start;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.gamifier-hud__quest--done {
+  opacity: 0.72;
+}
+
+.gamifier-hud__quest--done .gamifier-hud__label {
+  text-decoration: line-through;
+}
+
+.gamifier-hud__quest--active .gamifier-hud__label {
+  color: var(--accent-strong, #0b4f91);
+  font-weight: 600;
+}
+
+.gamifier-hud__quest--locked {
+  opacity: 0.55;
+}
+
+.gamifier-hud__icon {
+  width: 1rem;
+  text-align: center;
+  color: #ffd447;
+}
+
+.gamifier-hud__uc {
+  font-size: 0.65rem;
+  padding: 0.1rem 0.35rem;
+  border: 1px solid var(--border, #d7e0ec);
+  border-radius: 999px;
+  color: var(--accent-strong, #0b4f91);
+  white-space: nowrap;
+}

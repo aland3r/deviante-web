@@ -1,0 +1,42 @@
+@font-face {
+  font-family: Carbonot;
+  src:
+    url('./fonts/Carbonot-Bold.woff2') format('woff2'),
+    url('./fonts/Carbonot-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --font-carbonot: Carbonot, monospace;
+
+  --arcadia-bg: #000;
+  --arcadia-fg: #f0f0f0;
+  --arcadia-muted: #666;
+  --arcadia-line: #222;
+
+  --type-display-size: 2rem;
+  --type-display-line-height: 1.1;
+  --type-display-letter-spacing: 0.06em;
+
+  --type-title-size: 1.25rem;
+  --type-title-line-height: 1.2;
+  --type-title-letter-spacing: 0.08em;
+
+  --type-body-size: 0.875rem;
+  --type-body-line-height: 1.5;
+  --type-body-letter-spacing: 0.1em;
+
+  --type-label-size: 0.75rem;
+  --type-label-line-height: 1.2;
+  --type-label-letter-spacing: 0.12em;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --type-display-size: 2.75rem;
+    --type-title-size: 1.5rem;
+    --type-body-size: 1rem;
+  }
+}

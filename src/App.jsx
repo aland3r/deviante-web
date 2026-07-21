@@ -4,6 +4,9 @@ import {
   DevQuestProvider,
 } from '@gestalt/dev-quest'
 import '@gestalt/dev-quest/dev-quest.css'
+import { GamifierHud } from '@gestalt/gamifier'
+import '@gestalt/gamifier/gamifier.css'
+import { useGamifierProducts } from './lib/gamifier'
 import AppLayout from './components/layout/AppLayout'
 import { AuthProvider } from './context/AuthContext'
 import HomePage from './pages/HomePage'
@@ -16,6 +19,8 @@ import ProtectedRoute, { NoAccessRedirect } from './routes/ProtectedRoute'
 import { LOADING_LINES, ROADMAP_PHASES } from './lib/roadmap'
 
 export default function App() {
+  const gamifierProducts = useGamifierProducts()
+
   return (
     <DevQuestProvider
       productName="Deviante"
@@ -44,6 +49,7 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           <DevQuestHud />
+          <GamifierHud products={gamifierProducts} />
         </BrowserRouter>
       </AuthProvider>
     </DevQuestProvider>

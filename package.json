@@ -4,8 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/sync-vendor.mjs",
     "dev": "vite",
+    "prebuild": "node scripts/sync-vendor.mjs",
     "build": "vite build",
+    "sync:vendor": "node scripts/sync-vendor.mjs",
     "lint": "oxlint",
     "preview": "vite preview"
   },
