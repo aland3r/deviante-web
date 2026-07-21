@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { defineConfig, mergeConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 import { fileURLToPath } from 'node:url'
 import { gestaltDevQuest } from './vendor/gestalt/ui/dev-quest/vite-gestalt.js'
 
@@ -27,7 +28,7 @@ const gestaltRoot = resolveGestaltRoot(rootDir)
 
 export default mergeConfig(
   defineConfig({
-    plugins: [react()],
+    plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
         '@gestalt/tokens': path.resolve(gestaltRoot, 'tokens'),

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import Alert from '../components/ui/Alert'
-import Button from '../components/ui/Button'
+import Alert from '../components/ui/LegacyAlert'
+import Button from '../components/ui/LegacyButton'
 import { api, ApiError } from '../lib/api'
 
 function ProcessCard({ process }) {

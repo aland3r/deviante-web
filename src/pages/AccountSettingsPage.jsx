@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import Alert from '../components/ui/Alert'
-import Button from '../components/ui/Button'
+import Alert from '../components/ui/LegacyAlert'
+import Button from '../components/ui/LegacyButton'
 import FormField from '../components/ui/FormField'
 import { useAuth } from '../context/AuthContext'
 import { ApiError } from '../lib/api'

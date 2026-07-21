@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArcadeLoadingScreen, isDevQuestEnabled } from '@gestalt/dev-quest'
-import Alert from '../components/ui/Alert'
+import Alert from '../components/ui/LegacyAlert'
 import { useAuth } from '../context/AuthContext'
 import { completeOAuthCallback, isOAuthReturn } from '../lib/auth'
 

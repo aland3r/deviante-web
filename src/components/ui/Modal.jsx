@@ -1,4 +1,4 @@
-import Button from '../ui/Button'
+import Button from '../ui/LegacyButton'
 
 export default function Modal({ title, description, confirmLabel, onConfirm, onCancel, children }) {
   return (
