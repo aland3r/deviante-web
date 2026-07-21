@@ -7,8 +7,8 @@ const STATUS_ICON = {
   [QUEST_STATUS.LOCKED]: '·',
 }
 
-/** Active scope only (partials/active-scope.md) — MB/HA never gate the version. */
-const V1_GATE_CODES = ['io', 'deviante']
+/** Umbrella products (partials/portfolio-completion.md) — all four gate score + version fallback. */
+const UMBRELLA_PRODUCT_CODES = ['io', 'deviante', 'milebrick', 'harpia']
 
 /**
  * Prefer the persistent, trigger-maintained value from
@@ -22,7 +22,7 @@ function formatVersionLabel(gestaltVersion, products) {
     const value = Number(gestaltVersion.version)
     return value >= 1 ? 'v1.0' : `v${value.toFixed(2)}`
   }
-  const scoped = products.filter((product) => V1_GATE_CODES.includes(product.code))
+  const scoped = products.filter((product) => UMBRELLA_PRODUCT_CODES.includes(product.code))
   if (scoped.length === 0) return 'pré-v1'
   return scoped.every((product) => product.v1ApprovedAt) ? 'v1' : 'pré-v1'
 }
@@ -83,11 +83,8 @@ export default function GamifierHud({ products, label = 'QUEST LOG', gestaltVers
 
   if (!products.length) return null
 
-  // Score/percent reflect active scope only (io/deviante) — MB/HA quests
-  // exist in the data but are out of scope this sprint and shouldn't
-  // dilute or inflate the headline number. Matches gestalt_version's own
-  // scoping (data/schema/portfolio/gestalt_version.sql).
-  const scopedProducts = products.filter((product) => V1_GATE_CODES.includes(product.code))
+  // Headline score matches portfolio.gestalt_version quest scope (all four products).
+  const scopedProducts = products.filter((product) => UMBRELLA_PRODUCT_CODES.includes(product.code))
   const scoreProducts = scopedProducts.length > 0 ? scopedProducts : products
   const done = scoreProducts.reduce((sum, product) => sum + product.done, 0)
   const total = scoreProducts.reduce((sum, product) => sum + product.total, 0)
