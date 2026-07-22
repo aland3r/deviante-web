@@ -1,4 +1,4 @@
-import { getSupabase, isGestaltOwnerEmail } from './supabase.js'
+import { getSupabase, isGestaltMentorEmail, isGestaltOwnerEmail } from './supabase.js'
 import { getProductByCode } from './products.js'
 
 function mapAuthError(message) {
@@ -90,6 +90,8 @@ export async function hasGestaltProductAccess(user, productCode) {
 
   const email = user.email?.toLowerCase() ?? ''
   if (isGestaltOwnerEmail(email)) return true
+  // Mentor is Deviante-only and carries owner-equivalent permissions today.
+  if (productCode === 'deviante' && isGestaltMentorEmail(email)) return true
 
   const profile = await fetchPortfolioUser(user.id)
   if (profile?.role === 'owner') return true
@@ -372,6 +374,28 @@ export async function ensureProductAccess(user, productCode) {
 
   const allowed = await hasGestaltProductAccess(user, productCode)
   if (!allowed) return false
+  await ensureMentorProductAccess(user, productCode)
   await provisionProductUser(user, productCode)
   return true
+}
+
+/**
+ * Writes the `product_access` row for a pre-authorized mentor e-mail so the
+ * grant survives outside the allowlist (admin queue, SQL, RLS policies).
+ * Best-effort: the allowlist above already unblocked the session.
+ */
+async function ensureMentorProductAccess(user, productCode) {
+  if (productCode !== 'deviante') return
+  if (!isGestaltMentorEmail(user.email)) return
+
+  try {
+    await grantProductAccess({
+      userId: user.id,
+      productCode,
+      role: 'mentor',
+      grantedBy: user.id,
+    })
+  } catch {
+    // RLS may block self-grant — allowlist keeps access working regardless.
+  }
 }

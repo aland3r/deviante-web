@@ -48,6 +48,34 @@ export function isGestaltOwnerEmail(email, env = import.meta.env) {
   return getGestaltOwnerEmails(env).includes(normalized)
 }
 
+/**
+ * Mentor is a Deviante-only role (research advisor). Same permissions as
+ * owner for now — see gestalt-kit/skills/deviante-domain § Actors. Listing
+ * the e-mail here pre-authorizes the first Google login: access is granted
+ * on sign-in without the owner having to create the account by hand.
+ */
+const DEFAULT_MENTOR_EMAILS = ['pafileiro@gmail.com']
+
+export function getGestaltMentorEmails(env = import.meta.env) {
+  const raw =
+    env.VITE_GESTALT_MENTOR_EMAILS
+    ?? env.NEXT_PUBLIC_GESTALT_MENTOR_EMAILS
+    ?? ''
+
+  const fromEnv = String(raw)
+    .split(',')
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean)
+
+  return [...new Set([...DEFAULT_MENTOR_EMAILS, ...fromEnv])]
+}
+
+export function isGestaltMentorEmail(email, env = import.meta.env) {
+  const normalized = email?.trim().toLowerCase()
+  if (!normalized) return false
+  return getGestaltMentorEmails(env).includes(normalized)
+}
+
 export function getSupabase(env = import.meta.env) {
   const { url, publishableKey } = readSupabaseEnv(env)
   if (!url || !publishableKey) {

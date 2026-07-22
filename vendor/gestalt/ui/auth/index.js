@@ -10,6 +10,8 @@ export {
   getGestaltOwnerEmail,
   getGestaltOwnerEmails,
   isGestaltOwnerEmail,
+  getGestaltMentorEmails,
+  isGestaltMentorEmail,
   resetSupabaseClient,
 } from './supabase.js'
 
