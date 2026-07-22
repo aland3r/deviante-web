@@ -61,7 +61,12 @@ export function getSupabase(env = import.meta.env) {
         storage: createGestaltAuthStorage(),
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: true,
+        // The app owns the PKCE exchange explicitly (AuthCallbackPage ->
+        // completeOAuthCallback). Letting the client also auto-detect and
+        // exchange the ?code= on init races the same single-use code
+        // verifier against itself — the loser fails with a "session
+        // expired" / fetch error even on a fresh login attempt.
+        detectSessionInUrl: false,
       },
     })
   }
