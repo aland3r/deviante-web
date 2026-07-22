@@ -49,7 +49,7 @@ Responsive type tokens share the same property names across breakpoints (mobile 
 
 Google login from `deviante-web.vercel.app` returns to the same Vercel host. From `deviante.alander.io` it returns to the product subdomain.
 
-`vercel.json` rewrites all routes to `index.html` for React Router.
+`vercel.json` proxies `/api/*` to the Kotlin backend (`https://deviante-api.fly.dev`) and rewrites everything else to `index.html` for React Router. If the Fly.io app URL changes, update the `/api/*` destination here too.
 
 Shared Gestalt packages live in `vendor/gestalt/` so CI builds without the monorepo checkout. `npm run dev`/`npm run build` auto-sync `vendor/gestalt/` from the monorepo (`ui/auth`, `ui/dev-quest`, `ui/gamifier`, `tokens`) via `predev`/`prebuild` hooks (`scripts/sync-vendor.mjs`) — a no-op when the monorepo isn't checked out next to `deviante/` (e.g. on Vercel). Run `npm run sync:vendor` manually to refresh vendor without starting a build.
 
