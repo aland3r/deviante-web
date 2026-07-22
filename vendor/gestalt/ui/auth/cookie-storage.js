@@ -9,27 +9,9 @@ function cookieDomain() {
 }
 
 function readCookie(name) {
-  const prefix = `${encodeURIComponent(name)}=`
-  const chunks = []
-
-  for (const part of document.cookie.split(';')) {
-    const trimmed = part.trim()
-    if (trimmed.startsWith(prefix)) {
-      chunks.push({ index: 0, value: decodeURIComponent(trimmed.slice(prefix.length)) })
-      continue
-    }
-
-    const chunkMatch = trimmed.match(/^(.+)\.(\d+)=([^;]*)$/)
-    if (!chunkMatch) continue
-
-    const [, baseName, index, value] = chunkMatch
-    if (baseName === encodeURIComponent(name)) {
-      chunks.push({ index: Number(index), value: decodeURIComponent(value) })
-    }
-  }
-
-  if (chunks.length === 0) return null
-  return chunks.sort((a, b) => a.index - b.index).map((chunk) => chunk.value).join('')
+  // Disable cookie reading entirely - use localStorage fallback only
+  // This avoids malformed cookie errors from previous sessions
+  return null
 }
 
 function writeCookie(name, value) {
