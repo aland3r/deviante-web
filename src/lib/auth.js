@@ -137,9 +137,7 @@ export async function getCurrentAuthUser() {
 
 export async function checkDevianteAccess(sessionUser) {
   if (!sessionUser?.id) return false
-  const result = await hasGestaltProductAccess(sessionUser, PRODUCT_CODE)
-  console.log('[checkDevianteAccess]', { sessionUserId: sessionUser.id, PRODUCT_CODE, result })
-  return result
+  return hasGestaltProductAccess(sessionUser, PRODUCT_CODE)
 }
 
 export async function ensureDevianteAccess(sessionUser) {

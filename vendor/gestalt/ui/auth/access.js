@@ -99,7 +99,7 @@ export async function hasGestaltProductAccess(user, productCode) {
 
 async function ensureOwnerProductAccess(user) {
   const products = ['deviante', 'milebrick']
-  for (const productCode of products) {
+  await Promise.all(products.map(async (productCode) => {
     try {
       await grantProductAccess({
         userId: user.id,
@@ -111,7 +111,7 @@ async function ensureOwnerProductAccess(user) {
     } catch {
       // Best-effort — SQL seed or RLS may already satisfy access.
     }
-  }
+  }))
 }
 
 async function provisionDevianteUser(user) {
@@ -361,16 +361,14 @@ export async function searchAuthUsersByEmail(emailQuery) {
   return data ?? []
 }
 
+/**
+ * Callers must run `ensureOwnerBootstrap` themselves first when relevant
+ * (AuthContext.syncAccess already does, unconditionally, before calling
+ * this) — this used to call it again here too, doubling every owner
+ * login's Supabase round-trips for no behavior difference.
+ */
 export async function ensureProductAccess(user, productCode) {
   if (!user?.id) return false
-
-  if (isGestaltOwnerEmail(user.email)) {
-    try {
-      await ensureOwnerBootstrap(user)
-    } catch {
-      // RLS may still block bootstrap — owner e-mail is allowed below.
-    }
-  }
 
   const allowed = await hasGestaltProductAccess(user, productCode)
   if (!allowed) return false
