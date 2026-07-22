@@ -6,6 +6,9 @@ React frontend for the Deviante maintenance intelligence platform.
 
 - React 19 + Vite
 - React Router
+- **shadcn/ui** (component library over Radix UI)
+- **Radix UI** (headless components: alert-dialog, avatar, dialog, dropdown-menu, label, select, separator, tabs, tooltip)
+- **Tailwind CSS v4** (styling + theming)
 - Mock API via `localStorage` (swap to Ktor when `VITE_USE_REMOTE_API=true`)
 
 ## Typography
