@@ -1,18 +1,17 @@
 /*
-  Graph geometry + seed data for the process-mining canvas.
+  Graph geometry for the process-mining canvas.
 
   Ported verbatim (TS → JS) from the Figma Make export "Process Mining
-  Canvas Design" (ZZKdwxgmeCNJFG64zGbADe), Version 20. The export itself is
-  transient — staged under `figma-make/` and deleted once implemented (see
-  figma-make/README.md); this comment is the record of which version this
-  came from. Figma is the style authority: re-port from a newer export
-  rather than editing the geometry by hand.
+  Canvas Design" (ZZKdwxgmeCNJFG64zGbADe). The export itself is transient —
+  staged under `figma-make/` and deleted once implemented; this comment is
+  the record of where the geometry came from. Figma is the style authority:
+  re-port from a newer export rather than editing the curve math by hand.
 
-  NODE_DEFS / EDGE_DEFS / TRACE_VARIANTS are SIMULATED — a PCB assembly
-  line, not a real uploaded event log. There is no Kotlin route that
-  derives a graph from an event log yet (UC4/UC5, sprint plan 23–24/07).
-  Swap these three constants for an API call when that route lands; the
-  rest of this module is pure geometry and does not change.
+  This module is pure geometry and has no data. The nodes, edges and
+  variants the canvas draws come from the API (`ProcessGraphTab` →
+  `/api/processes/:id/graph` and `/traces`); the export's simulated PCB
+  assembly line was removed once those routes landed. Placement of the
+  ranked nodes lives in `graph-layout.js`.
 */
 
 // ─── Graph constants ────────────────────────────────────────────────────────
@@ -27,92 +26,7 @@ export const GRAD_MID = '#4d8fc0'
 export const GRAD_DEEP = '#2870a8'
 export const DASH_COLOR = '#5a8fb8'
 
-// ─── Seed data (simulated — manufacturing PCB assembly line) ────────────────
-
-export const NODE_DEFS = [
-  { id: 'n1', label: 'Solicitação de Material', hx: 80, hy: 240, vx: 230, vy: 60, frequency: 100, displayMetric: '856 casos', isStart: true,
-    metrics: { absoluteFreq: 856, caseFreq: 856, maxRepetitions: 1, endFreq: 0, totalDuration: '29d 8h', medianDuration: '48m', meanDuration: '49m', maxDuration: '4h 12m', minDuration: '3m', histogram: [.60, 1, .85, .55, .30, .14, .06, .03, .01, .01] } },
-  { id: 'n2', label: 'Inspeção de Componentes', hx: 340, hy: 100, vx: 230, vy: 210, frequency: 96, displayMetric: '822 casos',
-    metrics: { absoluteFreq: 822, caseFreq: 822, maxRepetitions: 2, endFreq: 0, totalDuration: '82d 14h', medianDuration: '2h 22m', meanDuration: '2h 24m', maxDuration: '9h 40m', minDuration: '18m', histogram: [.08, .30, .72, 1, .82, .50, .24, .10, .04, .01] } },
-  { id: 'n3', label: 'Montagem de PCB', hx: 600, hy: 240, vx: 230, vy: 360, frequency: 90, displayMetric: '771 casos',
-    metrics: { absoluteFreq: 771, caseFreq: 736, maxRepetitions: 3, endFreq: 0, totalDuration: '214d 6h', medianDuration: '6h 42m', meanDuration: '6h 40m', maxDuration: '28h 15m', minDuration: '1h 10m', histogram: [.05, .14, .38, .75, 1, .88, .56, .28, .10, .03] } },
-  { id: 'n4', label: 'Soldagem por Onda', hx: 860, hy: 100, vx: 230, vy: 510, frequency: 86, displayMetric: '736 casos',
-    metrics: { absoluteFreq: 736, caseFreq: 720, maxRepetitions: 2, endFreq: 0, totalDuration: '61d 8h', medianDuration: '1h 58m', meanDuration: '2h', maxDuration: '8h 30m', minDuration: '25m', histogram: [.18, .48, .82, 1, .78, .48, .22, .08, .03, .01] } },
-  { id: 'n5', label: 'Controle de Qualidade', hx: 860, hy: 380, vx: 230, vy: 660, frequency: 84, displayMetric: '719 casos',
-    metrics: { absoluteFreq: 719, caseFreq: 698, maxRepetitions: 2, endFreq: 0, totalDuration: '89d 18h', medianDuration: '2h 58m', meanDuration: '3h', maxDuration: '12h 20m', minDuration: '32m', histogram: [.10, .28, .65, 1, .90, .60, .30, .12, .04, .01] } },
-  { id: 'n6', label: 'Retrabalho', hx: 1100, hy: 240, vx: 30, vy: 760, frequency: 16, displayMetric: '137 casos',
-    metrics: { absoluteFreq: 137, caseFreq: 128, maxRepetitions: 3, endFreq: 0, totalDuration: '48d 10h', medianDuration: '8h 30m', meanDuration: '8h 28m', maxDuration: '32h', minDuration: '1h 20m', histogram: [.04, .12, .30, .65, 1, .88, .54, .24, .08, .02] } },
-  { id: 'n7', label: 'Inspeção Final', hx: 1340, hy: 240, vx: 230, vy: 810, frequency: 76, displayMetric: '651 casos',
-    metrics: { absoluteFreq: 651, caseFreq: 636, maxRepetitions: 1, endFreq: 0, totalDuration: '54d 4h', medianDuration: '2h', meanDuration: '2h', maxDuration: '7h 45m', minDuration: '20m', histogram: [.20, .55, .90, 1, .74, .44, .20, .08, .03, .01] } },
-  { id: 'n8', label: 'Embalagem', hx: 1590, hy: 240, vx: 230, vy: 960, frequency: 82, displayMetric: '702 casos', isEnd: true,
-    metrics: { absoluteFreq: 702, caseFreq: 702, maxRepetitions: 1, endFreq: 702, totalDuration: '17d 12h', medianDuration: '36m', meanDuration: '36m', maxDuration: '2h 10m', minDuration: '8m', histogram: [.50, 1, .90, .62, .36, .18, .08, .03, .01, .01] } },
-]
-
-export const EDGE_DEFS = [
-  { id: 'e1', source: 'n1', target: 'n2', frequency: 0.96, label: '856 · 49m' },
-  { id: 'e2', source: 'n2', target: 'n3', frequency: 0.90, label: '771 · 2h 22m' },
-  { id: 'e3', source: 'n3', target: 'n4', frequency: 0.86, label: '736 · 6h 42m' },
-  { id: 'e4', source: 'n4', target: 'n5', frequency: 0.85, label: '728 · 1h 58m' },
-  { id: 'e5', source: 'n5', target: 'n7', frequency: 0.72, label: '616 · 2h 58m' },
-  { id: 'e6', source: 'n5', target: 'n6', frequency: 0.16, label: '137 · 3h 10m' },
-  { id: 'e7', source: 'n7', target: 'n8', frequency: 0.86, label: '736 · 2h' },
-  { id: 'e8', source: 'n6', target: 'n3', frequency: 0.11, label: '94 · 3h 20m', dashed: true, offsetV: -290 },
-  { id: 'e9', source: 'n6', target: 'n4', frequency: 0.07, label: '60 · 2h', dashed: true, offsetV: -170 },
-  { id: 'e10', source: 'n3', target: 'n6', frequency: 0.05, label: '43 · 45m', dashed: true },
-  { id: 'e11', source: 'n4', target: 'n7', frequency: 0.03, label: '26 · 4h 10m', dashed: true, offsetV: 290 },
-]
-
-/** Total simulated cases in the seed log — shown in the header badge. */
-export const TOTAL_CASES = 856
-
-// ─── Trace variants (fed to the cases/layers panel) ─────────────────────────
-
-export const TRACE_VARIANTS = [
-  {
-    id: 'v1', label: 'Variante A — caminho padrão',
-    nodeIds: ['n1', 'n2', 'n3', 'n4', 'n5', 'n7', 'n8'],
-    caseCount: 616, deviation: false,
-    cases: [
-      { id: 'CASE-0001', duration: '7h 14m', startedAt: '2025-07-18 08:02', status: 'completed' },
-      { id: 'CASE-0004', duration: '6h 58m', startedAt: '2025-07-18 09:30', status: 'completed' },
-      { id: 'CASE-0007', duration: '8h 02m', startedAt: '2025-07-18 11:15', status: 'completed' },
-      { id: 'CASE-0011', duration: '7h 31m', startedAt: '2025-07-19 07:48', status: 'completed' },
-      { id: 'CASE-0014', duration: '6h 44m', startedAt: '2025-07-19 10:00', status: 'running' },
-      { id: 'CASE-0018', duration: '7h 56m', startedAt: '2025-07-19 13:22', status: 'completed' },
-    ],
-  },
-  {
-    id: 'v2', label: 'Variante B — loop de retrabalho',
-    nodeIds: ['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n3', 'n4', 'n5', 'n7', 'n8'],
-    caseCount: 94, deviation: true,
-    cases: [
-      { id: 'CASE-0003', duration: '15h 48m', startedAt: '2025-07-18 08:45', status: 'deviated' },
-      { id: 'CASE-0009', duration: '16h 12m', startedAt: '2025-07-18 14:00', status: 'completed' },
-      { id: 'CASE-0021', duration: '14h 33m', startedAt: '2025-07-19 09:10', status: 'deviated' },
-      { id: 'CASE-0027', duration: '17h 05m', startedAt: '2025-07-20 08:00', status: 'completed' },
-    ],
-  },
-  {
-    id: 'v3', label: 'Variante C — saída direta p/ inspeção',
-    nodeIds: ['n1', 'n2', 'n3', 'n4', 'n7', 'n8'],
-    caseCount: 26, deviation: true,
-    cases: [
-      { id: 'CASE-0006', duration: '9h 30m', startedAt: '2025-07-18 10:15', status: 'deviated' },
-      { id: 'CASE-0019', duration: '10h 02m', startedAt: '2025-07-19 11:40', status: 'completed' },
-      { id: 'CASE-0033', duration: '8h 54m', startedAt: '2025-07-20 09:05', status: 'deviated' },
-    ],
-  },
-  {
-    id: 'v4', label: 'Variante D — retrabalho antecipado',
-    nodeIds: ['n1', 'n2', 'n3', 'n6', 'n4', 'n5', 'n7', 'n8'],
-    caseCount: 43, deviation: true,
-    cases: [
-      { id: 'CASE-0012', duration: '13h 22m', startedAt: '2025-07-18 07:30', status: 'deviated' },
-      { id: 'CASE-0025', duration: '12h 48m', startedAt: '2025-07-19 08:55', status: 'completed' },
-      { id: 'CASE-0038', duration: '14h 11m', startedAt: '2025-07-20 10:30', status: 'running' },
-    ],
-  },
-]
+// ─── Case status vocabulary (traces panel) ──────────────────────────────────
 
 export const STATUS_DOT = {
   completed: '#22c55e',

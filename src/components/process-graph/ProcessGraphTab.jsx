@@ -1,22 +1,26 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
-import { X, ZoomIn, ZoomOut, Maximize2, Filter, SlidersHorizontal } from 'lucide-react'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import { X, ZoomIn, ZoomOut, Maximize2, Filter, SlidersHorizontal, AlignCenter, Upload } from 'lucide-react'
 import {
   NODE_W, NODE_H, CIRC_R,
   GRAD_LIGHT, GRAD_MID, GRAD_DEEP, DASH_COLOR,
-  NODE_DEFS, EDGE_DEFS, TRACE_VARIANTS, STATUS_DOT, STATUS_LABEL,
+  STATUS_DOT, STATUS_LABEL,
   freqOpacity, freqHalfW, computeEdgeCPs, edgeArrowPath,
   nodeById, nodeHitTest, getInitialView,
 } from './graph-core'
+import { buildGraphModel, positionNodes, withEdgeOffsets, formatDuration, formatCount } from './graph-layout'
+import { api, ApiError } from '../../lib/api'
 
 /*
-  "Grafo do Processo" tab — the canvas plus its two side panels, ported
-  from the Figma Make export "Process Mining Canvas Design"
-  (ZZKdwxgmeCNJFG64zGbADe), Version 20 — see graph-core.js for the
-  simulated-data caveat and figma-make/README.md for how exports are staged.
+  "Grafo do Processo" tab — the canvas plus its two side panels. Visual
+  language ported from the Figma Make export "Process Mining Canvas Design"
+  (ZZKdwxgmeCNJFG64zGbADe), including the newer export's dotted canvas, the
+  traces window and the Horizontal/Vertical toggle sitting INSIDE the canvas
+  rather than in the app header.
 
-  Layout is owned by the parent (the header's Horizontal/Vertical toggle
-  lives in ProcessCanvasPage), so it comes in as a prop; pan/zoom reset
-  whenever it changes.
+  Everything drawn here comes from the process's latest parsed event log via
+  `GET /api/processes/:id/graph` and `/traces` — the seed PCB line that used
+  to live in graph-core.js is gone. A process with no ingested log gets an
+  empty state, not a demo graph.
 */
 
 // ─── Small shared bits ──────────────────────────────────────────────────────
@@ -63,13 +67,28 @@ function Histogram({ data }) {
 
 // ─── Cases / layers panel (Figma-layers-style overlay on the left) ──────────
 
-function CasesLayersPanel({ node, onClose }) {
-  const relevantVariants = TRACE_VARIANTS.filter((v) => v.nodeIds.includes(node.id))
+function CasesLayersPanel({ node, variants, onClose }) {
+  const relevantVariants = useMemo(
+    () => variants.filter((v) => v.nodeIds.includes(node.id)),
+    [variants, node.id],
+  )
   const totalCases = relevantVariants.reduce((s, v) => s + v.caseCount, 0)
 
-  const [expanded, setExpanded] = useState(() => Object.fromEntries(relevantVariants.map((v) => [v.id, true])))
+  const [filter, setFilter] = useState('')
+  // Collapsed by default: a real log has dozens of variants, and the export's
+  // all-open tree only reads well with the three it invented.
+  const [expanded, setExpanded] = useState({})
   const [selectedCase, setSelectedCase] = useState(null)
   const [hiddenVariants, setHiddenVariants] = useState(() => new Set())
+
+  const visibleVariants = useMemo(() => {
+    const term = filter.trim().toLowerCase()
+    if (!term) return relevantVariants
+    return relevantVariants.filter((v) =>
+      v.label.toLowerCase().includes(term)
+      || v.sequence.some((s) => s.toLowerCase().includes(term))
+      || v.cases.some((c) => c.caseId.toLowerCase().includes(term)))
+  }, [relevantVariants, filter])
 
   const toggleExpand = (id) => setExpanded((p) => ({ ...p, [id]: !p[id] }))
   const toggleHide = (id, e) => {
@@ -116,12 +135,18 @@ function CasesLayersPanel({ node, onClose }) {
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2.5">
             <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-          <input placeholder="Filtrar casos…" style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'white', fontFamily: "'Inter',sans-serif", fontSize: 11, padding: 0 }} />
+          <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filtrar casos…"
+            style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'white', fontFamily: "'Inter',sans-serif", fontSize: 11, padding: 0 }} />
         </div>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
-        {relevantVariants.map((variant) => {
+        {visibleVariants.length === 0 && (
+          <p style={{ padding: '16px 12px', margin: 0, fontSize: 11, color: '#475569', fontFamily: "'Inter',sans-serif" }}>
+            Nenhum caso encontrado para “{filter}”.
+          </p>
+        )}
+        {visibleVariants.map((variant) => {
           const isHidden = hiddenVariants.has(variant.id)
           const isOpen = expanded[variant.id]
           const variantColor = variant.deviation ? '#f97316' : '#22c55e'
@@ -180,10 +205,10 @@ function CasesLayersPanel({ node, onClose }) {
                       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
                     </svg>
                     <span style={{ flex: 1, fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: isSelCase ? 'white' : 'rgba(255,255,255,0.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {c.id}
+                      {c.caseId}
                     </span>
                     <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: '#475569', flexShrink: 0 }}>
-                      {c.duration}
+                      {formatDuration(c.durationSeconds)}
                     </span>
                   </div>
                 )
@@ -204,17 +229,17 @@ function CasesLayersPanel({ node, onClose }) {
       </div>
 
       {selectedCase ? (() => {
-        const c = TRACE_VARIANTS.flatMap((v) => v.cases).find((x) => x.id === selectedCase)
+        const c = relevantVariants.flatMap((v) => v.cases).find((x) => x.id === selectedCase)
         if (!c) return null
         return (
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', padding: '10px 12px', flexShrink: 0 }}>
             <p style={{ margin: '0 0 6px', fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Caso selecionado</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {[
-                ['ID', c.id],
-                ['Duração', c.duration],
-                ['Início', c.startedAt],
-                ['Status', STATUS_LABEL[c.status]],
+                ['ID', c.caseId],
+                ['Duração', formatDuration(c.durationSeconds)],
+                ['Início', c.startedAt ? new Date(c.startedAt).toLocaleString('pt-BR') : '—'],
+                ['Status', STATUS_LABEL[c.status] ?? c.status],
               ].map(([k, v]) => (
                 <div key={k} style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#475569' }}>{k}</span>
@@ -324,17 +349,62 @@ function ActivityNode({ node, isSelected }) {
   </g>)
 }
 
+// ─── Empty / error canvas ───────────────────────────────────────────────────
+
+/**
+ * No parsed log means there is no graph to draw — say that instead of
+ * showing a demo one. A log that failed to parse is a different sentence:
+ * the process has history, it just has nothing drawable.
+ */
+function EmptyCanvas({ message, eventLog, onUploadLog }) {
+  const failed = eventLog?.parseStatus === 'failed'
+  return (
+    <div className="flex flex-1 items-center justify-center p-8" style={{ background: '#090d14' }}>
+      <div className="flex flex-col items-center gap-4 text-center" style={{ maxWidth: 380 }}>
+        <div className="w-12 h-12 rounded-full flex items-center justify-center"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <Upload size={18} color="#475569" />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground">
+            {message ? 'Não foi possível carregar o grafo' : failed ? 'O último log não pôde ser interpretado' : 'Nenhum log de eventos neste processo'}
+          </p>
+          <p className="text-[12px] text-muted-foreground mt-1 leading-relaxed">
+            {message
+              || (failed
+                ? `${eventLog.fileName}: ${eventLog.parseError ?? 'arquivo inválido'}. Envie outro arquivo .xes ou .csv.`
+                : 'O grafo é derivado do log carregado (UC4) — envie um arquivo .xes ou .csv para desenhar este processo.')}
+          </p>
+        </div>
+        {onUploadLog && (
+          <button type="button" onClick={onUploadLog}
+            className="flex items-center gap-2 py-2 px-3 rounded text-xs font-medium transition-colors border border-border text-muted-foreground hover:text-foreground"
+            style={{ fontFamily: "'JetBrains Mono',monospace" }}>
+            <Upload size={12} />Carregar log de eventos
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Tab body ───────────────────────────────────────────────────────────────
 
-export default function ProcessGraphTab({ layout, isMobile }) {
-  const [pan, setPan] = useState(() => getInitialView(layout).pan)
-  const [zoom, setZoom] = useState(() => getInitialView(layout).zoom)
-  const [selectedId, setSelectedId] = useState('n5')
+export default function ProcessGraphTab({ processId, isMobile, onStats, onUploadLog }) {
+  const [layout, setLayout] = useState('vertical')
+  const [pan, setPan] = useState(() => getInitialView('vertical').pan)
+  const [zoom, setZoom] = useState(() => getInitialView('vertical').zoom)
+  const [selectedId, setSelectedId] = useState(null)
   const [actSlider, setActSlider] = useState(80)
   const [pathSlider, setPathSlider] = useState(52)
   const [cursorGrab, setCursorGrab] = useState(false)
   const [mobileFilters, setMobileFilters] = useState(false)
   const [showCasesPanel, setShowCasesPanel] = useState(false)
+
+  const [graph, setGraph] = useState(null)
+  const [variants, setVariants] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
 
   const isDragging = useRef(false)
   const onNode = useRef(false)
@@ -343,19 +413,61 @@ export default function ProcessGraphTab({ layout, isMobile }) {
   const svgRef = useRef(null)
   const containerRef = useRef(null)
 
-  // Layout is owned by the header; reset the viewport when it flips.
+  // The graph and the variant tree are two views of the same ingestion, so
+  // they load together — a canvas whose traces panel disagrees with its nodes
+  // would be worse than one that is still loading.
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    Promise.all([api.getProcessGraph(processId), api.getProcessTraces(processId)])
+      .then(([graphData, traceData]) => {
+        if (cancelled) return
+        setGraph(graphData)
+        setVariants(traceData.variants ?? [])
+        setLoadError('')
+      })
+      .catch((err) => {
+        if (!cancelled) setLoadError(err instanceof ApiError ? err.message : 'Não foi possível carregar o grafo deste processo.')
+      })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [processId])
+
+  const model = useMemo(() => buildGraphModel(graph), [graph])
+
+  // Report upwards so the header badge counts the same cases the canvas draws.
+  useEffect(() => {
+    onStats?.({
+      caseCount: graph?.caseCount ?? 0,
+      eventLog: graph?.eventLog ?? null,
+      hasUnmappedOperations: graph?.hasUnmappedOperations ?? false,
+    })
+  }, [graph, onStats])
+
+  // Reset the viewport when the direction flips — the coordinates change.
   useEffect(() => {
     const v = getInitialView(layout)
     setPan(v.pan); setZoom(v.zoom)
   }, [layout])
 
-  const nodes = NODE_DEFS.map((n) => ({ ...n, x: layout === 'horizontal' ? n.hx : n.vx, y: layout === 'horizontal' ? n.hy : n.vy }))
+  const nodes = useMemo(() => positionNodes(model.nodes, layout), [model.nodes, layout])
   const actThr = (1 - actSlider / 100) * 100
   const pathThr = (1 - pathSlider / 100)
-  const visNodes = nodes.filter((n) => n.frequency >= actThr)
+  const visNodes = nodes.filter((n) => n.isStart || n.isEnd || n.frequency >= actThr)
   const visIds = new Set(visNodes.map((n) => n.id))
-  const visEdges = EDGE_DEFS.filter((e) => e.frequency >= pathThr && visIds.has(e.source) && visIds.has(e.target))
-  const selectedNode = selectedId ? nodes.find((n) => n.id === selectedId) ?? null : null
+  // Keyed on the visible set itself, not on `nodes`: raising the activity
+  // slider hides nodes, and their edges have to go with them.
+  const visKey = [...visIds].join('|')
+  const visEdges = useMemo(() => {
+    const visible = new Set(visKey ? visKey.split('|') : [])
+    return withEdgeOffsets(
+      model.edges.filter((e) => e.frequency >= pathThr && visible.has(e.source) && visible.has(e.target)),
+      nodes, layout,
+    )
+  }, [model.edges, pathThr, visKey, nodes, layout])
+  // Only activity nodes carry metrics — Início/Fim are graph punctuation.
+  const activityNodeCount = model.nodes.filter((n) => !n.isStart && !n.isEnd).length
+  const selectedNode = selectedId ? nodes.find((n) => n.id === selectedId && !n.isStart && !n.isEnd) ?? null : null
 
   const handleWheel = useCallback((e) => {
     e.preventDefault()
@@ -414,12 +526,39 @@ export default function ProcessGraphTab({ layout, isMobile }) {
     }
     onNode.current = false
   }
-  function fitView() {
+  const fitView = useCallback(() => {
     if (!visNodes.length) return
     const rect = svgRef.current?.getBoundingClientRect(); if (!rect) return
     const xs = visNodes.map((n) => n.x), ys = visNodes.map((n) => n.y), pad = 60
     const nz = Math.min((rect.width - pad * 2) / (Math.max(...xs) + NODE_W - Math.min(...xs)), (rect.height - pad * 2) / (Math.max(...ys) + NODE_H - Math.min(...ys)), 1.6)
     setPan({ x: pad - Math.min(...xs) * nz, y: pad - Math.min(...ys) * nz }); setZoom(nz)
+  }, [visNodes])
+
+  // A log's shape is unknown until it is fetched, so the export's fixed
+  // starting pan/zoom can leave the graph off-screen — frame it once instead.
+  const framed = useRef(false)
+  useEffect(() => {
+    if (framed.current || loading || nodes.length === 0) return
+    framed.current = true
+    fitView()
+  }, [loading, nodes.length, fitView])
+
+  if (loading) {
+    return (
+      <div className="flex flex-1 items-center justify-center" style={{ background: '#090d14' }}>
+        <p className="text-sm text-muted-foreground">Carregando grafo…</p>
+      </div>
+    )
+  }
+
+  if (loadError || model.nodes.length === 0) {
+    return (
+      <EmptyCanvas
+        message={loadError}
+        eventLog={graph?.eventLog ?? null}
+        onUploadLog={onUploadLog}
+      />
+    )
   }
 
   return (
@@ -427,7 +566,7 @@ export default function ProcessGraphTab({ layout, isMobile }) {
       <div ref={containerRef} className="relative flex-1 min-w-0 overflow-hidden" style={{ background: '#090d14' }}>
 
         {!isMobile && selectedNode && showCasesPanel && (
-          <CasesLayersPanel node={selectedNode} onClose={() => setShowCasesPanel(false)} />
+          <CasesLayersPanel node={selectedNode} variants={variants} onClose={() => setShowCasesPanel(false)} />
         )}
 
         <svg ref={svgRef} className="w-full h-full"
@@ -518,6 +657,46 @@ export default function ProcessGraphTab({ layout, isMobile }) {
           {Math.round(zoom * 100)}%
         </div>
 
+        {/* Direction toggle — inside the canvas, per the newer Figma export;
+            it steers the drawing, not the app shell, so it lives with it. */}
+        {!isMobile && (
+          <button onClick={() => setLayout((l) => (l === 'horizontal' ? 'vertical' : 'horizontal'))}
+            title="Alternar direção do grafo"
+            style={{
+              position: 'absolute', top: 16, right: 16, zIndex: 20,
+              display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 6,
+              border: '1px solid rgba(255,255,255,0.09)', background: '#161c28', color: '#64748b',
+              fontFamily: "'JetBrains Mono',monospace", fontSize: 10, cursor: 'pointer', transition: 'all 0.15s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)'; e.currentTarget.style.color = '#94a3b8' }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'; e.currentTarget.style.color = '#64748b' }}>
+            <AlignCenter size={12} style={{ transform: layout === 'horizontal' ? 'rotate(90deg)' : 'none', transition: 'transform 0.3s' }} />
+            {layout === 'horizontal' ? 'Vertical' : 'Horizontal'}
+          </button>
+        )}
+
+        {/* Traces window toggle — only meaningful with an activity selected,
+            since the panel lists the variants that pass through it. */}
+        {!isMobile && selectedNode && (
+          <button onClick={() => setShowCasesPanel((v) => !v)}
+            style={{
+              position: 'absolute', bottom: 20, left: 84,
+              display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px 5px 8px', borderRadius: 6,
+              border: `1px solid ${showCasesPanel ? 'rgba(40,112,168,0.50)' : 'rgba(255,255,255,0.09)'}`,
+              background: showCasesPanel ? 'rgba(40,112,168,0.18)' : '#161c28',
+              color: showCasesPanel ? '#c8e2f5' : '#64748b',
+              cursor: 'pointer', fontFamily: "'JetBrains Mono',monospace", fontSize: 10,
+              transition: 'all 0.15s', whiteSpace: 'nowrap',
+            }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2" />
+              <polyline points="2 17 12 22 22 17" />
+              <polyline points="2 12 12 17 22 12" />
+            </svg>
+            {showCasesPanel ? 'Ocultar traços' : `${formatCount(selectedNode.metrics.caseFreq)} casos`}
+          </button>
+        )}
+
         {isMobile && (
           <div className="absolute top-4 right-4 z-20">
             <button onClick={() => setMobileFilters((v) => !v)}
@@ -543,7 +722,7 @@ export default function ProcessGraphTab({ layout, isMobile }) {
             <Slider label="Atividades" value={actSlider} onChange={setActSlider} />
             <Slider label="Caminhos" value={pathSlider} onChange={setPathSlider} />
             <div className="flex items-center justify-between pt-1">
-              <span className="text-[11px] text-muted-foreground"><span className="text-foreground font-medium">{visNodes.length}</span> de {NODE_DEFS.length} atividades</span>
+              <span className="text-[11px] text-muted-foreground"><span className="text-foreground font-medium">{visNodes.filter((n) => !n.isStart && !n.isEnd).length}</span> de {activityNodeCount} atividades</span>
               <span className="text-[11px] text-muted-foreground"><span className="text-foreground font-medium">{visEdges.length}</span> caminhos</span>
             </div>
           </div>
@@ -590,6 +769,21 @@ export default function ProcessGraphTab({ layout, isMobile }) {
               </div>
             </div>
           )}
+
+          {/* Log source + upload, at the foot of the rail (newer export) */}
+          <div className="shrink-0 p-3 border-t border-border mt-auto space-y-2">
+            {graph?.eventLog ? (
+              <p className="text-[10px] text-muted-foreground truncate" style={{ fontFamily: "'JetBrains Mono',monospace" }}
+                title={`${graph.eventLog.fileName} · ${formatCount(graph.caseCount)} casos · ${formatCount(graph.eventCount)} eventos`}>
+                {graph.eventLog.fileName} · {formatCount(graph.caseCount)} casos
+              </p>
+            ) : null}
+            <button type="button" onClick={onUploadLog}
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded text-xs font-medium transition-colors border border-border text-muted-foreground hover:text-foreground"
+              style={{ fontFamily: "'JetBrains Mono',monospace" }}>
+              <Upload size={12} />Carregar log de eventos
+            </button>
+          </div>
         </div>
       )}
 

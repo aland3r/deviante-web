@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Upload, AlignCenter, Activity, Wrench, FileText } from 'lucide-react'
+import { ArrowLeft, Upload, Activity, Wrench, FileText } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
+import BrandMark from '../components/layout/BrandMark'
 import ProcessGraphTab from '../components/process-graph/ProcessGraphTab'
 import ProcessDetailsTab from '../components/process-graph/ProcessDetailsTab'
-import { TOTAL_CASES } from '../components/process-graph/graph-core'
+import EventLogUploadModal from '../components/process-graph/EventLogUploadModal'
 
 /*
   The process screen — what you land on after clicking a project on the
@@ -22,11 +23,11 @@ import { TOTAL_CASES } from '../components/process-graph/graph-core'
   a project is open. AppLayout's own header still owns /dashboard and
   /account.
 
-  Real vs. simulated: process name/company/description/sector and delete are
-  the real Kotlin-backed API. The graph itself is seed data — no route
-  derives a graph from an event log yet (UC4/UC5). The "simulado" pill in
-  the header says so rather than passing 856 fake cases off as this
-  process's own.
+  Everything on this screen is now the real Kotlin-backed API: process
+  metadata (UC2), the event-log upload (UC4/UC5) and — since the `/graph`
+  and `/traces` routes landed — the canvas itself, derived from the traces
+  persisted for this process. The old "simulado" pill is gone with the seed
+  data it warned about; the badge counts the cases actually ingested.
 */
 
 const TAB_ITEMS = [
@@ -47,8 +48,15 @@ export default function ProcessCanvasPage() {
   const [loadError, setLoadError] = useState('')
 
   const [activeTab, setActiveTab] = useState('grafo')
-  const [layout, setLayout] = useState('vertical')
   const [isMobile, setIsMobile] = useState(false)
+  // Reported by the graph tab so the header badge and the canvas never
+  // disagree about how many cases this process has.
+  const [graphStats, setGraphStats] = useState(null)
+
+  const [uploadOpen, setUploadOpen] = useState(false)
+  // Bumped after a mapping is confirmed so the graph tab refetches instead of
+  // showing the state it had before the log existed.
+  const [mappingVersion, setMappingVersion] = useState(0)
 
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState('')
@@ -76,6 +84,10 @@ export default function ProcessCanvasPage() {
   }, [])
 
   useEffect(() => { if (editingTitle) titleInputRef.current?.select() }, [editingTitle])
+
+  // Stable identity: the graph tab reports stats from an effect, and a fresh
+  // callback each render would make that effect fire in a loop.
+  const handleGraphStats = useCallback((stats) => setGraphStats(stats), [])
 
   async function commitTitle() {
     setEditingTitle(false)
@@ -122,18 +134,7 @@ export default function ProcessCanvasPage() {
 
       <header className="shrink-0 flex items-center gap-4 px-5 border-b border-border" style={{ height: '52px', background: '#111520' }}>
 
-        <div className="flex items-center gap-2.5 mr-2">
-          <div className="w-7 h-7 rounded flex items-center justify-center" style={{ background: '#991b1b' }}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <circle cx="3" cy="7" r="2" fill="white" />
-              <circle cx="11" cy="3" r="2" fill="white" opacity="0.7" />
-              <circle cx="11" cy="11" r="2" fill="white" opacity="0.7" />
-              <line x1="5" y1="6.2" x2="9" y2="3.8" stroke="white" strokeWidth="1.2" opacity="0.8" />
-              <line x1="5" y1="7.8" x2="9" y2="10.2" stroke="white" strokeWidth="1.2" opacity="0.5" />
-            </svg>
-          </div>
-          <span className="text-sm font-semibold text-foreground" style={{ letterSpacing: '-0.01em' }}>Deviante</span>
-        </div>
+        <BrandMark />
 
         <button onClick={() => navigate('/dashboard')}
           style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px', borderRadius: 6, border: 'none', background: 'rgba(255,255,255,0.05)', color: '#94a3b8', cursor: 'pointer', fontSize: 11, fontFamily: "'Inter',sans-serif", transition: 'background 0.15s' }}
@@ -186,34 +187,53 @@ export default function ProcessCanvasPage() {
           ))}
         </div>
 
-        {!isMobile && activeTab === 'grafo' && (
+        {!isMobile && activeTab === 'grafo' && graphStats?.caseCount > 0 && (
           <div className="flex items-center gap-1.5 px-2 py-1 rounded ml-1 shrink-0"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+            title={graphStats.eventLog ? `Derivado de ${graphStats.eventLog.fileName}` : undefined}>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
-            <span className="text-[11px] text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>{TOTAL_CASES} casos</span>
-            <span className="text-[10px] uppercase tracking-wide" style={{ color: '#f59e0b', fontFamily: "'JetBrains Mono',monospace" }}>simulado</span>
+            <span className="text-[11px] text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
+              {graphStats.caseCount.toLocaleString('pt-BR')} casos
+            </span>
+            {graphStats.hasUnmappedOperations && (
+              <span className="text-[10px] uppercase tracking-wide" title="Operações ainda não mapeadas para atividades (UC5)"
+                style={{ color: '#f59e0b', fontFamily: "'JetBrains Mono',monospace" }}>não mapeado</span>
+            )}
           </div>
         )}
 
         <div className="flex-1" />
 
-        {activeTab === 'grafo' && !isMobile && (
-          <button onClick={() => setLayout((l) => (l === 'horizontal' ? 'vertical' : 'horizontal'))}
-            className="flex items-center gap-2 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-border text-muted-foreground hover:text-foreground shrink-0"
-            style={{ fontFamily: "'JetBrains Mono',monospace" }}>
-            <AlignCenter size={13} style={{ transform: layout === 'horizontal' ? 'rotate(90deg)' : 'none', transition: 'transform 0.3s' }} />
-            {layout === 'horizontal' ? 'Vertical' : 'Horizontal'}
-          </button>
-        )}
-
-        <button title="Carregar log de eventos — em breve (UC4)" disabled
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium border border-border text-muted-foreground opacity-50 cursor-not-allowed shrink-0">
+        <button type="button" title="Carregar log de eventos (UC4)" onClick={() => setUploadOpen(true)}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium border border-border text-muted-foreground hover:text-foreground transition-colors shrink-0">
           <Upload size={12} /><span className="hidden sm:inline">Carregar log</span>
         </button>
       </header>
 
+      {uploadOpen && (
+        <EventLogUploadModal
+          processId={processId}
+          onClose={() => setUploadOpen(false)}
+          onMappingComplete={() => {
+            // Confirming the mapping is what makes the process viewable —
+            // close the modal and land the Manager on the graph.
+            setUploadOpen(false)
+            setMappingVersion((v) => v + 1)
+            setActiveTab('grafo')
+          }}
+        />
+      )}
+
       <div className="flex flex-1 min-h-0">
-        {activeTab === 'grafo' && <ProcessGraphTab layout={layout} isMobile={isMobile} />}
+        {activeTab === 'grafo' && (
+          <ProcessGraphTab
+            key={mappingVersion}
+            processId={processId}
+            isMobile={isMobile}
+            onStats={handleGraphStats}
+            onUploadLog={() => setUploadOpen(true)}
+          />
+        )}
 
         {activeTab === 'processos' && (
           <ProcessDetailsTab

@@ -238,6 +238,28 @@ async function request(path, options = {}) {
   return response.json()
 }
 
+/**
+ * Multipart upload: the browser must set its own `Content-Type` so the
+ * boundary is included, which is why this does not go through `request`.
+ */
+async function upload(path, file) {
+  const body = new FormData()
+  body.append('file', file, file.name)
+
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers: await authHeader(),
+    body,
+  })
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}))
+    throw new ApiError(payload.message ?? 'Falha no envio do arquivo.', payload.fieldErrors ?? {})
+  }
+
+  return response.json()
+}
+
 export const api = {
   login: (credentials) => {
     if (isSupabaseConfigured()) return loginWithPassword(credentials)
@@ -272,6 +294,20 @@ export const api = {
     ? request(`/processes/${id}`, { method: 'PUT', body: JSON.stringify({ name: data.name, companyName: data.companyName, description: data.description, sector: data.sector }) })
     : mockApi.updateProcess(id, data),
   deleteProcess: (id) => useRemoteProcesses() ? request(`/processes/${id}`, { method: 'DELETE' }) : mockApi.deleteProcess(id),
+
+  // UC4/UC5 — no mock counterpart: parsing a real event log is the point,
+  // and a fake parse result would teach the UI nothing about real logs.
+  uploadEventLog: (processId, file) => upload(`/processes/${processId}/event-logs`, file),
+  listEventLogs: (processId) => request(`/processes/${processId}/event-logs`),
+  listOperations: (processId) => request(`/processes/${processId}/operations`),
+  // UC7 — graph + variants derived from what was actually ingested. No mock
+  // counterpart on purpose: an invented graph is exactly what this replaces.
+  getProcessGraph: (processId) => request(`/processes/${processId}/graph`),
+  getProcessTraces: (processId) => request(`/processes/${processId}/traces`),
+  resolveMapping: (processId, mappings) => request(`/processes/${processId}/mapping`, {
+    method: 'POST',
+    body: JSON.stringify({ mappings }),
+  }),
 }
 
 export { ApiError } from './errors'
