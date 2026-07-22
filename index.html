@@ -8,6 +8,25 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Cleanup malformed cookies IMMEDIATELY before any modules load
+      try {
+        const cookies = document.cookie.split(';');
+        for (const cookie of cookies) {
+          const [name] = cookie.split('=').map(c => c.trim());
+          if (name) {
+            try {
+              decodeURIComponent(cookie.split('=')[1] || '');
+            } catch {
+              // Malformed - clear it
+              document.cookie = name + '=; Max-Age=0; path=/;';
+            }
+          }
+        }
+      } catch (e) {
+        // Ignore
+      }
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
