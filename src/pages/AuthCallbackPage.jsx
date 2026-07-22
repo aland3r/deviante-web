@@ -27,7 +27,11 @@ export default function AuthCallbackPage() {
     const params = new URLSearchParams(window.location.search)
     const oauthError = params.get('error_description') ?? params.get('error')
     if (oauthError) {
-      setError(decodeURIComponent(oauthError.replace(/\+/g, ' ')))
+      try {
+        setError(decodeURIComponent(oauthError.replace(/\+/g, ' ')))
+      } catch {
+        setError(oauthError)
+      }
       setExchangeDone(true)
     }
   }, [])

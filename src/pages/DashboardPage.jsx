@@ -9,8 +9,9 @@ import { api, ApiError } from '../lib/api'
   Figma's own navbar (logo/search/user-chip) is dropped here since
   AppLayout already provides that role site-wide; everything below it
   (Criar novo cards, Recentes/Compartilhados/Favoritos tabs, project
-  grid) is ported. Wired to the real Kotlin-backed API — cards route to
-  the existing /processes/:id (ProcessDetailPage), not an embedded view.
+  grid) is ported. Wired to the real Kotlin-backed API — cards and
+  "Novo processo" both route to /processes/:id (ProcessCanvasPage), which
+  is the open-project screen: graph canvas + Processos tab.
 
   Compartilhados/Favoritos have no backend concept yet (no sharing or
   favoriting on processes) — tabs render, but stay empty, per owner

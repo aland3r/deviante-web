@@ -14,8 +14,7 @@ import AccountSettingsPage from './pages/AccountSettingsPage'
 import DashboardPage from './pages/DashboardPage'
 import LoginPage from './pages/LoginPage'
 import AuthCallbackPage from './pages/AuthCallbackPage'
-import ProcessDetailPage from './pages/ProcessDetailPage'
-import ProcessMiningPreviewPage from './pages/ProcessMiningPreviewPage'
+import ProcessCanvasPage from './pages/ProcessCanvasPage'
 import ProtectedRoute, { NoAccessRedirect } from './routes/ProtectedRoute'
 import { LOADING_LINES, ROADMAP_PHASES } from './lib/roadmap'
 
@@ -39,11 +38,13 @@ export default function App() {
             <Route path="/no-access" element={<NoAccessRedirect />} />
 
             <Route element={<ProtectedRoute />}>
-              <Route path="/processes/:processId/mining" element={<ProcessMiningPreviewPage />} />
+              {/* The canvas owns its full-screen header (Figma Make v20), so it
+                  sits outside AppLayout. /mining was the old preview split. */}
+              <Route path="/processes/:processId" element={<ProcessCanvasPage />} />
+              <Route path="/processes/:processId/mining" element={<Navigate to=".." relative="path" replace />} />
               <Route element={<AppLayout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/account" element={<AccountSettingsPage />} />
-                <Route path="/processes/:processId" element={<ProcessDetailPage />} />
               </Route>
             </Route>
 
