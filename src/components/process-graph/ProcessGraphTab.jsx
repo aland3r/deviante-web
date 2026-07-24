@@ -472,9 +472,11 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   const handleWheel = useCallback((e) => {
     e.preventDefault()
     const rect = svgRef.current?.getBoundingClientRect(); if (!rect) return
-    const f = e.deltaY > 0 ? 0.9 : 1.1
+    const delta = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? rect.height : 1)
+    const f = Math.exp(-delta * 0.002)
     setZoom((z) => {
       const nz = Math.min(3, Math.max(0.2, z * f))
+      if (nz === z) return z
       const mx = e.clientX - rect.left, my = e.clientY - rect.top
       setPan((p) => ({ x: mx - (mx - p.x) * (nz / z), y: my - (my - p.y) * (nz / z) }))
       return nz
@@ -485,7 +487,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
     const el = containerRef.current; if (!el) return
     el.addEventListener('wheel', handleWheel, { passive: false })
     return () => el.removeEventListener('wheel', handleWheel)
-  }, [handleWheel])
+  }, [handleWheel, loading])
 
   function toCanvas(vx, vy) {
     const rect = svgRef.current?.getBoundingClientRect(); if (!rect) return { x: 0, y: 0 }

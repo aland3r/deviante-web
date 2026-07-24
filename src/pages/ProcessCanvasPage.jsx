@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Upload, Activity, Wrench, FileText } from 'lucide-react'
+import { ArrowLeft, Upload, Activity, Wrench, FileText, Scan } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
 import BrandMark from '../components/layout/BrandMark'
 import ProcessGraphTab from '../components/process-graph/ProcessGraphTab'
 import ProcessDetailsTab from '../components/process-graph/ProcessDetailsTab'
 import EventLogUploadModal from '../components/process-graph/EventLogUploadModal'
+import ProcessAnalysisView from '../components/process-analysis/ProcessAnalysisView'
 
 /*
   The process screen — what you land on after clicking a project on the
@@ -54,6 +55,7 @@ export default function ProcessCanvasPage() {
   const [graphStats, setGraphStats] = useState(null)
 
   const [uploadOpen, setUploadOpen] = useState(false)
+  const [analysisOpen, setAnalysisOpen] = useState(false)
   // Bumped after a mapping is confirmed so the graph tab refetches instead of
   // showing the state it had before the log existed.
   const [mappingVersion, setMappingVersion] = useState(0)
@@ -126,6 +128,17 @@ export default function ProcessCanvasPage() {
         <p className="text-sm" style={{ color: '#fca5a5' }}>{loadError || 'Processo não encontrado.'}</p>
         <Link to="/dashboard" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Voltar ao painel</Link>
       </div>
+    )
+  }
+
+  if (analysisOpen) {
+    return (
+      <ProcessAnalysisView
+        processName={process.name || 'Processo sem nome'}
+        eventLog={graphStats?.eventLog}
+        onBack={() => setAnalysisOpen(false)}
+        onGoHome={() => navigate('/dashboard')}
+      />
     )
   }
 
@@ -203,6 +216,18 @@ export default function ProcessCanvasPage() {
         )}
 
         <div className="flex-1" />
+
+        <button type="button" onClick={() => setAnalysisOpen(true)}
+          disabled={!graphStats?.caseCount || graphStats?.hasUnmappedOperations}
+          title={!graphStats?.caseCount
+            ? 'Carregue e mapeie um log antes de analisar desvios'
+            : graphStats?.hasUnmappedOperations
+              ? 'Conclua o mapeamento das atividades antes de analisar desvios'
+              : 'Abrir análise de desvios'}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{ border: '1px solid rgba(153,27,27,0.40)', background: 'rgba(153,27,27,0.12)', color: '#fca5a5' }}>
+          <Scan size={12} /><span className="hidden md:inline">Análise de desvios</span>
+        </button>
 
         <button type="button" title="Carregar log de eventos (UC4)" onClick={() => setUploadOpen(true)}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium border border-border text-muted-foreground hover:text-foreground transition-colors shrink-0">
