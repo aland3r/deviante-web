@@ -26,6 +26,7 @@ import {
 import { ApiError } from './errors'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '/api'
+const MOCK_OWNER_EMAILS = new Set(['design@alander.io', 'alanderavila@gmail.com'])
 
 function createId() {
   return crypto.randomUUID()
@@ -194,20 +195,33 @@ const mockApi = {
     return processes[index]
   },
 
-  async deleteProcess(processId) {
+  async deleteProcess(processId, confirmation) {
     const user = getCurrentUser()
     if (!user) throw new ApiError('Você precisa estar autenticado.')
+    if (mockRole(user) !== 'owner') throw new ApiError('Somente o proprietário pode excluir processos.')
 
     const processes = getProcesses(user.id)
+    const process = processes.find((item) => item.id === processId)
+    if (!process) throw new ApiError('Processo não encontrado.')
+    if (
+      confirmation?.processName !== process.name
+      || confirmation?.confirmationPhrase !== 'quero excluir este processo'
+    ) {
+      throw new ApiError('Confirme a exclusão do processo.')
+    }
     const next = processes.filter((item) => item.id !== processId)
-    if (next.length === processes.length) throw new ApiError('Processo não encontrado.')
     saveProcesses(user.id, next)
   },
 }
 
 function sanitizeUser(user) {
   const { password: _password, ...safeUser } = user
-  return safeUser
+  return { ...safeUser, role: mockRole(safeUser) }
+}
+
+function mockRole(user) {
+  if (user.role) return user.role
+  return MOCK_OWNER_EMAILS.has(user.email?.toLowerCase()) ? 'owner' : 'manager'
 }
 
 /** Process endpoints are Kotlin-owned persistence — attach the Supabase
@@ -287,13 +301,17 @@ export const api = {
     if (isRemoteApiEnabled()) return request('/auth/logout', { method: 'POST' })
     return mockApi.logout()
   },
-  listProcesses: () => useRemoteProcesses() ? request('/processes') : mockApi.listProcesses(),
-  createProcess: () => useRemoteProcesses() ? request('/processes', { method: 'POST' }) : mockApi.createProcess(),
-  getProcess: (id) => useRemoteProcesses() ? request(`/processes/${id}`) : mockApi.getProcess(id),
-  updateProcess: (id, data) => useRemoteProcesses()
+  listProcesses: () => shouldUseRemoteProcesses() ? request('/processes') : mockApi.listProcesses(),
+  createProcess: () => shouldUseRemoteProcesses() ? request('/processes', { method: 'POST' }) : mockApi.createProcess(),
+  getProcess: (id) => shouldUseRemoteProcesses() ? request(`/processes/${id}`) : mockApi.getProcess(id),
+  updateProcess: (id, data) => shouldUseRemoteProcesses()
     ? request(`/processes/${id}`, { method: 'PUT', body: JSON.stringify({ name: data.name, companyName: data.companyName, description: data.description, sector: data.sector }) })
     : mockApi.updateProcess(id, data),
-  deleteProcess: (id) => useRemoteProcesses() ? request(`/processes/${id}`, { method: 'DELETE' }) : mockApi.deleteProcess(id),
+  deleteProcess: (id, confirmation) => shouldUseRemoteProcesses()
+    ? request(`/processes/${id}`, { method: 'DELETE', body: JSON.stringify(confirmation) })
+    : mockApi.deleteProcess(id, confirmation),
+
+  listActivities: () => request('/activities'),
 
   // UC4/UC5 — no mock counterpart: parsing a real event log is the point,
   // and a fake parse result would teach the UI nothing about real logs.
@@ -318,6 +336,6 @@ function isRemoteApiEnabled() {
 
 /** Processes are Kotlin-owned persistence: use the real API whenever we
  * have a real identity to attach (Supabase) or the explicit remote flag. */
-function useRemoteProcesses() {
+function shouldUseRemoteProcesses() {
   return isSupabaseConfigured() || isRemoteApiEnabled()
 }

@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react'
-import { Upload, Check, AlertCircle, Loader2, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { AlertCircle, ArrowRight, Check, Loader2, Pencil, Plus, Upload, X } from 'lucide-react'
 import { api, ApiError } from '../../lib/api'
 
 /*
@@ -30,20 +30,29 @@ export default function EventLogUploadModal({ processId, onClose, onMappingCompl
   const [formatError, setFormatError] = useState(false)
 
   const [eventLog, setEventLog] = useState(null)
+  const [activityCatalog, setActivityCatalog] = useState([])
   const [rows, setRows] = useState([])
 
   const [confirming, setConfirming] = useState(false)
   const [confirmError, setConfirmError] = useState('')
 
-  const blankNames = useMemo(
-    () => rows.filter((row) => !row.activityName.trim()).length,
+  const validatedCount = useMemo(
+    () => rows.filter((row) => row.rowState === 'validated').length,
     [rows],
   )
+  const allValidated = rows.length > 0 && validatedCount === rows.length
 
-  const convergedCount = useMemo(() => {
-    const names = rows.map((r) => r.activityName.trim().toLowerCase()).filter(Boolean)
-    return names.length - new Set(names).size
-  }, [rows])
+  useEffect(() => {
+    let active = true
+    api.listActivities()
+      .then((activities) => {
+        if (active) setActivityCatalog(activities)
+      })
+      .catch(() => {
+        if (active) setActivityCatalog([])
+      })
+    return () => { active = false }
+  }, [])
 
   function acceptFile(next) {
     if (!next) return
@@ -77,6 +86,7 @@ export default function EventLogUploadModal({ processId, onClose, onMappingCompl
         meanDurationSeconds: operation.meanDurationSeconds,
         activityName: operation.suggestedActivityName,
         activityDescription: '',
+        rowState: operation.suggestedActivityName?.trim() ? 'suggested' : 'pending',
       })))
     } catch (err) {
       setUploadError(err instanceof ApiError ? err.message : 'Não foi possível enviar o arquivo.')
@@ -92,8 +102,37 @@ export default function EventLogUploadModal({ processId, onClose, onMappingCompl
     setConfirmError('')
   }
 
+  function editRow(operationId) {
+    setRows((current) => current.map((row) => {
+      if (row.operationId === operationId) {
+        return {
+          ...row,
+          rowState: row.rowState === 'editing'
+            ? (row.activityName.trim() ? 'suggested' : 'pending')
+            : 'editing',
+        }
+      }
+      return row.rowState === 'editing'
+        ? { ...row, rowState: row.activityName.trim() ? 'suggested' : 'pending' }
+        : row
+    }))
+    setConfirmError('')
+  }
+
+  function validateRow(operationId) {
+    setRows((current) => current.map((row) => {
+      if (row.operationId !== operationId) return row
+      if (row.rowState === 'validated') return { ...row, rowState: 'suggested' }
+      return {
+        ...row,
+        rowState: row.activityName.trim() ? 'validated' : 'pending',
+      }
+    }))
+    setConfirmError('')
+  }
+
   async function handleConfirm() {
-    if (confirming || blankNames > 0) return
+    if (confirming || !allValidated) return
 
     setConfirming(true)
     setConfirmError('')
@@ -132,7 +171,7 @@ export default function EventLogUploadModal({ processId, onClose, onMappingCompl
         style={{
           width: '100%', maxWidth: 896, background: '#161c28', borderRadius: 6,
           border: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column',
-          boxShadow: '0 24px 80px rgba(0,0,0,0.70)',
+          maxHeight: 'calc(100vh - 64px)', boxShadow: '0 24px 80px rgba(0,0,0,0.70)',
         }}
       >
         <header style={{
@@ -147,7 +186,7 @@ export default function EventLogUploadModal({ processId, onClose, onMappingCompl
               Carregar log de eventos
             </h2>
             <p style={{ margin: 0, fontFamily: "'Inter',sans-serif", fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>
-              Envie um arquivo .xes ou .csv. Depois do envio, nomeie a atividade que cada evento do log representa.
+              Envie um arquivo .xes ou .csv. Depois do envio, associe cada evento a uma atividade.
             </p>
           </div>
           <button
@@ -182,8 +221,10 @@ export default function EventLogUploadModal({ processId, onClose, onMappingCompl
           {eventLog && (
             <MappingSection
               rows={rows}
-              convergedCount={convergedCount}
+              activityCatalog={activityCatalog}
               onChange={updateRow}
+              onEdit={editRow}
+              onValidate={validateRow}
             />
           )}
         </div>
@@ -193,10 +234,10 @@ export default function EventLogUploadModal({ processId, onClose, onMappingCompl
             padding: '14px 24px', borderTop: '1px solid rgba(255,255,255,0.07)',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
           }}>
-            <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: blankNames > 0 ? '#f59e0b' : '#10b981' }}>
-              {blankNames > 0
-                ? `${blankNames} atividade${blankNames > 1 ? 's' : ''} ainda sem nome.`
-                : 'Todas as atividades nomeadas. Confirmar abre o processo.'}
+            <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: allValidated ? '#10b981' : validatedCount > 0 ? '#f59e0b' : '#64748b' }}>
+              {allValidated
+                ? 'Todas as atividades validadas. Concluir atualiza o grafo.'
+                : `${validatedCount} de ${rows.length} atividade${rows.length === 1 ? '' : 's'} validada${rows.length === 1 ? '' : 's'}.`}
               {confirmError && (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, color: '#dc2626' }}>
                   <AlertCircle size={12} /> {confirmError}
@@ -220,13 +261,13 @@ export default function EventLogUploadModal({ processId, onClose, onMappingCompl
               <button
                 type="button"
                 onClick={handleConfirm}
-                disabled={confirming || blankNames > 0}
+                disabled={confirming || !allValidated}
                 style={{
                   padding: '8px 18px', borderRadius: 4, border: 'none',
-                  background: blankNames === 0 && !confirming ? '#dc2626' : 'rgba(220,38,38,0.20)',
-                  color: blankNames === 0 && !confirming ? 'white' : '#64748b',
+                  background: allValidated && !confirming ? '#dc2626' : 'rgba(220,38,38,0.20)',
+                  color: allValidated && !confirming ? 'white' : '#64748b',
                   fontFamily: "'Inter',sans-serif", fontWeight: 500, fontSize: 12,
-                  cursor: blankNames === 0 && !confirming ? 'pointer' : 'not-allowed',
+                  cursor: allValidated && !confirming ? 'pointer' : 'not-allowed',
                   display: 'flex', alignItems: 'center', gap: 7,
                 }}
               >
@@ -362,38 +403,46 @@ function UploadArea({ inputRef, file, uploading, eventLog, formatError, error, o
   )
 }
 
-function MappingSection({ rows, convergedCount, onChange }) {
+function MappingSection({ rows, activityCatalog, onChange, onEdit, onValidate }) {
   return (
     <div>
-      <div className="mb-2.5 hidden grid-cols-[1fr_auto_1.4fr] gap-x-4 px-0.5 sm:grid">
-        <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          Evento do log — não editável
-        </span>
-        <span />
-        <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          Atividade — como aparecerá no processo
-        </span>
+      <div style={{ marginBottom: 16 }}>
+        <h3 style={{ margin: '0 0 4px', fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 13, color: '#e2e8f0' }}>
+          Mapear eventos para atividades
+        </h3>
+        <p style={{ margin: 0, fontFamily: "'Inter',sans-serif", fontSize: 12, color: '#64748b' }}>
+          Associe cada evento encontrado no log a uma atividade do catálogo.
+        </p>
       </div>
 
-      {convergedCount > 0 && (
-        <p style={{ margin: '0 0 10px', fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#64748b' }}>
-          {convergedCount} rótulo{convergedCount > 1 ? 's' : ''} convergindo para a mesma atividade
-        </p>
-      )}
+      <div
+        className="mb-2 hidden grid-cols-[1fr_28px_minmax(0,1.5fr)_64px] gap-x-3 border-b border-white/[0.06] px-0.5 pb-1.5 sm:grid"
+        aria-hidden="true"
+      >
+        <MappingColumnLabel>Evento do log</MappingColumnLabel>
+        <span />
+        <MappingColumnLabel>Atividade</MappingColumnLabel>
+        <span />
+      </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {rows.map((row) => (
           <div
             key={row.operationId}
-            className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[1fr_auto_1.4fr] sm:gap-x-4"
+            className="grid grid-cols-1 items-center gap-2 border-b border-white/[0.04] py-1.5 sm:grid-cols-[1fr_28px_minmax(0,1.5fr)_64px] sm:gap-x-3"
           >
             <EventCell row={row} />
-            <div style={{ color: '#2870a8', display: 'flex', alignItems: 'center' }} className="hidden sm:flex" aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
-              </svg>
+            <div className="hidden items-center justify-center text-[#2870a8] sm:flex" aria-hidden="true">
+              <ArrowRight size={14} />
             </div>
-            <ActivityCard row={row} onChange={onChange} />
+            <ActivityCard
+              row={row}
+              activityCatalog={activityCatalog}
+              onChange={onChange}
+              onEdit={onEdit}
+              onValidate={onValidate}
+            />
+            <MappingStatus state={row.rowState} />
           </div>
         ))}
       </div>
@@ -401,57 +450,237 @@ function MappingSection({ rows, convergedCount, onChange }) {
   )
 }
 
+function MappingColumnLabel({ children }) {
+  return (
+    <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+      {children}
+    </span>
+  )
+}
+
 function EventCell({ row }) {
   return (
-    <div style={{ padding: '8px 10px', minWidth: 0 }}>
+    <div style={{ minWidth: 0 }}>
       <p
         title={row.rawLabel}
         style={{
-          margin: '0 0 3px', fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: '#e2e8f0',
+          margin: '0 0 2px', fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: '#e2e8f0',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}
       >
         {row.rawLabel}
       </p>
-      <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#64748b' }}>
+      <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#475569' }}>
         {Number(row.occurrenceCount).toLocaleString('pt-BR')} ocorrência{row.occurrenceCount === 1 ? '' : 's'}
-        {row.caseCount > 0 && ` · ${Number(row.caseCount).toLocaleString('pt-BR')} caso${row.caseCount === 1 ? '' : 's'}`}
-        {row.meanDurationSeconds > 0 && ` · ${formatDuration(row.meanDurationSeconds)} médio`}
+        {row.caseCount > 0 && ` · ${Number(row.caseCount).toLocaleString('pt-BR')} traço${row.caseCount === 1 ? '' : 's'}`}
+        {row.meanDurationSeconds > 0 && ` · ${formatDuration(row.meanDurationSeconds)} em média`}
       </p>
     </div>
   )
 }
 
-function ActivityCard({ row, onChange }) {
-  const empty = !row.activityName.trim()
-  const borderColor = empty ? 'rgba(245,158,11,0.60)' : 'rgba(255,255,255,0.10)'
+function ActivityCard({ row, activityCatalog, onChange, onEdit, onValidate }) {
+  const inputRef = useRef(null)
+  const [query, setQuery] = useState(row.activityName)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const isEditing = row.rowState === 'editing'
+  const isValidated = row.rowState === 'validated'
+  const isPending = row.rowState === 'pending'
+
+  useEffect(() => {
+    setQuery(row.activityName)
+  }, [row.activityName])
+
+  useEffect(() => {
+    if (isEditing) {
+      inputRef.current?.focus()
+      setShowDropdown(true)
+    } else {
+      setShowDropdown(false)
+    }
+  }, [isEditing])
+
+  const catalogNames = useMemo(
+    () => activityCatalog.map((activity) => activity.name),
+    [activityCatalog],
+  )
+  const normalizedQuery = query.trim().toLocaleLowerCase('pt-BR')
+  const filtered = catalogNames.filter((name) => (
+    name.toLocaleLowerCase('pt-BR').includes(normalizedQuery)
+    && name.toLocaleLowerCase('pt-BR') !== normalizedQuery
+  ))
+  const canCreate = normalizedQuery.length > 0 && !catalogNames.some(
+    (name) => name.toLocaleLowerCase('pt-BR') === normalizedQuery,
+  )
+
+  const borderColor = isValidated
+    ? 'rgba(16,185,129,0.40)'
+    : isPending
+      ? 'rgba(245,158,11,0.55)'
+      : isEditing
+        ? 'rgba(40,112,168,0.60)'
+        : 'rgba(255,255,255,0.10)'
+
+  function updateName(value) {
+    setQuery(value)
+    setShowDropdown(true)
+    onChange(row.operationId, { activityName: value })
+  }
+
+  function selectName(value) {
+    setQuery(value)
+    setShowDropdown(false)
+    onChange(row.operationId, { activityName: value })
+  }
 
   return (
-    <div style={{ background: '#16202e', border: `1px solid ${borderColor}`, borderRadius: 5, overflow: 'hidden', transition: 'border-color 0.15s', minWidth: 0 }}>
-      <div style={{ height: 3, background: 'rgba(153,27,27,0.75)' }} />
-      <div style={{ padding: '7px 10px 8px' }}>
-        <input
-          value={row.activityName}
-          onChange={(e) => onChange(row.operationId, { activityName: e.target.value })}
-          placeholder="Nome da atividade…"
-          aria-label={`Atividade para o evento ${row.rawLabel}`}
-          style={{
-            display: 'block', width: '100%', background: 'transparent', border: 'none', outline: 'none',
-            fontFamily: "'Inter',sans-serif", fontWeight: 500, fontSize: 12,
-            color: empty ? '#64748b' : '#e2e8f0', padding: 0, marginBottom: 3, boxSizing: 'border-box',
-          }}
-        />
-        <input
-          value={row.activityDescription}
-          onChange={(e) => onChange(row.operationId, { activityDescription: e.target.value })}
-          placeholder="Descrição opcional"
-          aria-label={`Descrição da atividade para ${row.rawLabel}`}
-          style={{
-            display: 'block', width: '100%', background: 'transparent', border: 'none', outline: 'none',
-            fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: '#64748b', padding: 0, boxSizing: 'border-box',
-          }}
-        />
+    <div className="flex min-w-0 items-center gap-2">
+      <div style={{
+        flex: 1, minWidth: 0, position: 'relative', overflow: 'visible',
+        background: '#16202e', border: `1px solid ${borderColor}`, borderRadius: 5,
+        transition: 'border-color 0.15s',
+      }}>
+        <div style={{ height: 3, background: isValidated ? 'rgba(16,185,129,0.70)' : 'rgba(153,27,27,0.75)', transition: 'background 0.2s' }} />
+        <div style={{ padding: '7px 10px 8px' }}>
+          {isEditing ? (
+            <div style={{ position: 'relative' }}>
+              <input
+                ref={inputRef}
+                value={query}
+                onChange={(event) => updateName(event.target.value)}
+                onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+                placeholder="Nome da atividade…"
+                aria-label={`Atividade para o evento ${row.rawLabel}`}
+                style={{
+                  display: 'block', width: '100%', background: 'transparent', border: 'none', outline: 'none',
+                  fontFamily: "'Inter',sans-serif", fontWeight: 500, fontSize: 12,
+                  color: '#e2e8f0', padding: 0, marginBottom: 3, boxSizing: 'border-box',
+                }}
+              />
+              {showDropdown && (filtered.length > 0 || canCreate) && (
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 6px)', left: -10, right: -10, zIndex: 200,
+                  background: '#1a2133', border: '1px solid rgba(255,255,255,0.10)',
+                  borderRadius: 6, boxShadow: '0 8px 24px rgba(0,0,0,0.55)', overflow: 'hidden',
+                }}>
+                  {filtered.slice(0, 6).map((name) => (
+                    <button
+                      key={name}
+                      type="button"
+                      onMouseDown={(event) => { event.preventDefault(); selectName(name) }}
+                      style={{
+                        display: 'block', width: '100%', padding: '7px 12px', border: 0,
+                        background: 'transparent', color: '#e2e8f0', textAlign: 'left',
+                        fontFamily: "'Inter',sans-serif", fontSize: 12, cursor: 'pointer',
+                      }}
+                      onMouseEnter={(event) => { event.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
+                      onMouseLeave={(event) => { event.currentTarget.style.background = 'transparent' }}
+                    >
+                      {name}
+                    </button>
+                  ))}
+                  {canCreate && (
+                    <button
+                      type="button"
+                      onMouseDown={(event) => { event.preventDefault(); selectName(query.trim()) }}
+                      style={{
+                        display: 'flex', width: '100%', alignItems: 'center', gap: 6,
+                        padding: '7px 12px', border: 0,
+                        borderTop: filtered.length > 0 ? '1px solid rgba(255,255,255,0.07)' : 'none',
+                        background: 'transparent', color: '#4d8fc0', textAlign: 'left',
+                        fontFamily: "'Inter',sans-serif", fontSize: 12, cursor: 'pointer',
+                      }}
+                      onMouseEnter={(event) => { event.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+                      onMouseLeave={(event) => { event.currentTarget.style.background = 'transparent' }}
+                    >
+                      <Plus size={11} />Criar atividade “{query.trim()}”
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <p style={{
+              margin: '0 0 3px', fontFamily: "'Inter',sans-serif", fontWeight: 500,
+              fontSize: 12, color: isValidated ? '#10b981' : '#e2e8f0',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
+              {row.activityName || <span style={{ color: '#64748b' }}>Nome da atividade…</span>}
+            </p>
+          )}
+          <input
+            value={row.activityDescription}
+            onChange={(event) => onChange(row.operationId, { activityDescription: event.target.value })}
+            disabled={isValidated}
+            placeholder="Descrição opcional"
+            aria-label={`Descrição da atividade para ${row.rawLabel}`}
+            style={{
+              display: 'block', width: '100%', background: 'transparent', border: 'none', outline: 'none',
+              fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: '#64748b',
+              padding: 0, boxSizing: 'border-box', cursor: isValidated ? 'default' : 'text',
+            }}
+          />
+        </div>
       </div>
+
+      <div className="flex shrink-0 flex-col gap-[5px]">
+        <CircleButton label="Editar atividade" active={isEditing} onClick={() => onEdit(row.operationId)}>
+          <Pencil size={11} />
+        </CircleButton>
+        <CircleButton label="Validar atividade" active={isValidated} onClick={() => onValidate(row.operationId)}>
+          <Check size={11} color={isValidated ? '#10b981' : 'currentColor'} />
+        </CircleButton>
+      </div>
+    </div>
+  )
+}
+
+function CircleButton({ label, active, onClick, children }) {
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      aria-pressed={active}
+      onClick={onClick}
+      style={{
+        width: 24, height: 24, borderRadius: '50%', padding: 0, flexShrink: 0,
+        border: `1px solid ${active ? 'rgba(255,255,255,0.20)' : 'rgba(255,255,255,0.09)'}`,
+        background: active ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.04)',
+        color: active ? 'white' : '#64748b', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', cursor: 'pointer', transition: 'all 0.14s',
+      }}
+      onMouseEnter={(event) => {
+        event.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'
+        event.currentTarget.style.color = 'white'
+      }}
+      onMouseLeave={(event) => {
+        event.currentTarget.style.borderColor = active ? 'rgba(255,255,255,0.20)' : 'rgba(255,255,255,0.09)'
+        event.currentTarget.style.color = active ? 'white' : '#64748b'
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
+function MappingStatus({ state }) {
+  const config = {
+    validated: { label: 'OK', color: '#10b981', background: 'rgba(6,78,59,0.25)', border: 'rgba(16,185,129,0.25)' },
+    pending: { label: 'Pendente', color: '#f59e0b', background: 'rgba(120,53,15,0.20)', border: 'rgba(245,158,11,0.25)' },
+    editing: { label: 'Editando', color: '#64748b', background: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.07)' },
+    suggested: { label: 'Sugerida', color: '#64748b', background: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.07)' },
+  }[state]
+
+  return (
+    <div className="flex items-center justify-start sm:justify-end">
+      <span style={{
+        fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: config.color,
+        background: config.background, border: `1px solid ${config.border}`,
+        borderRadius: 4, padding: '2px 6px', letterSpacing: '0.05em',
+      }}>
+        {state === 'validated' && '✓ '}{config.label}
+      </span>
     </div>
   )
 }

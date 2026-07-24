@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { AlertCircle, Lock, Trash2, X } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
 import { api, ApiError } from '../../lib/api'
 
 /*
@@ -53,7 +54,13 @@ function ProcessFormField({ label, error, required, children }) {
   )
 }
 
+const DELETE_PHRASE = 'quero excluir este processo'
+
 function ProcessDeleteDialog({ name, onConfirm, onCancel }) {
+  const [processName, setProcessName] = useState('')
+  const [confirmationPhrase, setConfirmationPhrase] = useState('')
+  const canDelete = processName === name && confirmationPhrase === DELETE_PHRASE
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
       <div className="absolute inset-0" style={{ background: 'rgba(3,5,9,0.82)' }} onClick={onCancel} />
@@ -65,8 +72,29 @@ function ProcessDeleteDialog({ name, onConfirm, onCancel }) {
         <div className="flex flex-col gap-2">
           <h2 className="text-base font-bold text-foreground" style={{ letterSpacing: '-0.01em' }}>Excluir processo?</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            O processo <strong className="text-foreground">&ldquo;{name}&rdquo;</strong> e todos os dados — atividades, logs e análises — serão excluídos permanentemente.
+            O processo <strong className="text-foreground">&ldquo;{name}&rdquo;</strong>, seus logs, mapeamentos, traços e análises serão excluídos permanentemente. O catálogo global de atividades será preservado.
           </p>
+        </div>
+        <div className="flex flex-col gap-3">
+          <label className="flex flex-col gap-1.5 text-xs text-muted-foreground">
+            Digite o nome exato do processo
+            <input
+              autoFocus
+              value={processName}
+              onChange={(event) => setProcessName(event.target.value)}
+              style={pInputBase}
+              aria-label="Nome do processo para confirmação"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-xs text-muted-foreground">
+            Digite <strong className="text-foreground">{DELETE_PHRASE}</strong>
+            <input
+              value={confirmationPhrase}
+              onChange={(event) => setConfirmationPhrase(event.target.value)}
+              style={pInputBase}
+              aria-label="Frase para confirmação"
+            />
+          </label>
         </div>
         <div className="flex gap-2.5 justify-end">
           <button onClick={onCancel}
@@ -76,11 +104,13 @@ function ProcessDeleteDialog({ name, onConfirm, onCancel }) {
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}>
             Cancelar
           </button>
-          <button onClick={onConfirm}
+          <button
+            onClick={() => onConfirm({ processName, confirmationPhrase })}
+            disabled={!canDelete}
             className="px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5"
-            style={{ background: 'rgba(153,27,27,0.20)', color: '#fca5a5', border: '1px solid rgba(153,27,27,0.40)' }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(153,27,27,0.35)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(153,27,27,0.20)' }}>
+            style={{ background: 'rgba(153,27,27,0.20)', color: '#fca5a5', border: '1px solid rgba(153,27,27,0.40)', opacity: canDelete ? 1 : 0.45, cursor: canDelete ? 'pointer' : 'not-allowed' }}
+            onMouseEnter={(e) => { if (canDelete) e.currentTarget.style.background = 'rgba(153,27,27,0.35)' }}
+            onMouseLeave={(e) => { if (canDelete) e.currentTarget.style.background = 'rgba(153,27,27,0.20)' }}>
             <Trash2 size={11} />Excluir processo
           </button>
         </div>
@@ -93,6 +123,8 @@ function ProcessDeleteDialog({ name, onConfirm, onCancel }) {
 }
 
 export default function ProcessDetailsTab({ process, onSaved, onDeleted }) {
+  const { user } = useAuth()
+  const isOwner = user?.role === 'owner'
   const [vals, setVals] = useState({
     name: process.name ?? '',
     company: process.companyName ?? '',
@@ -145,12 +177,13 @@ export default function ProcessDetailsTab({ process, onSaved, onDeleted }) {
     }
   }
 
-  async function handleDelete() {
-    setShowDel(false)
+  async function handleDelete(confirmation) {
     try {
-      await api.deleteProcess(process.id)
+      await api.deleteProcess(process.id, confirmation)
+      setShowDel(false)
       onDeleted()
     } catch (err) {
+      setShowDel(false)
       setError(err instanceof ApiError ? err.message : 'Não foi possível excluir este processo.')
     }
   }
@@ -253,19 +286,21 @@ export default function ProcessDetailsTab({ process, onSaved, onDeleted }) {
               </p>
             </div>
 
-            <div className="rounded-xl p-4 flex flex-col gap-3" style={{ background: '#111520', border: '1px solid rgba(153,27,27,0.20)' }}>
-              <div>
-                <p className="text-xs font-semibold" style={{ color: '#fca5a5' }}>Zona de perigo</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Ações irreversíveis.</p>
+            {isOwner && (
+              <div className="rounded-xl p-4 flex flex-col gap-3" style={{ background: '#111520', border: '1px solid rgba(153,27,27,0.20)' }}>
+                <div>
+                  <p className="text-xs font-semibold" style={{ color: '#fca5a5' }}>Zona de perigo</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Ações irreversíveis.</p>
+                </div>
+                <button onClick={() => setShowDel(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors self-start"
+                  style={{ background: 'rgba(153,27,27,0.15)', color: '#fca5a5', border: '1px solid rgba(153,27,27,0.35)' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(153,27,27,0.30)' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(153,27,27,0.15)' }}>
+                  <Trash2 size={11} />Excluir processo
+                </button>
               </div>
-              <button onClick={() => setShowDel(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors self-start"
-                style={{ background: 'rgba(153,27,27,0.15)', color: '#fca5a5', border: '1px solid rgba(153,27,27,0.35)' }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(153,27,27,0.30)' }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(153,27,27,0.15)' }}>
-                <Trash2 size={11} />Excluir processo
-              </button>
-            </div>
+            )}
           </div>
         </div>
       </div>

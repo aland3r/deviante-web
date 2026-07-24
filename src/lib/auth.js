@@ -101,6 +101,7 @@ async function loadManagerProfile() {
     const manager = await apiFetch('/manager/me')
     return {
       fullName: manager.fullName,
+      role: manager.role,
       firstLanguage: manager.firstLanguage,
       targetLanguage: manager.targetLanguage,
       locationEnabled: manager.locationEnabled,
@@ -122,6 +123,7 @@ async function mapSessionUser(sessionUser) {
   return {
     id: sessionUser.id,
     email,
+    role: fromDb?.role ?? 'manager',
     fullName: fromDb?.fullName || fromMeta.fullName || email.split('@')[0] || 'Usuário',
     firstLanguage: fromDb?.firstLanguage ?? fromMeta.firstLanguage,
     targetLanguage: fromDb?.targetLanguage ?? fromMeta.targetLanguage,
