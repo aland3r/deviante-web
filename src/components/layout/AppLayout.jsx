@@ -24,12 +24,12 @@ export default function AppLayout() {
 
   return (
     <div className="app-shell" style={{ background: '#0d1017', minHeight: '100vh' }}>
-      <header className="shrink-0 flex items-center gap-4 px-5 border-b border-border sticky top-0 z-10"
+      <header className="shrink-0 flex items-center gap-2 sm:gap-4 px-3 sm:px-5 border-b border-border sticky top-0 z-10"
         style={{ height: '52px', background: '#111520', fontFamily: "'Inter',sans-serif" }}>
 
         <BrandMark />
 
-        <div className="w-px h-5 bg-border" />
+        <div className="hidden sm:block w-px h-5 bg-border" />
 
         <nav className="flex items-center gap-0.5 rounded-lg p-0.5 shrink-0"
           style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
@@ -49,7 +49,7 @@ export default function AppLayout() {
 
         <div className="flex-1" />
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="hidden sm:flex items-center gap-2 shrink-0">
           <span className="px-3 py-1 rounded-full text-xs font-semibold text-foreground truncate"
             style={{ background: '#1e2738', border: '1px solid rgba(255,255,255,0.09)', maxWidth: 220 }}>
             {user?.fullName || user?.email || 'Gestor'}

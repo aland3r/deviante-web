@@ -1,6 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Activity, Plus, Grid3X3, List } from 'lucide-react'
+import {
+  Activity,
+  BarChart3,
+  ChevronRight,
+  Grid3X3,
+  List,
+  Plus,
+  RadioTower,
+  X,
+} from 'lucide-react'
 import { api, ApiError } from '../lib/api'
 
 /*
@@ -14,9 +23,8 @@ import { api, ApiError } from '../lib/api'
   is the open-project screen: graph canvas + Processos tab.
 
   Compartilhados/Favoritos have no backend concept yet (no sharing or
-  favoriting on processes) — tabs render, but stay empty, per owner
-  21/07. "Nova análise" card is visibly present but disabled — depends
-  on UC4 (log upload), not built yet.
+  favoriting on processes) — tabs render, but stay empty. Analysis stays
+  process-scoped: its dashboard action first asks which process to open.
 */
 
 function timeAgo(isoDate) {
@@ -60,62 +68,164 @@ function ProcessThumbnail() {
   )
 }
 
-function AnaliseThumbnail() {
+const ACTION_APPEARANCE = {
+  processo: {
+    icon: Activity,
+    accent: '#2870a8',
+    surface: 'rgba(40,112,168,0.12)',
+    border: 'rgba(77,143,192,0.30)',
+  },
+  analise: {
+    icon: BarChart3,
+    accent: '#b45309',
+    surface: 'rgba(180,83,9,0.11)',
+    border: 'rgba(245,158,11,0.27)',
+  },
+  monitoramento: {
+    icon: RadioTower,
+    accent: '#059669',
+    surface: 'rgba(5,150,105,0.10)',
+    border: 'rgba(16,185,129,0.24)',
+  },
+}
+
+function NewProjectButton({ type, label, description, disabled, busy, onClick }) {
+  const appearance = ACTION_APPEARANCE[type]
+  const Icon = appearance.icon
+
   return (
-    <svg width="100%" height="100%" viewBox="0 0 220 130" fill="none" preserveAspectRatio="xMidYMid meet">
-      {[40, 70, 100].map((y) => (
-        <line key={y} x1="30" y1={y} x2="200" y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-      ))}
-      <rect x="42" y="72" width="22" height="38" rx="3" fill="#2870a8" opacity="0.75" />
-      <rect x="76" y="52" width="22" height="58" rx="3" fill="#4d8fc0" opacity="0.85" />
-      <rect x="110" y="60" width="22" height="50" rx="3" fill="#2870a8" opacity="0.75" />
-      <rect x="144" y="38" width="22" height="72" rx="3" fill="#4d8fc0" opacity="0.90" />
-      <rect x="178" y="55" width="22" height="55" rx="3" fill="#2870a8" opacity="0.70" />
-      <path d="M 30 85 L 53 80 L 87 68 L 121 72 L 155 52 L 189 65 L 200 60" stroke="#c8e2f5" strokeWidth="2" fill="none" opacity="0.9" />
-      {[[53, 80], [87, 68], [121, 72], [155, 52], [189, 65]].map(([cx, cy], i) => (
-        <circle key={i} cx={cx} cy={cy} r="3.5" fill="#c8e2f5" opacity="0.85" />
-      ))}
-      <line x1="30" y1="110" x2="200" y2="110" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
-      {['Jan', 'Mar', 'Mai', 'Jul', 'Set'].map((l, i) => (
-        <text key={l} x={42 + i * 34 + 11} y="122" textAnchor="middle" fontSize="8" fill="rgba(255,255,255,0.25)" fontFamily="'JetBrains Mono',monospace">{l}</text>
-      ))}
-    </svg>
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled || busy}
+      style={{
+        minHeight: 68,
+        display: 'grid',
+        gridTemplateColumns: '42px minmax(0, 1fr) 24px',
+        alignItems: 'center',
+        gap: 11,
+        padding: '10px 11px',
+        borderRadius: 7,
+        border: `1px solid ${appearance.border}`,
+        background: '#111520',
+        color: 'white',
+        textAlign: 'left',
+        cursor: disabled || busy ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.48 : 1,
+        transition: 'border-color 0.15s, background 0.15s, transform 0.15s',
+      }}
+      onMouseEnter={(event) => {
+        if (disabled || busy) return
+        event.currentTarget.style.borderColor = appearance.accent
+        event.currentTarget.style.background = '#151b27'
+        event.currentTarget.style.transform = 'translateY(-1px)'
+      }}
+      onMouseLeave={(event) => {
+        if (disabled || busy) return
+        event.currentTarget.style.borderColor = appearance.border
+        event.currentTarget.style.background = '#111520'
+        event.currentTarget.style.transform = 'translateY(0)'
+      }}
+    >
+      <span style={{
+        width: 42,
+        height: 42,
+        borderRadius: 6,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: appearance.surface,
+        border: `1px solid ${appearance.border}`,
+        color: appearance.accent,
+      }}>
+        <Icon size={17} />
+      </span>
+      <span style={{ minWidth: 0 }}>
+        <span style={{
+          display: 'block',
+          fontFamily: "'Inter',sans-serif",
+          fontWeight: 600,
+          fontSize: 12,
+          color: '#e2e8f0',
+          lineHeight: 1.25,
+        }}>
+          {busy ? 'Criando processo...' : label}
+        </span>
+        <span style={{
+          display: 'block',
+          marginTop: 3,
+          fontFamily: "'Inter',sans-serif",
+          fontSize: 10,
+          color: '#64748b',
+          lineHeight: 1.3,
+          whiteSpace: 'normal',
+        }}>
+          {description}
+        </span>
+      </span>
+      <span style={{
+        width: 24,
+        height: 24,
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: disabled ? '#475569' : appearance.accent,
+        background: disabled ? 'rgba(255,255,255,0.03)' : appearance.surface,
+      }}>
+        {disabled ? (
+          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8 }}>--</span>
+        ) : type === 'processo' ? (
+          <Plus size={12} />
+        ) : (
+          <ChevronRight size={13} />
+        )}
+      </span>
+    </button>
   )
 }
 
-function NewProjectCard({ type, label, description, disabled, onClick }) {
+function AnalysisProcessPicker({ processes, onClose }) {
   return (
-    <div
-      onClick={disabled ? undefined : onClick}
-      style={{
-        background: '#111520', border: '1px dashed rgba(255,255,255,0.14)', borderRadius: 12,
-        overflow: 'hidden', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.55 : 1,
-        transition: 'border-color 0.15s, background 0.15s',
-      }}
-      onMouseEnter={(e) => { if (disabled) return; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.30)'; e.currentTarget.style.background = '#161c28' }}
-      onMouseLeave={(e) => { if (disabled) return; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.background = '#111520' }}
-    >
-      <div style={{ height: 140, background: '#080c14', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-        <div style={{ position: 'absolute', inset: 0, opacity: 0.4 }}>
-          {type === 'processo' ? <ProcessThumbnail /> : <AnaliseThumbnail />}
-        </div>
-        <div style={{ position: 'relative', width: 40, height: 40, borderRadius: 10, border: '1.5px dashed rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.04)' }}>
-          <Plus size={18} color="rgba(255,255,255,0.45)" />
-        </div>
-      </div>
-      <div style={{ padding: '12px 14px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-          <div style={{ width: 16, height: 16, borderRadius: 4, background: type === 'processo' ? '#2870a8' : type === 'monitoramento' ? '#047857' : '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            {type === 'processo'
-              ? <Activity size={9} color="white" />
-              : <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><rect x="0" y="4" width="2.5" height="5" rx="1" fill="white" /><rect x="3.25" y="2" width="2.5" height="7" rx="1" fill="white" /><rect x="6.5" y="0" width="2.5" height="9" rx="1" fill="white" /></svg>}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(3,6,12,0.78)' }}
+      onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
+      <div className="w-full overflow-hidden border border-border"
+        role="dialog" aria-modal="true" aria-labelledby="analysis-picker-title"
+        style={{ maxWidth: 460, maxHeight: 'min(620px, 84vh)', borderRadius: 8, background: '#111520', boxShadow: '0 24px 70px rgba(0,0,0,0.55)' }}>
+        <div className="flex items-start justify-between gap-4 px-4 py-3.5 border-b border-border">
+          <div>
+            <h2 id="analysis-picker-title" className="text-sm font-semibold text-foreground">Nova análise</h2>
+            <p className="text-[11px] text-muted-foreground mt-1">Selecione o processo que será analisado.</p>
           </div>
-          <span style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 13, color: 'white' }}>{label}</span>
-          {disabled ? (
-            <span style={{ marginLeft: 'auto', fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>em breve</span>
-          ) : null}
+          <button type="button" onClick={onClose} title="Fechar"
+            className="w-7 h-7 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary">
+            <X size={13} />
+          </button>
         </div>
-        <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: '#64748b', margin: 0, lineHeight: 1.45 }}>{description}</p>
+        <div className="overflow-y-auto p-2" style={{ maxHeight: 'calc(min(620px, 84vh) - 70px)' }}>
+          {processes.length ? processes.map((process) => (
+            <Link key={process.id} to={`/processes/${process.id}`}
+              className="flex items-center gap-3 px-3 py-2.5 rounded hover:bg-secondary/60"
+              style={{ textDecoration: 'none' }}>
+              <span className="w-8 h-8 rounded flex items-center justify-center shrink-0"
+                style={{ background: 'rgba(180,83,9,0.12)', color: '#f59e0b' }}>
+                <BarChart3 size={13} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-xs font-medium text-foreground truncate">{process.name}</span>
+                <span className="block text-[10px] text-muted-foreground truncate mt-0.5">
+                  {process.companyName || 'Empresa não definida'}
+                </span>
+              </span>
+              <ChevronRight size={13} className="text-muted-foreground shrink-0" />
+            </Link>
+          )) : (
+            <p className="px-3 py-8 text-center text-xs text-muted-foreground">
+              Crie um processo antes de iniciar uma análise.
+            </p>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -125,7 +235,7 @@ function ProjectCard({ process }) {
   return (
     <Link
       to={`/processes/${process.id}`}
-      style={{ display: 'block', background: '#0f141e', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, overflow: 'hidden', textDecoration: 'none', transition: 'border-color 0.15s' }}
+      style={{ display: 'block', background: '#0f141e', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8, overflow: 'hidden', textDecoration: 'none', transition: 'border-color 0.15s' }}
       onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)' }}
       onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)' }}
     >
@@ -164,8 +274,8 @@ function ProjectListItem({ process }) {
 }
 
 const HOME_TABS = [
-  { id: 'recentes', label: 'Visualizados recentemente' },
-  { id: 'compartilhados', label: 'Compartilhados comigo' },
+  { id: 'recentes', label: 'Visualizados recentemente', shortLabel: 'Recentes' },
+  { id: 'compartilhados', label: 'Compartilhados comigo', shortLabel: 'Compartilhados' },
   { id: 'favoritos', label: 'Favoritos' },
 ]
 
@@ -178,6 +288,7 @@ export default function DashboardPage() {
   const [tab, setTab] = useState('recentes')
   const [search, setSearch] = useState('')
   const [displayMode, setDisplayMode] = useState('grid')
+  const [analysisPickerOpen, setAnalysisPickerOpen] = useState(false)
 
   useEffect(() => {
     api.listProcesses()
@@ -206,10 +317,14 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col" style={{ background: '#0d1017', margin: '-2rem calc(-50vw + 50%)', padding: '0 calc(50vw - 50%)', minHeight: 'calc(100vh - 52px)' }}>
-      <div className="flex-1" style={{ maxWidth: 1120, margin: '0 auto', padding: '32px 24px', width: '100%', boxSizing: 'border-box' }}>
+      {analysisPickerOpen && (
+        <AnalysisProcessPicker processes={processes} onClose={() => setAnalysisPickerOpen(false)} />
+      )}
+      <div className="flex-1 px-4 py-6 sm:px-6 sm:py-8"
+        style={{ maxWidth: 1120, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
 
         <div className="flex items-center justify-end mb-6 gap-3 flex-wrap">
-          <div style={{ position: 'relative', width: '100%', maxWidth: 280 }}>
+          <div className="w-full sm:max-w-[280px]" style={{ position: 'relative' }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }}>
               <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
@@ -229,38 +344,45 @@ export default function DashboardPage() {
 
         <div style={{ marginBottom: 40 }}>
           <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, fontWeight: 600, color: '#94a3b8', margin: '0 0 14px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Criar novo</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, maxWidth: 760 }}>
-            <NewProjectCard
-              type="processo" label={creating ? 'Criando processo…' : 'Novo processo'}
-              description="Mapeie e analise fluxos de trabalho com grafo de processos."
-              onClick={handleCreateProcess} disabled={creating}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            <NewProjectButton
+              type="processo"
+              label="Novo processo"
+              description="Defina atividades e carregue um log."
+              onClick={handleCreateProcess}
+              busy={creating}
             />
-            <NewProjectCard
-              type="analise" label="Nova análise"
-              description="Detecte desvios e derive conformidade com logs de eventos."
-              disabled
+            <NewProjectButton
+              type="analise"
+              label="Nova análise"
+              description="Escolha um processo com log mapeado."
+              onClick={() => setAnalysisPickerOpen(true)}
             />
-            <NewProjectCard
-              type="monitoramento" label="Novo monitoramento"
-              description="Acompanhe mudanças do processo ao longo do tempo."
+            <NewProjectButton
+              type="monitoramento"
+              label="Novo monitoramento"
+              description="Acompanhe desvios ao longo do tempo."
               disabled
             />
           </div>
         </div>
 
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-            <div style={{ display: 'flex', gap: 0 }}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0"
+            style={{ marginBottom: 18, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="flex" style={{ gap: 0 }}>
               {HOME_TABS.map((t) => (
                 <button
                   key={t.id} onClick={() => setTab(t.id)}
-                  style={{ padding: '8px 14px', background: 'transparent', border: 'none', borderBottom: tab === t.id ? '2px solid #991b1b' : '2px solid transparent', color: tab === t.id ? 'white' : '#64748b', fontFamily: "'Inter',sans-serif", fontWeight: tab === t.id ? 600 : 500, fontSize: 13, cursor: 'pointer', marginBottom: -1, transition: 'color 0.15s' }}
+                  className="flex-1 sm:flex-none"
+                  style={{ padding: '8px 12px', background: 'transparent', border: 'none', borderBottom: tab === t.id ? '2px solid #991b1b' : '2px solid transparent', color: tab === t.id ? 'white' : '#64748b', fontFamily: "'Inter',sans-serif", fontWeight: tab === t.id ? 600 : 500, fontSize: 12, cursor: 'pointer', marginBottom: -1, transition: 'color 0.15s', whiteSpace: 'nowrap' }}
                 >
-                  {t.label}
+                  <span className="sm:hidden">{t.shortLabel || t.label}</span>
+                  <span className="hidden sm:inline">{t.label}</span>
                 </button>
               ))}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 8 }}>
+            <div className="flex items-center justify-end" style={{ gap: 8, paddingBottom: 8 }}>
               <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#475569', letterSpacing: '0.04em' }}>
                 {visible.length} processo{visible.length !== 1 ? 's' : ''}
               </span>
