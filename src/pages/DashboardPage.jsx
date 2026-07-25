@@ -105,7 +105,7 @@ function NewProjectCard({ type, label, description, disabled, onClick }) {
       </div>
       <div style={{ padding: '12px 14px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-          <div style={{ width: 16, height: 16, borderRadius: 4, background: type === 'processo' ? '#2870a8' : '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: 16, height: 16, borderRadius: 4, background: type === 'processo' ? '#2870a8' : type === 'monitoramento' ? '#047857' : '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             {type === 'processo'
               ? <Activity size={9} color="white" />
               : <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><rect x="0" y="4" width="2.5" height="5" rx="1" fill="white" /><rect x="3.25" y="2" width="2.5" height="7" rx="1" fill="white" /><rect x="6.5" y="0" width="2.5" height="9" rx="1" fill="white" /></svg>}
@@ -145,6 +145,24 @@ function ProjectCard({ process }) {
   )
 }
 
+function ProjectListItem({ process }) {
+  return (
+    <Link to={`/processes/${process.id}`}
+      className="flex items-center gap-3 px-3 py-3 border-b border-border last:border-0 hover:bg-secondary/40"
+      style={{ textDecoration: 'none' }}>
+      <div className="w-8 h-8 rounded flex items-center justify-center shrink-0" style={{ background: '#16202e' }}>
+        <Activity size={13} color="#4d8fc0" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-semibold text-foreground truncate">{process.name}</p>
+        <p className="text-[10px] text-muted-foreground mt-0.5" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
+          {process.companyName || 'Empresa não definida'} · editado {timeAgo(process.updatedAt)}
+        </p>
+      </div>
+    </Link>
+  )
+}
+
 const HOME_TABS = [
   { id: 'recentes', label: 'Visualizados recentemente' },
   { id: 'compartilhados', label: 'Compartilhados comigo' },
@@ -159,6 +177,7 @@ export default function DashboardPage() {
   const [creating, setCreating] = useState(false)
   const [tab, setTab] = useState('recentes')
   const [search, setSearch] = useState('')
+  const [displayMode, setDisplayMode] = useState('grid')
 
   useEffect(() => {
     api.listProcesses()
@@ -189,11 +208,7 @@ export default function DashboardPage() {
     <div className="flex flex-col" style={{ background: '#0d1017', margin: '-2rem calc(-50vw + 50%)', padding: '0 calc(50vw - 50%)', minHeight: 'calc(100vh - 52px)' }}>
       <div className="flex-1" style={{ maxWidth: 1120, margin: '0 auto', padding: '32px 24px', width: '100%', boxSizing: 'border-box' }}>
 
-        <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: '#f59e0b', fontFamily: "'JetBrains Mono',monospace" }}>UC2 · Manter processo</p>
-            <p className="text-xs text-muted-foreground">Crie e gerencie processos antes de enviar logs de eventos.</p>
-          </div>
+        <div className="flex items-center justify-end mb-6 gap-3 flex-wrap">
           <div style={{ position: 'relative', width: '100%', maxWidth: 280 }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }}>
               <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -214,7 +229,7 @@ export default function DashboardPage() {
 
         <div style={{ marginBottom: 40 }}>
           <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, fontWeight: 600, color: '#94a3b8', margin: '0 0 14px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Criar novo</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, maxWidth: 500 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, maxWidth: 760 }}>
             <NewProjectCard
               type="processo" label={creating ? 'Criando processo…' : 'Novo processo'}
               description="Mapeie e analise fluxos de trabalho com grafo de processos."
@@ -223,6 +238,11 @@ export default function DashboardPage() {
             <NewProjectCard
               type="analise" label="Nova análise"
               description="Detecte desvios e derive conformidade com logs de eventos."
+              disabled
+            />
+            <NewProjectCard
+              type="monitoramento" label="Novo monitoramento"
+              description="Acompanhe mudanças do processo ao longo do tempo."
               disabled
             />
           </div>
@@ -245,12 +265,14 @@ export default function DashboardPage() {
                 {visible.length} processo{visible.length !== 1 ? 's' : ''}
               </span>
               <div style={{ display: 'flex', gap: 1, padding: 3, borderRadius: 6, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <div style={{ width: 24, height: 24, borderRadius: 4, background: 'rgba(255,255,255,0.08)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <button type="button" onClick={() => setDisplayMode('grid')} title="Visualização em grade"
+                  style={{ width: 24, height: 24, borderRadius: 4, border: 0, background: displayMode === 'grid' ? 'rgba(255,255,255,0.08)' : 'transparent', color: displayMode === 'grid' ? 'white' : '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Grid3X3 size={12} />
-                </div>
-                <div style={{ width: 24, height: 24, borderRadius: 4, color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                </button>
+                <button type="button" onClick={() => setDisplayMode('list')} title="Visualização em lista"
+                  style={{ width: 24, height: 24, borderRadius: 4, border: 0, background: displayMode === 'list' ? 'rgba(255,255,255,0.08)' : 'transparent', color: displayMode === 'list' ? 'white' : '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <List size={12} />
-                </div>
+                </button>
               </div>
             </div>
           </div>
@@ -264,6 +286,10 @@ export default function DashboardPage() {
           ) : visible.length === 0 ? (
             <div style={{ padding: '60px 0', textAlign: 'center', color: '#475569', fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
               {search ? `Nenhum processo encontrado para “${search}”` : 'Nenhum processo ainda — crie o primeiro acima.'}
+            </div>
+          ) : displayMode === 'list' ? (
+            <div className="border border-border rounded overflow-hidden" style={{ background: '#0f141e' }}>
+              {visible.map((process) => <ProjectListItem key={process.id} process={process} />)}
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>

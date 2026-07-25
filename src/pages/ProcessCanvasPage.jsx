@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Upload, Activity, Wrench, FileText, Scan } from 'lucide-react'
+import { ArrowLeft, Upload, Activity, Wrench, FileText } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
 import BrandMark from '../components/layout/BrandMark'
 import ProcessGraphTab from '../components/process-graph/ProcessGraphTab'
@@ -206,7 +206,7 @@ export default function ProcessCanvasPage() {
             title={graphStats.eventLog ? `Derivado de ${graphStats.eventLog.fileName}` : undefined}>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
             <span className="text-[11px] text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
-              {graphStats.caseCount.toLocaleString('pt-BR')} casos
+              {graphStats.caseCount.toLocaleString('pt-BR')} traces
             </span>
             {graphStats.hasUnmappedOperations && (
               <span className="text-[10px] uppercase tracking-wide" title="Operações ainda não mapeadas para atividades (UC5)"
@@ -217,20 +217,8 @@ export default function ProcessCanvasPage() {
 
         <div className="flex-1" />
 
-        <button type="button" onClick={() => setAnalysisOpen(true)}
-          disabled={!graphStats?.caseCount || graphStats?.hasUnmappedOperations}
-          title={!graphStats?.caseCount
-            ? 'Carregue e mapeie um log antes de analisar desvios'
-            : graphStats?.hasUnmappedOperations
-              ? 'Conclua o mapeamento das atividades antes de analisar desvios'
-              : 'Abrir análise de desvios'}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ border: '1px solid rgba(153,27,27,0.40)', background: 'rgba(153,27,27,0.12)', color: '#fca5a5' }}>
-          <Scan size={12} /><span className="hidden md:inline">Análise de desvios</span>
-        </button>
-
         <button type="button" title="Carregar log de eventos (UC4)" onClick={() => setUploadOpen(true)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium border border-border text-muted-foreground hover:text-foreground transition-colors shrink-0">
+          className="lg:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium border border-border text-muted-foreground hover:text-foreground transition-colors shrink-0">
           <Upload size={12} /><span className="hidden sm:inline">Carregar log</span>
         </button>
       </header>
@@ -257,6 +245,7 @@ export default function ProcessCanvasPage() {
             isMobile={isMobile}
             onStats={handleGraphStats}
             onUploadLog={() => setUploadOpen(true)}
+            onAnalyze={() => setAnalysisOpen(true)}
           />
         )}
 

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
-import { X, ZoomIn, ZoomOut, Maximize2, Filter, SlidersHorizontal, AlignCenter, Upload } from 'lucide-react'
+import { X, ZoomIn, ZoomOut, Maximize2, SlidersHorizontal, RotateCcw, Scan, Upload } from 'lucide-react'
 import {
   NODE_W, NODE_H, CIRC_R,
   GRAD_LIGHT, GRAD_MID, GRAD_DEEP, DASH_COLOR,
@@ -9,6 +9,9 @@ import {
 } from './graph-core'
 import { buildGraphModel, positionNodes, withEdgeOffsets, formatDuration, formatCount } from './graph-layout'
 import { api, ApiError } from '../../lib/api'
+import ProcessActivitiesPanel from './ProcessActivitiesPanel'
+
+const MIN_ANALYSIS_TRACES = Number(import.meta.env.VITE_MIN_ANALYSIS_TRACES ?? 32)
 
 /*
   "Grafo do Processo" tab — the canvas plus its two side panels. Visual
@@ -69,10 +72,10 @@ function Histogram({ data }) {
 
 function CasesLayersPanel({ node, variants, onClose }) {
   const relevantVariants = useMemo(
-    () => variants.filter((v) => v.nodeIds.includes(node.id)),
-    [variants, node.id],
+    () => node ? variants.filter((v) => v.nodeIds.includes(node.id)) : variants,
+    [variants, node],
   )
-  const totalCases = relevantVariants.reduce((s, v) => s + v.caseCount, 0)
+  const totalCases = variants.reduce((s, v) => s + v.caseCount, 0)
 
   const [filter, setFilter] = useState('')
   // Collapsed by default: a real log has dozens of variants, and the export's
@@ -80,6 +83,8 @@ function CasesLayersPanel({ node, variants, onClose }) {
   const [expanded, setExpanded] = useState({})
   const [selectedCase, setSelectedCase] = useState(null)
   const [hiddenVariants, setHiddenVariants] = useState(() => new Set())
+  const [ignoredTraces, setIgnoredTraces] = useState(() => new Set())
+  const [hoveredCase, setHoveredCase] = useState(null)
 
   const visibleVariants = useMemo(() => {
     const term = filter.trim().toLowerCase()
@@ -109,7 +114,7 @@ function CasesLayersPanel({ node, variants, onClose }) {
       <div style={{ padding: '10px 12px 8px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.10em', color: '#475569', textTransform: 'uppercase' }}>
-            Instâncias · Camadas
+            Ciclos · Traces
           </span>
           <button onClick={onClose}
             style={{ width: 18, height: 18, borderRadius: 3, border: 'none', background: 'transparent', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}
@@ -118,14 +123,14 @@ function CasesLayersPanel({ node, variants, onClose }) {
             <X size={11} />
           </button>
         </div>
-        <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: 'white', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.label}</p>
+        <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: 'white', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node?.label || 'Todos os ciclos'}</p>
         <div style={{ display: 'flex', gap: 8 }}>
           <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#64748b' }}>
-            {relevantVariants.length} variante{relevantVariants.length !== 1 ? 's' : ''}
+            {relevantVariants.length} ciclo{relevantVariants.length !== 1 ? 's' : ''}
           </span>
           <span style={{ color: 'rgba(255,255,255,0.12)' }}>·</span>
           <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#64748b' }}>
-            {totalCases.toLocaleString('pt-BR')} casos
+            {totalCases.toLocaleString('pt-BR')} traces
           </span>
         </div>
       </div>
@@ -135,15 +140,26 @@ function CasesLayersPanel({ node, variants, onClose }) {
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2.5">
             <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-          <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filtrar casos…"
+          <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filtrar traces…"
             style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'white', fontFamily: "'Inter',sans-serif", fontSize: 11, padding: 0 }} />
         </div>
+        {ignoredTraces.size > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
+            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: '#475569' }}>
+              {ignoredTraces.size} ignorado{ignoredTraces.size !== 1 ? 's' : ''}
+            </span>
+            <button type="button" onClick={() => setIgnoredTraces(new Set())}
+              style={{ border: 0, padding: 0, background: 'transparent', color: '#2870a8', fontSize: 9, cursor: 'pointer' }}>
+              resetar
+            </button>
+          </div>
+        )}
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
         {visibleVariants.length === 0 && (
           <p style={{ padding: '16px 12px', margin: 0, fontSize: 11, color: '#475569', fontFamily: "'Inter',sans-serif" }}>
-            Nenhum caso encontrado para “{filter}”.
+            Nenhum trace encontrado para “{filter}”.
           </p>
         )}
         {visibleVariants.map((variant) => {
@@ -187,6 +203,8 @@ function CasesLayersPanel({ node, variants, onClose }) {
 
               {isOpen && variant.cases.map((c) => {
                 const isSelCase = selectedCase === c.id
+                const isIgnored = ignoredTraces.has(c.id)
+                const isHovered = hoveredCase === c.id
                 return (
                   <div key={c.id} onClick={() => setSelectedCase(isSelCase ? null : c.id)}
                     style={{
@@ -194,22 +212,38 @@ function CasesLayersPanel({ node, variants, onClose }) {
                       padding: `0 8px 0 ${INDENT}px`, gap: 5, cursor: 'pointer',
                       background: isSelCase ? 'rgba(40,112,168,0.20)' : 'transparent',
                       borderLeft: isSelCase ? '2px solid #2870a8' : '2px solid transparent',
-                      transition: 'background 0.1s', opacity: isHidden ? 0.2 : 1,
+                      transition: 'background 0.1s', opacity: isHidden ? 0.2 : isIgnored ? 0.25 : 1,
                     }}
-                    onMouseEnter={(e) => { if (!isSelCase) e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
-                    onMouseLeave={(e) => { if (!isSelCase) e.currentTarget.style.background = 'transparent' }}>
+                    onMouseEnter={(e) => { setHoveredCase(c.id); if (!isSelCase) e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
+                    onMouseLeave={(e) => { setHoveredCase(null); if (!isSelCase) e.currentTarget.style.background = 'transparent' }}>
 
                     <div style={{ width: 16, flexShrink: 0 }} />
                     <div style={{ width: 5, height: 5, borderRadius: '50%', background: STATUS_DOT[c.status], flexShrink: 0 }} />
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2" style={{ flexShrink: 0 }}>
                       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
                     </svg>
-                    <span style={{ flex: 1, fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: isSelCase ? 'white' : 'rgba(255,255,255,0.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span style={{ flex: 1, fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: isSelCase ? 'white' : 'rgba(255,255,255,0.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: isIgnored ? 'line-through' : 'none' }}>
                       {c.caseId}
                     </span>
                     <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: '#475569', flexShrink: 0 }}>
                       {formatDuration(c.durationSeconds)}
                     </span>
+                    <button type="button" title={isIgnored ? 'Reincluir trace' : 'Ignorar trace nesta análise'}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        setIgnoredTraces((current) => {
+                          const next = new Set(current)
+                          if (next.has(c.id)) next.delete(c.id); else next.add(c.id)
+                          return next
+                        })
+                      }}
+                      style={{
+                        width: 16, height: 16, border: 0, padding: 0, background: 'transparent',
+                        color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        visibility: isHovered || isIgnored ? 'visible' : 'hidden', cursor: 'pointer',
+                      }}>
+                      <X size={9} />
+                    </button>
                   </div>
                 )
               })}
@@ -217,7 +251,7 @@ function CasesLayersPanel({ node, variants, onClose }) {
               {isOpen && variant.caseCount > variant.cases.length && (
                 <div style={{ height: 24, display: 'flex', alignItems: 'center', paddingLeft: INDENT + 31, gap: 4 }}>
                   <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: '#2870a8', cursor: 'pointer' }}>
-                    + {(variant.caseCount - variant.cases.length).toLocaleString('pt-BR')} casos ocultos…
+                    + {(variant.caseCount - variant.cases.length).toLocaleString('pt-BR')} traces ocultos…
                   </span>
                 </div>
               )}
@@ -233,7 +267,7 @@ function CasesLayersPanel({ node, variants, onClose }) {
         if (!c) return null
         return (
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', padding: '10px 12px', flexShrink: 0 }}>
-            <p style={{ margin: '0 0 6px', fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Caso selecionado</p>
+            <p style={{ margin: '0 0 6px', fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Trace selecionado</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {[
                 ['ID', c.caseId],
@@ -299,13 +333,6 @@ function NodeDetailPanel({ node, onClose }) {
             </div>
           </>
         )}
-      </div>
-      <div className="p-4 border-t border-border">
-        <button title="Filtro de atividade — depende de UC5/UC6" disabled
-          className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded text-xs font-medium opacity-50 cursor-not-allowed"
-          style={{ background: 'rgba(153,27,27,0.12)', color: '#fca5a5', border: '1px solid rgba(153,27,27,0.30)', fontFamily: "'JetBrains Mono',monospace" }}>
-          <Filter size={11} />Filtrar esta atividade
-        </button>
       </div>
     </div>
   )
@@ -388,9 +415,53 @@ function EmptyCanvas({ message, eventLog, onUploadLog }) {
   )
 }
 
+function DefinedModelCanvas({ activities, onUploadLog }) {
+  return (
+    <div className="relative flex-1 overflow-auto p-8" style={{
+      backgroundColor: '#090d14',
+      backgroundImage: 'radial-gradient(rgba(255,255,255,0.05) 0.8px, transparent 0.8px)',
+      backgroundSize: '24px 24px',
+    }}>
+      {activities.length ? (
+        <div className="grid gap-5 content-start mx-auto" style={{
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 220px))',
+          maxWidth: 920,
+        }}>
+          {activities.map((activity) => (
+            <div key={activity.id} className="relative overflow-hidden border border-border"
+              style={{ minHeight: 64, borderRadius: 5, background: '#16202e' }}>
+              <div className="h-[3px]" style={{ background: 'rgba(40,112,168,0.85)' }} />
+              <div className="px-3 py-2.5">
+                <p className="text-xs font-medium text-foreground truncate">{activity.name}</p>
+                <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2"
+                  style={{ fontFamily: "'JetBrains Mono',monospace" }}>
+                  {activity.description || 'Atividade definida no processo'}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="h-full flex items-center justify-center">
+          <div className="text-center max-w-sm">
+            <p className="text-sm font-medium text-foreground">O modelo definido está vazio</p>
+            <p className="text-[12px] text-muted-foreground mt-1 leading-relaxed">
+              Crie atividades no painel lateral ou carregue um log para descobrir o processo observado.
+            </p>
+            <button type="button" onClick={onUploadLog}
+              className="inline-flex items-center gap-2 mt-4 py-2 px-3 rounded text-xs border border-border text-muted-foreground hover:text-foreground">
+              <Upload size={12} />Carregar log
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Tab body ───────────────────────────────────────────────────────────────
 
-export default function ProcessGraphTab({ processId, isMobile, onStats, onUploadLog }) {
+export default function ProcessGraphTab({ processId, isMobile, onStats, onUploadLog, onAnalyze }) {
   const [layout, setLayout] = useState('vertical')
   const [pan, setPan] = useState(() => getInitialView('vertical').pan)
   const [zoom, setZoom] = useState(() => getInitialView('vertical').zoom)
@@ -403,6 +474,9 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
 
   const [graph, setGraph] = useState(null)
   const [variants, setVariants] = useState([])
+  const [definedActivities, setDefinedActivities] = useState([])
+  const [activityCatalog, setActivityCatalog] = useState([])
+  const [viewMode, setViewMode] = useState('defined')
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
 
@@ -419,11 +493,19 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    Promise.all([api.getProcessGraph(processId), api.getProcessTraces(processId)])
-      .then(([graphData, traceData]) => {
+    Promise.all([
+      api.getProcessGraph(processId),
+      api.getProcessTraces(processId),
+      api.listProcessActivities(processId),
+      api.listActivities(),
+    ])
+      .then(([graphData, traceData, processActivities, catalog]) => {
         if (cancelled) return
         setGraph(graphData)
         setVariants(traceData.variants ?? [])
+        setDefinedActivities(processActivities)
+        setActivityCatalog(catalog)
+        setViewMode(graphData.nodes?.length ? 'observed' : 'defined')
         setLoadError('')
       })
       .catch((err) => {
@@ -441,8 +523,12 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
       caseCount: graph?.caseCount ?? 0,
       eventLog: graph?.eventLog ?? null,
       hasUnmappedOperations: graph?.hasUnmappedOperations ?? false,
+      definedActivityCount: definedActivities.length,
+      analysisMinimumTraces: MIN_ANALYSIS_TRACES,
+      analysisEligible: (graph?.caseCount ?? 0) >= MIN_ANALYSIS_TRACES
+        && !(graph?.hasUnmappedOperations ?? false),
     })
-  }, [graph, onStats])
+  }, [graph, definedActivities.length, onStats])
 
   // Reset the viewport when the direction flips — the coordinates change.
   useEffect(() => {
@@ -465,9 +551,33 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
       nodes, layout,
     )
   }, [model.edges, pathThr, visKey, nodes, layout])
+  const sideExitMap = useMemo(() => {
+    if (layout !== 'vertical') return {}
+    const bySource = {}
+    visEdges.forEach((edge) => { (bySource[edge.source] ??= []).push(edge) })
+    const exits = {}
+    Object.entries(bySource).forEach(([sourceId, edges]) => {
+      if (edges.length <= 1) return
+      const source = nodeById(nodes, sourceId)
+      ;[...edges].sort((a, b) => b.frequency - a.frequency).forEach((edge, index) => {
+        if (index === 0) {
+          exits[edge.id] = 'bottom'
+          return
+        }
+        const target = nodeById(nodes, edge.target)
+        if (source && target) {
+          exits[edge.id] = target.x + NODE_W / 2 < source.x + NODE_W / 2 ? 'left' : 'right'
+        }
+      })
+    })
+    return exits
+  }, [layout, nodes, visEdges])
   // Only activity nodes carry metrics — Início/Fim are graph punctuation.
   const activityNodeCount = model.nodes.filter((n) => !n.isStart && !n.isEnd).length
   const selectedNode = selectedId ? nodes.find((n) => n.id === selectedId && !n.isStart && !n.isEnd) ?? null : null
+  const hasObservedProcess = model.nodes.length > 0
+  const analysisEligible = (graph?.caseCount ?? 0) >= MIN_ANALYSIS_TRACES
+    && !graph?.hasUnmappedOperations
 
   const handleWheel = useCallback((e) => {
     e.preventDefault()
@@ -553,21 +663,41 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
     )
   }
 
-  if (loadError || model.nodes.length === 0) {
-    return (
-      <EmptyCanvas
-        message={loadError}
-        eventLog={graph?.eventLog ?? null}
-        onUploadLog={onUploadLog}
-      />
-    )
-  }
-
   return (
     <>
+      <div className="relative flex flex-1 min-w-0 overflow-hidden" style={{ background: '#090d14' }}>
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 flex items-center p-0.5 rounded border border-border"
+          style={{ background: '#111520' }}>
+          <button type="button" onClick={() => setViewMode('defined')}
+            className="px-3 py-1.5 rounded text-[10px] transition-colors"
+            style={{
+              background: viewMode === 'defined' ? '#1e2738' : 'transparent',
+              color: viewMode === 'defined' ? '#e2e8f0' : '#64748b',
+              fontFamily: "'JetBrains Mono',monospace",
+            }}>
+            Modelo definido
+          </button>
+          <button type="button" onClick={() => hasObservedProcess && setViewMode('observed')}
+            disabled={!hasObservedProcess}
+            title={hasObservedProcess ? 'Ver processo derivado do log' : 'Mapeie um log para gerar esta visão'}
+            className="px-3 py-1.5 rounded text-[10px] transition-colors disabled:opacity-35 disabled:cursor-not-allowed"
+            style={{
+              background: viewMode === 'observed' ? '#1e2738' : 'transparent',
+              color: viewMode === 'observed' ? '#e2e8f0' : '#64748b',
+              fontFamily: "'JetBrains Mono',monospace",
+            }}>
+            Processo observado
+          </button>
+        </div>
+
+        {viewMode === 'defined' ? (
+          <DefinedModelCanvas activities={definedActivities} onUploadLog={onUploadLog} />
+        ) : loadError || !hasObservedProcess ? (
+          <EmptyCanvas message={loadError} eventLog={graph?.eventLog ?? null} onUploadLog={onUploadLog} />
+        ) : (
       <div ref={containerRef} className="relative flex-1 min-w-0 overflow-hidden" style={{ background: '#090d14' }}>
 
-        {!isMobile && selectedNode && showCasesPanel && (
+        {!isMobile && showCasesPanel && (
           <CasesLayersPanel node={selectedNode} variants={variants} onClose={() => setShowCasesPanel(false)} />
         )}
 
@@ -583,7 +713,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
               const src = nodeById(nodes, edge.source), tgt = nodeById(nodes, edge.target)
               if (!src || !tgt) return null
               const offset = layout === 'horizontal' ? (edge.offsetH ?? 0) : (edge.offsetV ?? 0)
-              const cps = computeEdgeCPs(src, tgt, layout, offset)
+              const cps = computeEdgeCPs(src, tgt, layout, offset, sideExitMap[edge.id])
               const { midX, midY } = cps
               const opacity = freqOpacity(edge.frequency)
 
@@ -642,7 +772,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
           </g>
         </svg>
 
-        <div className="absolute bottom-5 left-5 flex flex-col rounded overflow-hidden border border-border" style={{ background: '#161c28' }}>
+        <div className="absolute bottom-5 right-5 flex flex-col rounded overflow-hidden border border-border" style={{ background: '#161c28' }}>
           {[
             { icon: <ZoomIn size={13} />, fn: () => setZoom((z) => Math.min(3, z * 1.2)), title: 'Aumentar zoom' },
             { icon: <ZoomOut size={13} />, fn: () => setZoom((z) => Math.max(0.2, z * 0.8)), title: 'Reduzir zoom' },
@@ -654,8 +784,8 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
             </button>
           ))}
         </div>
-        <div className="absolute bottom-5 left-14 px-2 py-1 rounded border border-border text-xs text-muted-foreground"
-          style={{ background: '#161c28', fontFamily: "'JetBrains Mono',monospace" }}>
+        <div className="absolute bottom-[122px] right-5 w-8 text-center text-[9px] text-muted-foreground"
+          style={{ fontFamily: "'JetBrains Mono',monospace" }}>
           {Math.round(zoom * 100)}%
         </div>
 
@@ -665,24 +795,24 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
           <button onClick={() => setLayout((l) => (l === 'horizontal' ? 'vertical' : 'horizontal'))}
             title="Alternar direção do grafo"
             style={{
-              position: 'absolute', top: 16, right: 16, zIndex: 20,
-              display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 6,
+              position: 'absolute', bottom: 154, right: 20, zIndex: 20,
+              width: 32, height: 32, borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
               border: '1px solid rgba(255,255,255,0.09)', background: '#161c28', color: '#64748b',
-              fontFamily: "'JetBrains Mono',monospace", fontSize: 10, cursor: 'pointer', transition: 'all 0.15s',
+              cursor: 'pointer', transition: 'all 0.15s',
             }}
             onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)'; e.currentTarget.style.color = '#94a3b8' }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'; e.currentTarget.style.color = '#64748b' }}>
-            <AlignCenter size={12} style={{ transform: layout === 'horizontal' ? 'rotate(90deg)' : 'none', transition: 'transform 0.3s' }} />
-            {layout === 'horizontal' ? 'Vertical' : 'Horizontal'}
+            <RotateCcw size={13} style={{ transform: layout === 'horizontal' ? 'rotate(90deg)' : 'none', transition: 'transform 0.3s' }} />
           </button>
         )}
 
         {/* Traces window toggle — only meaningful with an activity selected,
             since the panel lists the variants that pass through it. */}
-        {!isMobile && selectedNode && (
+        {!isMobile && (
           <button onClick={() => setShowCasesPanel((v) => !v)}
             style={{
-              position: 'absolute', bottom: 20, left: 84,
+              position: 'absolute', bottom: 20, left: 20,
               display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px 5px 8px', borderRadius: 6,
               border: `1px solid ${showCasesPanel ? 'rgba(40,112,168,0.50)' : 'rgba(255,255,255,0.09)'}`,
               background: showCasesPanel ? 'rgba(40,112,168,0.18)' : '#161c28',
@@ -695,7 +825,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
               <polyline points="2 17 12 22 22 17" />
               <polyline points="2 12 12 17 22 12" />
             </svg>
-            {showCasesPanel ? 'Ocultar traços' : `${formatCount(selectedNode.metrics.caseFreq)} casos`}
+            {showCasesPanel ? 'Ocultar ciclos' : `${formatCount(graph?.caseCount ?? 0)} traces`}
           </button>
         )}
 
@@ -716,74 +846,73 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
           </div>
         )}
       </div>
+        )}
+      </div>
 
       {!isMobile && (
         <div className="shrink-0 flex flex-col border-l border-border" style={{ width: '284px', background: '#111520' }}>
-          <div className="p-4 border-b border-border space-y-5">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>Densidade do Grafo</p>
-            <Slider label="Atividades" value={actSlider} onChange={setActSlider} />
-            <Slider label="Caminhos" value={pathSlider} onChange={setPathSlider} />
-            <div className="flex items-center justify-between pt-1">
-              <span className="text-[11px] text-muted-foreground"><span className="text-foreground font-medium">{visNodes.filter((n) => !n.isStart && !n.isEnd).length}</span> de {activityNodeCount} atividades</span>
-              <span className="text-[11px] text-muted-foreground"><span className="text-foreground font-medium">{visEdges.length}</span> caminhos</span>
-            </div>
-          </div>
-          <div className="px-4 py-3 border-b border-border">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2.5" style={{ fontFamily: "'JetBrains Mono',monospace" }}>Frequência dos caminhos</p>
-            <div className="flex items-end gap-1.5 mb-1">
-              {[0.42, 0.55, 0.68, 0.80, 0.95].map((op, i) => (
-                <div key={i} className="flex-1 rounded-sm"
-                  style={{ height: `${[3, 5, 8, 12, 18][i]}px`, background: `linear-gradient(to right, ${GRAD_LIGHT}, ${GRAD_DEEP})`, opacity: op }} />
-              ))}
-            </div>
-            <div className="flex justify-between"><span className="text-[10px] text-muted-foreground">raro</span><span className="text-[10px] text-muted-foreground">frequente</span></div>
-            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
-              <svg width="32" height="10">
-                <defs>
-                  <linearGradient id="leg-dash" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor={DASH_COLOR} stopOpacity={0.15} />
-                    <stop offset="100%" stopColor={DASH_COLOR} stopOpacity={0.85} />
-                  </linearGradient>
-                </defs>
-                <line x1="0" y1="5" x2="32" y2="5" stroke="url(#leg-dash)" strokeWidth="1.6" strokeDasharray="5 3" strokeLinecap="round" />
-              </svg>
-              <span className="text-[10px] text-muted-foreground">loop / caminho raro</span>
-            </div>
-          </div>
-          {selectedNode ? (
-            <div className="flex-1 min-h-0 overflow-hidden">
-              <NodeDetailPanel node={selectedNode} onClose={() => setSelectedId(null)} />
-            </div>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <rect x="1" y="5" width="6" height="6" rx="1.5" stroke="#475569" strokeWidth="1.2" />
-                  <rect x="9" y="1" width="6" height="6" rx="1.5" stroke="#475569" strokeWidth="1.2" />
-                  <rect x="9" y="9" width="6" height="6" rx="1.5" stroke="#475569" strokeWidth="1.2" />
-                  <line x1="7" y1="8" x2="9" y2="4" stroke="#475569" strokeWidth="1" />
-                  <line x1="7" y1="8" x2="9" y2="12" stroke="#475569" strokeWidth="1" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">Selecione uma atividade</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5 opacity-60">Clique em um nó para inspecionar suas métricas.</p>
-              </div>
-            </div>
-          )}
-
-          {/* Log source + upload, at the foot of the rail (newer export) */}
-          <div className="shrink-0 p-3 border-t border-border mt-auto space-y-2">
-            {graph?.eventLog ? (
-              <p className="text-[10px] text-muted-foreground truncate" style={{ fontFamily: "'JetBrains Mono',monospace" }}
-                title={`${graph.eventLog.fileName} · ${formatCount(graph.caseCount)} casos · ${formatCount(graph.eventCount)} eventos`}>
-                {graph.eventLog.fileName} · {formatCount(graph.caseCount)} casos
-              </p>
-            ) : null}
+          <div className="shrink-0 p-3 border-b border-border">
             <button type="button" onClick={onUploadLog}
               className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded text-xs font-medium transition-colors border border-border text-muted-foreground hover:text-foreground"
               style={{ fontFamily: "'JetBrains Mono',monospace" }}>
-              <Upload size={12} />Carregar log de eventos
+              <Upload size={12} />{graph?.eventLog ? 'Recarregar log' : 'Carregar log de eventos'}
+            </button>
+          </div>
+
+          {viewMode === 'defined' ? (
+            <ProcessActivitiesPanel
+              processId={processId}
+              activities={definedActivities}
+              catalog={activityCatalog}
+              onActivitiesChange={setDefinedActivities}
+              onCatalogChange={setActivityCatalog}
+            />
+          ) : (
+            <>
+              <div className="p-4 border-b border-border space-y-5">
+                <p className="text-[10px] font-semibold uppercase text-muted-foreground"
+                  style={{ fontFamily: "'JetBrains Mono',monospace" }}>Densidade do grafo</p>
+                <Slider label="Atividades" value={actSlider} onChange={setActSlider} />
+                <Slider label="Caminhos" value={pathSlider} onChange={setPathSlider} />
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-[11px] text-muted-foreground"><span className="text-foreground font-medium">{visNodes.filter((n) => !n.isStart && !n.isEnd).length}</span> de {activityNodeCount}</span>
+                  <span className="text-[11px] text-muted-foreground"><span className="text-foreground font-medium">{visEdges.length}</span> caminhos</span>
+                </div>
+              </div>
+              {selectedNode ? (
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  <NodeDetailPanel node={selectedNode} onClose={() => setSelectedId(null)} />
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center justify-center p-6 text-center">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Selecione uma atividade</p>
+                    <p className="text-[11px] text-muted-foreground mt-1 opacity-60">Inspecione frequência e desempenho.</p>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          <div className="shrink-0 p-3 border-t border-border mt-auto space-y-2">
+            {graph?.eventLog && (
+              <p className="text-[10px] text-muted-foreground truncate"
+                style={{ fontFamily: "'JetBrains Mono',monospace" }}>
+                {graph.eventLog.fileName} · {formatCount(graph.caseCount)} traces
+              </p>
+            )}
+            <button type="button" onClick={() => onAnalyze?.(selectedNode)}
+              disabled={!analysisEligible}
+              title={!graph?.caseCount
+                ? 'Carregue e mapeie um log antes de analisar'
+                : graph.hasUnmappedOperations
+                  ? 'Conclua o mapeamento antes de analisar'
+                  : graph.caseCount < MIN_ANALYSIS_TRACES
+                    ? `São necessários ao menos ${MIN_ANALYSIS_TRACES} traces`
+                    : 'Gerar análise de desvios'}
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded text-xs font-medium disabled:opacity-35 disabled:cursor-not-allowed"
+              style={{ background: 'rgba(180,83,9,0.16)', color: '#fbbf24', border: '1px solid rgba(180,83,9,0.42)' }}>
+              <Scan size={12} />Gerar análise de desvios
             </button>
           </div>
         </div>

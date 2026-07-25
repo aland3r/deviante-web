@@ -312,6 +312,21 @@ export const api = {
     : mockApi.deleteProcess(id, confirmation),
 
   listActivities: () => request('/activities'),
+  createActivity: (data) => request('/activities', {
+    method: 'POST',
+    body: JSON.stringify({ name: data.name, description: data.description ?? '' }),
+  }),
+  updateActivity: (id, data) => request(`/activities/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ name: data.name, description: data.description ?? '' }),
+  }),
+  listProcessActivities: (processId) => request(`/processes/${processId}/activities`),
+  addProcessActivity: (processId, activityId) => request(`/processes/${processId}/activities/${activityId}`, {
+    method: 'PUT',
+  }),
+  removeProcessActivity: (processId, activityId) => request(`/processes/${processId}/activities/${activityId}`, {
+    method: 'DELETE',
+  }),
 
   // UC4/UC5 — no mock counterpart: parsing a real event log is the point,
   // and a fake parse result would teach the UI nothing about real logs.

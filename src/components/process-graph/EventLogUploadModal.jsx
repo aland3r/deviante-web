@@ -44,15 +44,25 @@ export default function EventLogUploadModal({ processId, onClose, onMappingCompl
 
   useEffect(() => {
     let active = true
-    api.listActivities()
-      .then((activities) => {
-        if (active) setActivityCatalog(activities)
+    Promise.all([
+      api.listProcessActivities(processId),
+      api.listActivities(),
+    ])
+      .then(([processActivities, activities]) => {
+        if (!active) return
+        const processIds = new Set(processActivities.map((activity) => activity.id))
+        setActivityCatalog([
+          ...processActivities.map((activity) => ({ ...activity, inProcess: true })),
+          ...activities
+            .filter((activity) => !processIds.has(activity.id))
+            .map((activity) => ({ ...activity, inProcess: false })),
+        ])
       })
       .catch(() => {
         if (active) setActivityCatalog([])
       })
     return () => { active = false }
-  }, [])
+  }, [processId])
 
   function acceptFile(next) {
     if (!next) return
@@ -505,9 +515,9 @@ function ActivityCard({ row, activityCatalog, onChange, onEdit, onValidate }) {
     [activityCatalog],
   )
   const normalizedQuery = query.trim().toLocaleLowerCase('pt-BR')
-  const filtered = catalogNames.filter((name) => (
-    name.toLocaleLowerCase('pt-BR').includes(normalizedQuery)
-    && name.toLocaleLowerCase('pt-BR') !== normalizedQuery
+  const filtered = activityCatalog.filter((activity) => (
+    activity.name.toLocaleLowerCase('pt-BR').includes(normalizedQuery)
+    && activity.name.toLocaleLowerCase('pt-BR') !== normalizedQuery
   ))
   const canCreate = normalizedQuery.length > 0 && !catalogNames.some(
     (name) => name.toLocaleLowerCase('pt-BR') === normalizedQuery,
@@ -563,20 +573,29 @@ function ActivityCard({ row, activityCatalog, onChange, onEdit, onValidate }) {
                   background: '#1a2133', border: '1px solid rgba(255,255,255,0.10)',
                   borderRadius: 6, boxShadow: '0 8px 24px rgba(0,0,0,0.55)', overflow: 'hidden',
                 }}>
-                  {filtered.slice(0, 6).map((name) => (
+                  {filtered.slice(0, 6).map((activity) => (
                     <button
-                      key={name}
+                      key={activity.id}
                       type="button"
-                      onMouseDown={(event) => { event.preventDefault(); selectName(name) }}
+                      onMouseDown={(event) => { event.preventDefault(); selectName(activity.name) }}
                       style={{
-                        display: 'block', width: '100%', padding: '7px 12px', border: 0,
+                        display: 'flex', width: '100%', padding: '7px 12px', border: 0,
+                        alignItems: 'center', justifyContent: 'space-between', gap: 8,
                         background: 'transparent', color: '#e2e8f0', textAlign: 'left',
                         fontFamily: "'Inter',sans-serif", fontSize: 12, cursor: 'pointer',
                       }}
                       onMouseEnter={(event) => { event.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
                       onMouseLeave={(event) => { event.currentTarget.style.background = 'transparent' }}
                     >
-                      {name}
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {activity.name}
+                      </span>
+                      <span style={{
+                        flexShrink: 0, color: activity.inProcess ? '#4d8fc0' : '#64748b',
+                        fontFamily: "'JetBrains Mono',monospace", fontSize: 8, textTransform: 'uppercase',
+                      }}>
+                        {activity.inProcess ? 'neste processo' : 'catálogo'}
+                      </span>
                     </button>
                   ))}
                   {canCreate && (

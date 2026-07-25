@@ -122,7 +122,18 @@ function tgtPoint(n, layout) {
   return layout === 'horizontal' ? { x: n.x, y: n.y + NODE_H / 2 } : { x: n.x + NODE_W / 2, y: n.y }
 }
 
-export function computeEdgeCPs(src, tgt, layout, offset = 0) {
+export function computeEdgeCPs(src, tgt, layout, offset = 0, exitSide) {
+  if (layout === 'vertical' && exitSide && exitSide !== 'bottom') {
+    const s = exitSide === 'right'
+      ? { x: src.x + NODE_W, y: src.y + NODE_H / 2 }
+      : { x: src.x, y: src.y + NODE_H / 2 }
+    const e = tgtPoint(tgt, layout)
+    const dx = Math.abs(e.x - s.x) * 0.55
+    const dy = Math.abs(e.y - s.y) * 0.5
+    const p1 = { x: s.x + (exitSide === 'right' ? dx : -dx), y: s.y }
+    const p2 = { x: e.x, y: e.y - dy }
+    return { kind: 'cubic', p0: s, p1, p2, p3: e, midX: (s.x + e.x) / 2, midY: (s.y + e.y) / 2 }
+  }
   const s = srcPoint(src, layout), e = tgtPoint(tgt, layout)
   if (layout === 'horizontal') {
     const dx = Math.abs(e.x - s.x) * 0.46, p1 = { x: s.x + dx, y: s.y }, p2 = { x: e.x - dx, y: e.y }
