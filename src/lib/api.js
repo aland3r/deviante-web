@@ -337,6 +337,7 @@ export const api = {
   // counterpart on purpose: an invented graph is exactly what this replaces.
   getProcessGraph: (processId) => request(`/processes/${processId}/graph`),
   getProcessTraces: (processId) => request(`/processes/${processId}/traces`),
+  runProcessAnalysis: (processId) => request(`/processes/${processId}/analysis`, { method: 'POST' }),
   resolveMapping: (processId, mappings) => request(`/processes/${processId}/mapping`, {
     method: 'POST',
     body: JSON.stringify({ mappings }),

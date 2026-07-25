@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Upload, Activity, Wrench, FileText } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
 import BrandMark from '../components/layout/BrandMark'
@@ -43,6 +43,7 @@ const TAB_ITEMS = [
 export default function ProcessCanvasPage() {
   const { processId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const [process, setProcess] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -55,7 +56,9 @@ export default function ProcessCanvasPage() {
   const [graphStats, setGraphStats] = useState(null)
 
   const [uploadOpen, setUploadOpen] = useState(false)
-  const [analysisOpen, setAnalysisOpen] = useState(false)
+  const [analysisOpen, setAnalysisOpen] = useState(
+    () => new URLSearchParams(location.search).get('view') === 'analysis',
+  )
   // Bumped after a mapping is confirmed so the graph tab refetches instead of
   // showing the state it had before the log existed.
   const [mappingVersion, setMappingVersion] = useState(0)
@@ -86,6 +89,10 @@ export default function ProcessCanvasPage() {
   }, [])
 
   useEffect(() => { if (editingTitle) titleInputRef.current?.select() }, [editingTitle])
+
+  useEffect(() => {
+    setAnalysisOpen(new URLSearchParams(location.search).get('view') === 'analysis')
+  }, [location.search])
 
   // Stable identity: the graph tab reports stats from an effect, and a fresh
   // callback each render would make that effect fire in a loop.
@@ -134,9 +141,10 @@ export default function ProcessCanvasPage() {
   if (analysisOpen) {
     return (
       <ProcessAnalysisView
+        processId={processId}
         processName={process.name || 'Processo sem nome'}
         eventLog={graphStats?.eventLog}
-        onBack={() => setAnalysisOpen(false)}
+        onBack={() => navigate(`/processes/${processId}`, { replace: true })}
         onGoHome={() => navigate('/dashboard')}
       />
     )
@@ -245,7 +253,7 @@ export default function ProcessCanvasPage() {
             isMobile={isMobile}
             onStats={handleGraphStats}
             onUploadLog={() => setUploadOpen(true)}
-            onAnalyze={() => setAnalysisOpen(true)}
+            onAnalyze={() => navigate(`/processes/${processId}?view=analysis`)}
           />
         )}
 

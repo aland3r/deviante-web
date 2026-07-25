@@ -205,7 +205,7 @@ function AnalysisProcessPicker({ processes, onClose }) {
         </div>
         <div className="overflow-y-auto p-2" style={{ maxHeight: 'calc(min(620px, 84vh) - 70px)' }}>
           {processes.length ? processes.map((process) => (
-            <Link key={process.id} to={`/processes/${process.id}`}
+            <Link key={process.id} to={`/processes/${process.id}?view=analysis`}
               className="flex items-center gap-3 px-3 py-2.5 rounded hover:bg-secondary/60"
               style={{ textDecoration: 'none' }}>
               <span className="w-8 h-8 rounded flex items-center justify-center shrink-0"

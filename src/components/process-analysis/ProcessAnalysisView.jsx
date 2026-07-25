@@ -1,49 +1,52 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, ChevronRight,
-  Clock3, Play, RefreshCw, Scan, SkipForward, XCircle,
+  AlertTriangle, ArrowLeft, CheckCircle2, ChevronRight, Clock3,
+  Play, RefreshCw, Scan, SkipForward, XCircle,
 } from 'lucide-react'
 import BrandMark from '../layout/BrandMark'
+import { api } from '../../lib/api'
 
-const DRIFTS = [
-  { id: 'd1', trace: 50, end: 159, before: 45.2, after: 62.1, magnitude: 37.4 },
-  { id: 'd2', trace: 160, end: 229, before: 62.1, after: 38.3, magnitude: -38.3 },
-]
-const OUTLIERS = [23, 87, 145, 199]
-const CYCLES = [
-  { id: 'c1', label: 'Ciclo 1', traces: 180, drifts: 1, outliers: 2 },
-  { id: 'c2', label: 'Ciclo 2', traces: 230, drifts: 2, outliers: 4 },
-  { id: 'c3', label: 'Ciclo 3', traces: 90, drifts: 0, outliers: 1 },
-]
+const formatSeconds = (value) => `${Number(value ?? 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} s`
+const EMPTY_LIST = []
 
-function metricAt(index) {
-  const base = index < 50 ? 45 : index < 160 ? 62 : 38
-  const noise = Math.sin(index * 0.7) * 3 + Math.cos(index * 1.3) * 1.5
-  return Math.round((base + noise + (OUTLIERS.includes(index) ? 28 : 0)) * 10) / 10
+function percentile(sorted, fraction) {
+  if (!sorted.length) return 0
+  return sorted[Math.min(sorted.length - 1, Math.max(0, Math.ceil(sorted.length * fraction) - 1))]
 }
 
-const CHART = Array.from({ length: 230 }, (_, index) => ({ index, metric: metricAt(index) }))
+function findOutliers(points) {
+  const values = points.map((point) => point.durationSeconds).sort((a, b) => a - b)
+  if (values.length < 4) return new Set()
+  const q1 = percentile(values, 0.25)
+  const q3 = percentile(values, 0.75)
+  const spread = q3 - q1
+  const low = q1 - spread * 1.5
+  const high = q3 + spread * 1.5
+  return new Set(points.filter((point) => point.durationSeconds < low || point.durationSeconds > high).map((point) => point.index))
+}
 
-function TraceList({ dismissed, selectedTrace, onSelect }) {
+function TraceList({ points, driftIndexes, outliers, dismissed, selectedTrace, onSelect }) {
   return (
-    <div className="overflow-y-auto" style={{ maxHeight: 360 }}>
-      {CHART.map((trace) => {
-        const isOutlier = OUTLIERS.includes(trace.index) && !dismissed.includes(trace.index)
-        const drift = DRIFTS.some((item) => trace.index >= item.trace && trace.index <= item.end)
+    <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 155px)' }}>
+      {points.map((point) => {
+        const isOutlier = outliers.has(point.index) && !dismissed.has(point.index)
+        const isDrift = driftIndexes.has(point.index)
         return (
-          <button key={trace.index} type="button" onClick={() => onSelect(trace.index)}
+          <button key={point.traceId} type="button" onClick={() => onSelect(point.index)}
             className="w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors"
             style={{
-              background: selectedTrace === trace.index ? 'rgba(40,112,168,0.18)' : 'transparent',
-              color: selectedTrace === trace.index ? '#e2e8f0' : '#64748b',
+              background: selectedTrace === point.index ? 'rgba(40,112,168,0.18)' : 'transparent',
+              color: selectedTrace === point.index ? '#e2e8f0' : '#64748b',
               border: 0,
             }}>
             <span className="w-1.5 h-1.5 rounded-full shrink-0"
-              style={{ background: isOutlier ? '#f59e0b' : drift ? '#dc2626' : '#10b981' }} />
-            <span className="text-[10px] flex-1" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
-              TRACE-{String(trace.index + 1).padStart(4, '0')}
+              style={{ background: isDrift ? '#dc2626' : isOutlier ? '#f59e0b' : '#10b981' }} />
+            <span className="text-[10px] flex-1 truncate" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
+              {point.caseId}
             </span>
-            <span className="text-[9px]" style={{ fontFamily: "'JetBrains Mono',monospace" }}>{trace.metric.toFixed(1)} s</span>
+            <span className="text-[9px] shrink-0" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
+              {formatSeconds(point.durationSeconds)}
+            </span>
           </button>
         )
       })}
@@ -51,34 +54,44 @@ function TraceList({ dismissed, selectedTrace, onSelect }) {
   )
 }
 
-function DriftChart({ selectedDrift, selectedTrace, onSelectDrift, onSelectTrace }) {
+function DriftChart({ points, drifts, outliers, dismissed, selectedDrift, selectedTrace, onSelectDrift, onSelectTrace }) {
   const width = 900
   const height = 410
-  const pad = { left: 54, right: 24, top: 28, bottom: 42 }
+  const pad = { left: 58, right: 24, top: 28, bottom: 42 }
   const innerW = width - pad.left - pad.right
   const innerH = height - pad.top - pad.bottom
-  const x = (index) => pad.left + (index / 229) * innerW
-  const y = (metric) => pad.top + (1 - (metric - 20) / 80) * innerH
-  const points = CHART.map((item) => `${x(item.index)},${y(item.metric)}`).join(' ')
+  const values = points.map((point) => point.durationSeconds)
+  const rawMin = Math.min(...values)
+  const rawMax = Math.max(...values)
+  const range = Math.max(rawMax - rawMin, rawMax * 0.1, 1)
+  const min = Math.max(0, rawMin - range * 0.08)
+  const max = rawMax + range * 0.08
+  const lastIndex = Math.max(points.length - 1, 1)
+  const x = (arrayIndex) => pad.left + (arrayIndex / lastIndex) * innerW
+  const y = (metric) => pad.top + (1 - (metric - min) / Math.max(max - min, 1)) * innerH
+  const linePoints = points.map((point, index) => `${x(index)},${y(point.durationSeconds)}`).join(' ')
+  const yTicks = Array.from({ length: 5 }, (_, index) => min + ((max - min) * index) / 4)
+  const xTicks = Array.from(new Set([0, 0.25, 0.5, 0.75, 1].map((fraction) => Math.round(lastIndex * fraction))))
 
   function selectFromPointer(event) {
     const rect = event.currentTarget.getBoundingClientRect()
     const localX = ((event.clientX - rect.left) / rect.width) * width
-    const index = Math.max(0, Math.min(229, Math.round(((localX - pad.left) / innerW) * 229)))
-    onSelectTrace(index)
-    const nearby = DRIFTS.find((drift) => Math.abs(drift.trace - index) <= 8)
-    if (nearby) onSelectDrift(nearby.id)
+    const arrayIndex = Math.max(0, Math.min(points.length - 1, Math.round(((localX - pad.left) / innerW) * lastIndex)))
+    const point = points[arrayIndex]
+    onSelectTrace(point.index)
+    const nearby = drifts.find((drift) => Math.abs(drift.index - point.index) <= Math.max(2, points.length * 0.01))
+    if (nearby) onSelectDrift(nearby.index)
   }
 
   return (
-    <div className="flex-1 min-h-0 px-5 py-4">
-      <div className="flex items-center justify-between mb-3">
+    <div className="flex-1 min-h-0 px-4 sm:px-5 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         <div>
-          <h2 className="text-xs font-semibold text-foreground">Tempo de ciclo por traço</h2>
-          <p className="text-[10px] text-muted-foreground mt-0.5">Ciclo 2 · ADWIN · duração total</p>
+          <h2 className="text-xs font-semibold text-foreground">Duração total por trace</h2>
+          <p className="text-[10px] text-muted-foreground mt-0.5">Log completo · ADWIN · ordem cronológica</p>
         </div>
-        <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
-          <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full bg-blue-400" />Traço</span>
+        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+          <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full bg-blue-400" />Trace</span>
           <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full bg-amber-500" />Outlier</span>
           <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full bg-red-600" />Drift</span>
         </div>
@@ -87,60 +100,86 @@ function DriftChart({ selectedDrift, selectedTrace, onSelectDrift, onSelectTrace
         style={{ height: 'calc(100% - 42px)', minHeight: 280, cursor: 'crosshair' }}
         onClick={selectFromPointer} role="img" aria-label="Gráfico temporal de detecção de desvios">
         <rect width={width} height={height} fill="#0d1119" rx="4" />
-        {[20, 40, 60, 80, 100].map((tick) => (
+        {yTicks.map((tick) => (
           <g key={tick}>
             <line x1={pad.left} x2={width - pad.right} y1={y(tick)} y2={y(tick)} stroke="rgba(255,255,255,0.06)" />
-            <text x={pad.left - 10} y={y(tick) + 3} textAnchor="end" fill="#475569" fontSize="10">{tick}s</text>
+            <text x={pad.left - 10} y={y(tick) + 3} textAnchor="end" fill="#475569" fontSize="10">{formatSeconds(tick)}</text>
           </g>
         ))}
-        {DRIFTS.map((drift) => (
-          <g key={drift.id} onClick={(event) => { event.stopPropagation(); onSelectDrift(drift.id) }}>
-            <rect x={x(drift.trace)} y={pad.top} width={x(drift.end) - x(drift.trace)} height={innerH}
-              fill={selectedDrift === drift.id ? 'rgba(153,27,27,0.10)' : 'rgba(153,27,27,0.045)'} />
-            <line x1={x(drift.trace)} x2={x(drift.trace)} y1={pad.top} y2={height - pad.bottom}
-              stroke="#dc2626" strokeWidth={selectedDrift === drift.id ? 2 : 1} strokeDasharray="5 4" />
-            <text x={x(drift.trace) + 6} y={pad.top + 14} fill="#fca5a5" fontSize="10">Drift #{drift.id.slice(1)}</text>
-          </g>
+        {drifts.map((drift, driftIndex) => {
+          const arrayIndex = points.findIndex((point) => point.index === drift.index)
+          const selected = selectedDrift === drift.index
+          return (
+            <g key={drift.index} onClick={(event) => { event.stopPropagation(); onSelectDrift(drift.index) }}>
+              <line x1={x(arrayIndex)} x2={x(arrayIndex)} y1={pad.top} y2={height - pad.bottom}
+                stroke="#dc2626" strokeWidth={selected ? 2 : 1} strokeDasharray="5 4" />
+              <text x={x(arrayIndex) + 6} y={pad.top + 14} fill="#fca5a5" fontSize="10">Drift #{driftIndex + 1}</text>
+            </g>
+          )
+        })}
+        <polyline points={linePoints} fill="none" stroke="#4a90c2" strokeWidth="1.5" opacity="0.9" />
+        {points.map((point, index) => outliers.has(point.index) && !dismissed.has(point.index) ? (
+          <circle key={point.traceId} cx={x(index)} cy={y(point.durationSeconds)} r="3.5" fill="#f59e0b" stroke="#0d1119" strokeWidth="1.5" />
+        ) : null)}
+        {selectedTrace != null && (() => {
+          const index = points.findIndex((point) => point.index === selectedTrace)
+          const point = points[index]
+          return point ? (
+            <g>
+              <line x1={x(index)} x2={x(index)} y1={pad.top} y2={height - pad.bottom} stroke="#e2e8f0" opacity="0.45" />
+              <circle cx={x(index)} cy={y(point.durationSeconds)} r="5" fill="#e2e8f0" stroke="#2870a8" strokeWidth="2" />
+            </g>
+          ) : null
+        })()}
+        {xTicks.map((tick) => (
+          <text key={tick} x={x(tick)} y={height - 16} textAnchor="middle" fill="#475569" fontSize="10">{points[tick]?.index}</text>
         ))}
-        <polyline points={points} fill="none" stroke="#4a90c2" strokeWidth="1.5" opacity="0.9" />
-        {OUTLIERS.map((index) => <circle key={index} cx={x(index)} cy={y(metricAt(index))} r="4" fill="#f59e0b" stroke="#0d1119" strokeWidth="2" />)}
-        {selectedTrace != null && (
-          <g>
-            <line x1={x(selectedTrace)} x2={x(selectedTrace)} y1={pad.top} y2={height - pad.bottom} stroke="#e2e8f0" opacity="0.45" />
-            <circle cx={x(selectedTrace)} cy={y(metricAt(selectedTrace))} r="5" fill="#e2e8f0" stroke="#2870a8" strokeWidth="2" />
-          </g>
-        )}
-        {[0, 50, 100, 150, 200, 229].map((tick) => (
-          <text key={tick} x={x(tick)} y={height - 16} textAnchor="middle" fill="#475569" fontSize="10">{tick + 1}</text>
-        ))}
-        <text x={width / 2} y={height - 2} textAnchor="middle" fill="#64748b" fontSize="10">Traços do ciclo</text>
+        <text x={width / 2} y={height - 2} textAnchor="middle" fill="#64748b" fontSize="10">Traces do log</text>
       </svg>
     </div>
   )
 }
 
-export default function ProcessAnalysisView({ processName, eventLog, onBack, onGoHome }) {
-  const [runState, setRunState] = useState('done')
-  const [expandedCycle, setExpandedCycle] = useState('c2')
-  const [selectedDrift, setSelectedDrift] = useState('d1')
+export default function ProcessAnalysisView({ processId, processName, eventLog, onBack, onGoHome }) {
+  const [analysis, setAnalysis] = useState(null)
+  const [runState, setRunState] = useState('running')
+  const [error, setError] = useState('')
+  const [elapsed, setElapsed] = useState(0)
+  const [selectedDrift, setSelectedDrift] = useState(null)
   const [selectedTrace, setSelectedTrace] = useState(null)
-  const [dismissed, setDismissed] = useState([])
+  const [dismissed, setDismissed] = useState(new Set())
 
-  const drift = useMemo(() => DRIFTS.find((item) => item.id === selectedDrift) ?? null, [selectedDrift])
-  const selectedIsOutlier = selectedTrace != null && OUTLIERS.includes(selectedTrace) && !dismissed.includes(selectedTrace)
-
-  function runAnalysis() {
+  const runAnalysis = useCallback(async () => {
+    const started = performance.now()
     setRunState('running')
-    setSelectedDrift(null)
-    window.setTimeout(() => {
+    setError('')
+    try {
+      const result = await api.runProcessAnalysis(processId)
+      setAnalysis(result)
+      setSelectedDrift(result.drifts[0]?.index ?? null)
+      setElapsed((performance.now() - started) / 1000)
+    } catch (requestError) {
+      setError(requestError.message)
+    } finally {
       setRunState('done')
-      setSelectedDrift('d1')
-    }, 1400)
-  }
+    }
+  }, [processId])
+
+  useEffect(() => {
+    runAnalysis()
+  }, [runAnalysis])
+
+  const points = analysis?.points ?? EMPTY_LIST
+  const drifts = analysis?.drifts ?? EMPTY_LIST
+  const drift = drifts.find((item) => item.index === selectedDrift) ?? null
+  const selectedPoint = points.find((item) => item.index === selectedTrace) ?? null
+  const outliers = useMemo(() => findOutliers(points), [points])
+  const driftIndexes = useMemo(() => new Set(drifts.map((item) => item.index)), [drifts])
+  const selectedIsOutlier = selectedTrace != null && outliers.has(selectedTrace) && !dismissed.has(selectedTrace)
 
   return (
     <div className="flex flex-col w-full overflow-hidden" style={{ height: '100vh', background: '#0d1017', fontFamily: "'Inter',sans-serif" }}>
-      <header className="shrink-0 flex items-center gap-3 px-5 border-b border-border" style={{ height: 52, background: '#111520' }}>
+      <header className="shrink-0 flex items-center gap-3 px-3 sm:px-5 border-b border-border" style={{ height: 52, background: '#111520' }}>
         <BrandMark />
         <button type="button" onClick={onGoHome} title="Voltar aos projetos"
           className="flex items-center gap-1 px-2 py-1 rounded text-[11px] text-muted-foreground hover:text-foreground"
@@ -153,10 +192,10 @@ export default function ProcessAnalysisView({ processName, eventLog, onBack, onG
           <Scan size={13} /><span className="hidden sm:inline">Análise de desvios</span>
         </span>
         <span className="hidden lg:block px-2 py-0.5 rounded text-[10px] text-muted-foreground border border-border"
-          style={{ fontFamily: "'JetBrains Mono',monospace" }}>{eventLog?.fileName ?? 'log de eventos'}</span>
+          style={{ fontFamily: "'JetBrains Mono',monospace" }}>{analysis?.eventLog?.fileName ?? eventLog?.fileName ?? 'log de eventos'}</span>
         <div className="flex-1" />
         <button type="button" onClick={runAnalysis} disabled={runState === 'running'}
-          className="flex items-center gap-1.5 px-4 py-2 rounded text-xs font-medium text-white disabled:opacity-60"
+          className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded text-xs font-medium text-white disabled:opacity-60"
           style={{ background: '#991b1b' }}>
           {runState === 'running'
             ? <><RefreshCw size={12} className="animate-spin" /><span className="hidden sm:inline">Processando...</span></>
@@ -165,99 +204,100 @@ export default function ProcessAnalysisView({ processName, eventLog, onBack, onG
       </header>
 
       <div className="flex flex-1 min-h-0">
-        <aside className="hidden lg:block shrink-0 border-r border-border overflow-y-auto" style={{ width: 238, background: '#111520' }}>
-          <div className="px-4 py-3 border-b border-border">
-            <p className="text-[10px] uppercase text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>Ciclos e traços</p>
-          </div>
-          {CYCLES.map((cycle) => {
-            const open = expandedCycle === cycle.id
-            return (
-              <div key={cycle.id} className="border-b border-border">
-                <button type="button" onClick={() => setExpandedCycle(open ? null : cycle.id)}
-                  className="w-full flex items-center gap-2 px-3 py-3 text-left hover:bg-secondary">
-                  {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                  <span className="text-xs text-foreground flex-1">{cycle.label}</span>
-                  <span className="text-[9px] text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>{cycle.traces}</span>
-                </button>
-                <div className="flex gap-2 px-8 pb-2 text-[9px]" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
-                  <span style={{ color: cycle.drifts ? '#fca5a5' : '#64748b' }}>{cycle.drifts} drifts</span>
-                  <span style={{ color: cycle.outliers ? '#f59e0b' : '#64748b' }}>{cycle.outliers} outliers</span>
-                </div>
-                {open && cycle.id === 'c2' && (
-                  <TraceList dismissed={dismissed} selectedTrace={selectedTrace} onSelect={setSelectedTrace} />
-                )}
-              </div>
-            )
-          })}
-        </aside>
+        {analysis && (
+          <aside className="hidden lg:block shrink-0 border-r border-border overflow-hidden" style={{ width: 238, background: '#111520' }}>
+            <div className="px-4 py-3 border-b border-border">
+              <p className="text-[10px] uppercase text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>Traces do log</p>
+              <p className="text-[9px] text-muted-foreground mt-1">{points.length} em ordem cronológica</p>
+            </div>
+            <TraceList points={points} driftIndexes={driftIndexes} outliers={outliers} dismissed={dismissed}
+              selectedTrace={selectedTrace} onSelect={setSelectedTrace} />
+          </aside>
+        )}
 
         <main className="flex flex-1 min-w-0 flex-col">
-          <div className="grid grid-cols-2 sm:grid-cols-4 border-b border-border" style={{ background: '#111520' }}>
-            {[
-              ['230', 'traços analisados', CheckCircle2, '#10b981'],
-              ['2', 'mudanças detectadas', Scan, '#dc2626'],
-              ['4', 'outliers', AlertTriangle, '#f59e0b'],
-              ['1,8 s', 'tempo de análise', Clock3, '#64748b'],
-            ].map(([value, label, Icon, color]) => (
-              <div key={label} className="flex items-center gap-3 px-4 py-3 border-r border-border last:border-r-0">
-                <Icon size={14} color={color} />
-                <div><p className="text-sm font-semibold text-foreground">{value}</p><p className="text-[9px] text-muted-foreground">{label}</p></div>
-              </div>
-            ))}
-          </div>
-          {runState === 'running' ? (
-            <div className="flex flex-1 items-center justify-center">
-              <div className="text-center"><RefreshCw size={22} className="animate-spin mx-auto mb-3" color="#991b1b" /><p className="text-xs text-muted-foreground">Analisando os traços do ciclo...</p></div>
-            </div>
-          ) : (
-            <DriftChart selectedDrift={selectedDrift} selectedTrace={selectedTrace} onSelectDrift={setSelectedDrift} onSelectTrace={setSelectedTrace} />
-          )}
-        </main>
-
-        <aside className="hidden lg:block shrink-0 border-l border-border overflow-y-auto" style={{ width: 286, background: '#111520' }}>
-          <div className="px-4 py-3 border-b border-border">
-            <p className="text-[10px] uppercase text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>Detalhe da detecção</p>
-          </div>
-          {selectedTrace != null && (
-            <div className="p-4 border-b border-border">
-              <p className="text-xs font-semibold text-foreground">TRACE-{String(selectedTrace + 1).padStart(4, '0')}</p>
-              <p className="text-[10px] text-muted-foreground mt-1">Duração total · {metricAt(selectedTrace).toFixed(1)} s</p>
-              {selectedIsOutlier && (
-                <button type="button" onClick={() => setDismissed((items) => [...items, selectedTrace])}
-                  className="mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded text-[11px] border"
-                  style={{ borderColor: 'rgba(245,158,11,0.25)', color: '#f59e0b', background: 'rgba(120,53,15,0.12)' }}>
-                  <SkipForward size={11} />Desconsiderar outlier
-                </button>
-              )}
-            </div>
-          )}
-          {drift ? (
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-xs font-semibold text-foreground">Drift #{drift.id.slice(1)}</p>
-                <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ color: '#fca5a5', background: 'rgba(153,27,27,0.18)' }}>detectado</span>
-              </div>
+          {analysis && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 border-b border-border" style={{ background: '#111520' }}>
               {[
-                ['Início', `Traço ${drift.trace + 1}`],
-                ['Faixa afetada', `${drift.trace + 1}–${drift.end + 1}`],
-                ['Antes', `${drift.before.toFixed(1)} s`],
-                ['Depois', `${drift.after.toFixed(1)} s`],
-                ['Variação', `${drift.magnitude > 0 ? '+' : ''}${drift.magnitude.toFixed(1)}%`],
-              ].map(([label, value]) => (
-                <div key={label} className="flex justify-between py-2 border-b border-border text-[11px]">
-                  <span className="text-muted-foreground">{label}</span>
-                  <span className="text-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>{value}</span>
+                [analysis.traceCount, 'traces analisados', CheckCircle2, '#10b981'],
+                [drifts.length, 'mudanças detectadas', Scan, '#dc2626'],
+                [outliers.size - [...dismissed].filter((item) => outliers.has(item)).length, 'outliers estatísticos', AlertTriangle, '#f59e0b'],
+                [`${elapsed.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} s`, `${analysis.method} · δ ${analysis.delta}`, Clock3, '#64748b'],
+              ].map(([value, label, Icon, color]) => (
+                <div key={label} className="flex items-center gap-3 px-4 py-3 border-r border-border last:border-r-0">
+                  <Icon size={14} color={color} />
+                  <div><p className="text-sm font-semibold text-foreground">{value}</p><p className="text-[9px] text-muted-foreground">{label}</p></div>
                 </div>
               ))}
-              <button type="button" onClick={() => setSelectedDrift(null)}
-                className="mt-4 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded text-[11px] border border-border text-muted-foreground hover:text-foreground">
-                <XCircle size={11} />Dispensar alerta
-              </button>
             </div>
-          ) : (
-            <div className="p-6 text-center"><Scan size={18} className="mx-auto mb-2" color="#475569" /><p className="text-[11px] text-muted-foreground">Selecione um drift no gráfico.</p></div>
           )}
-        </aside>
+          {runState === 'running' ? (
+            <div className="flex flex-1 items-center justify-center">
+              <div className="text-center"><RefreshCw size={22} className="animate-spin mx-auto mb-3" color="#991b1b" /><p className="text-xs text-muted-foreground">Analisando as durações dos traces...</p></div>
+            </div>
+          ) : error ? (
+            <div className="flex flex-1 items-center justify-center p-6">
+              <div className="max-w-md text-center">
+                <AlertTriangle size={22} className="mx-auto mb-3" color="#f59e0b" />
+                <p className="text-sm text-foreground">A análise ainda não pode ser executada</p>
+                <p className="text-xs text-muted-foreground mt-2">{error}</p>
+              </div>
+            </div>
+          ) : points.length ? (
+            <DriftChart points={points} drifts={drifts} outliers={outliers} dismissed={dismissed}
+              selectedDrift={selectedDrift} selectedTrace={selectedTrace}
+              onSelectDrift={setSelectedDrift} onSelectTrace={setSelectedTrace} />
+          ) : null}
+        </main>
+
+        {analysis && (
+          <aside className="hidden lg:block shrink-0 border-l border-border overflow-y-auto" style={{ width: 286, background: '#111520' }}>
+            <div className="px-4 py-3 border-b border-border">
+              <p className="text-[10px] uppercase text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>Detalhe da detecção</p>
+            </div>
+            {selectedPoint && (
+              <div className="p-4 border-b border-border">
+                <p className="text-xs font-semibold text-foreground truncate">{selectedPoint.caseId}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Duração total · {formatSeconds(selectedPoint.durationSeconds)}</p>
+                {selectedIsOutlier && (
+                  <button type="button" onClick={() => setDismissed((items) => new Set([...items, selectedTrace]))}
+                    className="mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded text-[11px] border"
+                    style={{ borderColor: 'rgba(245,158,11,0.25)', color: '#f59e0b', background: 'rgba(120,53,15,0.12)' }}>
+                    <SkipForward size={11} />Desconsiderar outlier
+                  </button>
+                )}
+              </div>
+            )}
+            {drift ? (
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-xs font-semibold text-foreground">Drift #{drifts.indexOf(drift) + 1}</p>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ color: '#fca5a5', background: 'rgba(153,27,27,0.18)' }}>detectado</span>
+                </div>
+                {[
+                  ['Ponto', `Trace ${drift.index}`],
+                  ['Caso', drift.caseId],
+                  ['Antes', formatSeconds(drift.beforeMeanSeconds)],
+                  ['Depois', formatSeconds(drift.afterMeanSeconds)],
+                  ['Variação', `${drift.magnitudePercent > 0 ? '+' : ''}${drift.magnitudePercent.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`],
+                ].map(([label, value]) => (
+                  <div key={label} className="flex justify-between gap-3 py-2 border-b border-border text-[11px]">
+                    <span className="text-muted-foreground">{label}</span>
+                    <span className="text-foreground text-right truncate" style={{ fontFamily: "'JetBrains Mono',monospace" }}>{value}</span>
+                  </div>
+                ))}
+                <button type="button" onClick={() => setSelectedDrift(null)}
+                  className="mt-4 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded text-[11px] border border-border text-muted-foreground hover:text-foreground">
+                  <XCircle size={11} />Dispensar alerta
+                </button>
+              </div>
+            ) : (
+              <div className="p-6 text-center"><Scan size={18} className="mx-auto mb-2" color="#475569" /><p className="text-[11px] text-muted-foreground">
+                {drifts.length ? 'Selecione um drift no gráfico.' : 'Nenhuma mudança de distribuição foi detectada.'}
+              </p></div>
+            )}
+          </aside>
+        )}
       </div>
     </div>
   )
