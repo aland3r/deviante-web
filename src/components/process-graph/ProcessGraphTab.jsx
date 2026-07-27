@@ -75,7 +75,7 @@ function CasesLayersPanel({ node, variants, onClose }) {
     () => node ? variants.filter((v) => v.nodeIds.includes(node.id)) : variants,
     [variants, node],
   )
-  const totalCases = variants.reduce((s, v) => s + v.caseCount, 0)
+  const totalCases = relevantVariants.reduce((s, v) => s + v.caseCount, 0)
 
   const [filter, setFilter] = useState('')
   // Collapsed by default: a real log has dozens of variants, and the export's
@@ -344,7 +344,7 @@ function SvgDefs() {
   return (
     <defs>
       <pattern id="dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
-        <circle cx="1" cy="1" r="0.8" fill="rgba(255,255,255,0.048)" />
+        <circle cx="1" cy="1" r="1" fill="rgba(255,255,255,0.11)" />
       </pattern>
       <marker id="arrow-dashed" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto">
         <path d="M 0 1 L 8 4 L 0 7 Z" fill={DASH_COLOR} />
@@ -386,7 +386,11 @@ function ActivityNode({ node, isSelected }) {
 function EmptyCanvas({ message, eventLog, onUploadLog }) {
   const failed = eventLog?.parseStatus === 'failed'
   return (
-    <div className="flex flex-1 items-center justify-center p-8" style={{ background: '#090d14' }}>
+    <div className="flex flex-1 items-center justify-center p-8" style={{
+      backgroundColor: '#090d14',
+      backgroundImage: 'radial-gradient(rgba(255,255,255,0.11) 1px, transparent 1px)',
+      backgroundSize: '24px 24px',
+    }}>
       <div className="flex flex-col items-center gap-4 text-center" style={{ maxWidth: 380 }}>
         <div className="w-12 h-12 rounded-full flex items-center justify-center"
           style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
@@ -419,7 +423,7 @@ function DefinedModelCanvas({ activities, onUploadLog }) {
   return (
     <div className="relative flex-1 overflow-auto p-8" style={{
       backgroundColor: '#090d14',
-      backgroundImage: 'radial-gradient(rgba(255,255,255,0.05) 0.8px, transparent 0.8px)',
+      backgroundImage: 'radial-gradient(rgba(255,255,255,0.11) 1px, transparent 1px)',
       backgroundSize: '24px 24px',
     }}>
       {activities.length ? (
@@ -470,7 +474,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   const [pathSlider, setPathSlider] = useState(52)
   const [cursorGrab, setCursorGrab] = useState(false)
   const [mobileFilters, setMobileFilters] = useState(false)
-  const [showCasesPanel, setShowCasesPanel] = useState(false)
+  const [showCasesPanel, setShowCasesPanel] = useState(true)
 
   const [graph, setGraph] = useState(null)
   const [variants, setVariants] = useState([])

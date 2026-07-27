@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Upload, Activity, Wrench, FileText } from 'lucide-react'
+import { ArrowLeft, Upload } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
 import BrandMark from '../components/layout/BrandMark'
 import ProcessGraphTab from '../components/process-graph/ProcessGraphTab'
-import ProcessDetailsTab from '../components/process-graph/ProcessDetailsTab'
 import EventLogUploadModal from '../components/process-graph/EventLogUploadModal'
 import ProcessAnalysisView from '../components/process-analysis/ProcessAnalysisView'
 
@@ -14,13 +13,11 @@ import ProcessAnalysisView from '../components/process-analysis/ProcessAnalysisV
 
   Ported from the Figma Make export "Process Mining Canvas Design"
   Version 20 (`ZZKdwxgmeCNJFG64zGbADe`), which models the whole open-project
-  experience as ONE screen with tabs, not as a form page that links to a
-  graph page. That's why this replaces both the old ProcessDetailPage
-  (`/processes/:id`, metadata form) and ProcessMiningPreviewPage
-  (`/processes/:id/mining`): the form is now the "Processos" tab.
+  experience as one focused process workspace rather than a form page that
+  links to a separate graph page.
 
-  Deliberately mounted OUTSIDE AppLayout: the export's canvas header (logo,
-  ← Projetos, title, tabs, log upload) replaces the app shell entirely once
+  Deliberately mounted OUTSIDE AppLayout: the canvas header (logo, ← Projetos,
+  title and log status) replaces the app shell entirely once
   a project is open. AppLayout's own header still owns /dashboard and
   /account.
 
@@ -31,15 +28,6 @@ import ProcessAnalysisView from '../components/process-analysis/ProcessAnalysisV
   data it warned about; the badge counts the cases actually ingested.
 */
 
-const TAB_ITEMS = [
-  { id: 'grafo', label: 'Grafo do Processo', icon: <Activity size={12} /> },
-  // UC16 (máquinas + modelo 3D) hasn't been through uc-scaffolder/esteira yet
-  // — the tab is shown because the design has it, disabled because it has
-  // no spec, no schema and no backend.
-  { id: 'maquinas', label: 'Máquinas', icon: <Wrench size={12} />, disabled: true, hint: 'Máquinas — em breve (UC16, ainda sem especificação)' },
-  { id: 'processos', label: 'Processos', icon: <FileText size={12} /> },
-]
-
 export default function ProcessCanvasPage() {
   const { processId } = useParams()
   const navigate = useNavigate()
@@ -49,7 +37,6 @@ export default function ProcessCanvasPage() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
 
-  const [activeTab, setActiveTab] = useState('grafo')
   const [isMobile, setIsMobile] = useState(false)
   // Reported by the graph tab so the header badge and the canvas never
   // disagree about how many cases this process has.
@@ -186,30 +173,13 @@ export default function ProcessCanvasPage() {
           )}
           <span className="text-[11px] leading-none mt-0.5 truncate" style={{ color: titleError ? '#fca5a5' : undefined }}>
             {titleError
-              ? <span>{titleError} — ajuste na aba Processos.</span>
+              ? <span>{titleError}</span>
               : <span className="text-muted-foreground">{process.companyName || 'Empresa não definida'}</span>}
           </span>
         </div>
 
-        <div className="flex items-center gap-0.5 ml-4 rounded-lg p-0.5 shrink-0" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-          {TAB_ITEMS.map((tab) => (
-            <button key={tab.id} onClick={() => { if (!tab.disabled) setActiveTab(tab.id) }}
-              disabled={tab.disabled} title={tab.hint}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all"
-              style={{
-                background: activeTab === tab.id ? '#1e2738' : 'transparent',
-                color: activeTab === tab.id ? '#e2e8f0' : '#64748b',
-                fontFamily: "'JetBrains Mono',monospace",
-                opacity: tab.disabled ? 0.4 : 1,
-                cursor: tab.disabled ? 'not-allowed' : 'pointer',
-              }}>
-              {tab.icon}{tab.label}
-            </button>
-          ))}
-        </div>
-
-        {!isMobile && activeTab === 'grafo' && graphStats?.caseCount > 0 && (
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded ml-1 shrink-0"
+        {!isMobile && graphStats?.caseCount > 0 && (
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded ml-4 shrink-0"
             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
             title={graphStats.eventLog ? `Derivado de ${graphStats.eventLog.fileName}` : undefined}>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
@@ -240,30 +210,19 @@ export default function ProcessCanvasPage() {
             // close the modal and land the Manager on the graph.
             setUploadOpen(false)
             setMappingVersion((v) => v + 1)
-            setActiveTab('grafo')
           }}
         />
       )}
 
       <div className="flex flex-1 min-h-0">
-        {activeTab === 'grafo' && (
-          <ProcessGraphTab
-            key={mappingVersion}
-            processId={processId}
-            isMobile={isMobile}
-            onStats={handleGraphStats}
-            onUploadLog={() => setUploadOpen(true)}
-            onAnalyze={() => navigate(`/processes/${processId}?view=analysis`)}
-          />
-        )}
-
-        {activeTab === 'processos' && (
-          <ProcessDetailsTab
-            process={process}
-            onSaved={setProcess}
-            onDeleted={() => navigate('/dashboard', { replace: true, state: { message: 'Processo excluído com sucesso.' } })}
-          />
-        )}
+        <ProcessGraphTab
+          key={mappingVersion}
+          processId={processId}
+          isMobile={isMobile}
+          onStats={handleGraphStats}
+          onUploadLog={() => setUploadOpen(true)}
+          onAnalyze={() => navigate(`/processes/${processId}?view=analysis`)}
+        />
       </div>
     </div>
   )

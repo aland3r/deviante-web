@@ -1,11 +1,12 @@
 /*
   Graph geometry for the process-mining canvas.
 
-  Ported verbatim (TS → JS) from the Figma Make export "Process Mining
-  Canvas Design" (ZZKdwxgmeCNJFG64zGbADe). The export itself is transient —
-  staged under `figma-make/` and deleted once implemented; this comment is
-  the record of where the geometry came from. Figma is the style authority:
-  re-port from a newer export rather than editing the curve math by hand.
+  Derived (TS → JS) from the Figma Make export "Process Mining Canvas
+  Design" (ZZKdwxgmeCNJFG64zGbADe). The export itself is transient — staged
+  under `figma-make/` and deleted once implemented; this comment records the
+  visual source. The edge geometry is adapted here for data legibility:
+  frequency controls emphasis, while node distance does not distort the
+  arrowhead.
 
   This module is pure geometry and has no data. The nodes, edges and
   variants the canvas draws come from the API (`ProcessGraphTab` →
@@ -61,40 +62,53 @@ function quadTang(p0, p1, p2, t) {
   return norm({ x: 2 * ((1 - t) * (p1.x - p0.x) + t * (p2.x - p1.x)), y: 2 * ((1 - t) * (p1.y - p0.y) + t * (p2.y - p1.y)) })
 }
 
-/** 0.42 (very rare) → 0.95 (very frequent). Doubles up with thickness. */
-export function freqOpacity(f) { return 0.42 + f * 0.53 }
+function clampFrequency(f) {
+  return Math.min(1, Math.max(0, Number(f) || 0))
+}
 
-/** Half-width of the edge body at the neck: 1.5px (f=0) → 10.5px (f=1). */
-export function freqHalfW(f) { return 1.5 + f * 9.0 }
+/** 0.42 (very rare) → 0.95 (very frequent). Doubles up with thickness. */
+export function freqOpacity(f) { return 0.42 + clampFrequency(f) * 0.53 }
+
+/**
+ * Half-width of the flow ribbon: 1.5px (f=0) → 8px (f=1).
+ * Square-root scaling keeps medium-volume paths legible without letting the
+ * busiest path dominate the graph.
+ */
+export function freqHalfW(f) { return 1.5 + Math.sqrt(clampFrequency(f)) * 6.5 }
 
 function buildArrowPath(sample, tang, baseHW, N = 32) {
-  // Arrowhead dimensions scale with baseHW so the tip angle stays ~30°.
-  const START_HW = 0.4
-  const HEAD_W_RATIO = 1.80
-  const TIP_ASPECT = 1.60
+  // Frequency changes the ribbon width and head flare, never the perceived
+  // length of the arrowhead.
+  const HEAD_LENGTH = 18
+  const HEAD_FLARE = 3.5
+  const headHW = baseHW + HEAD_FLARE
 
-  const headHW = baseHW * HEAD_W_RATIO
-  const headLength = headHW * TIP_ASPECT
-
-  // Walk the arc to find the t where the arrowhead begins.
+  // Walk the arc to find the point where the fixed-length arrowhead begins.
   const S = N * 2
   const pts = Array.from({ length: S + 1 }, (_, i) => sample(i / S))
   const cum = [0]
   for (let i = 1; i <= S; i++) cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y))
   const total = cum[S]
+  const headLength = Math.min(HEAD_LENGTH, total * 0.38)
   const neckDist = Math.max(0, total - headLength)
-  let ni = S
-  for (let i = 1; i <= S; i++) { if (cum[i] >= neckDist) { ni = i; break } }
-  const NECK = ni / S
+  let NECK = 1
+  for (let i = 1; i <= S; i++) {
+    if (cum[i] < neckDist) continue
+    const segmentLength = cum[i] - cum[i - 1]
+    const segmentRatio = segmentLength > 0 ? (neckDist - cum[i - 1]) / segmentLength : 0
+    NECK = (i - 1 + segmentRatio) / S
+    break
+  }
 
-  // Body polygon: nearly a point at source → full baseHW at neck.
+  // A constant-width ribbon makes length purely a consequence of node
+  // distance. Nodes are painted over its source end, so it appears to emerge
+  // cleanly from the activity card.
   const right = [], left = []
   for (let i = 0; i <= N; i++) {
     const t = (i / N) * NECK
     const p = sample(t), n = perp2(tang(t))
-    const hw = START_HW + (baseHW - START_HW) * (i / N)
-    right.push({ x: p.x + n.x * hw, y: p.y + n.y * hw })
-    left.push({ x: p.x - n.x * hw, y: p.y - n.y * hw })
+    right.push({ x: p.x + n.x * baseHW, y: p.y + n.y * baseHW })
+    left.push({ x: p.x - n.x * baseHW, y: p.y - n.y * baseHW })
   }
 
   // Arrowhead: flare from neck to tip.
