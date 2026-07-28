@@ -543,12 +543,6 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
     })
   }, [graph, definedActivities.length, onStats])
 
-  // Reset the viewport when the direction flips — the coordinates change.
-  useEffect(() => {
-    const v = getInitialView(layout)
-    setPan(v.pan); setZoom(v.zoom)
-  }, [layout])
-
   const nodes = useMemo(() => positionNodes(model.nodes, layout), [model.nodes, layout])
   const actThr = (1 - actSlider / 100) * 100
   const pathThr = (1 - pathSlider / 100)
@@ -655,19 +649,41 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   const fitView = useCallback(() => {
     if (!visNodes.length) return
     const rect = svgRef.current?.getBoundingClientRect(); if (!rect) return
-    const xs = visNodes.map((n) => n.x), ys = visNodes.map((n) => n.y), pad = 60
-    const nz = Math.min((rect.width - pad * 2) / (Math.max(...xs) + NODE_W - Math.min(...xs)), (rect.height - pad * 2) / (Math.max(...ys) + NODE_H - Math.min(...ys)), 1.6)
-    setPan({ x: pad - Math.min(...xs) * nz, y: pad - Math.min(...ys) * nz }); setZoom(nz)
-  }, [visNodes])
+    const bounds = visNodes.map((node) => ({
+      left: node.x,
+      top: node.y,
+      right: node.x + (node.isStart || node.isEnd ? CIRC_R * 2 : NODE_W),
+      bottom: node.y + (node.isStart || node.isEnd ? CIRC_R * 2 : NODE_H),
+    }))
+    const minX = Math.min(...bounds.map((item) => item.left))
+    const minY = Math.min(...bounds.map((item) => item.top))
+    const contentWidth = Math.max(1, Math.max(...bounds.map((item) => item.right)) - minX)
+    const contentHeight = Math.max(1, Math.max(...bounds.map((item) => item.bottom)) - minY)
+    const panelInset = !isMobile && showCasesPanel ? 252 : 0
+    const padding = 56
+    const availableWidth = Math.max(1, rect.width - panelInset - padding * 2)
+    const availableHeight = Math.max(1, rect.height - padding * 2)
+    const nextZoom = Math.max(0.2, Math.min(
+      availableWidth / contentWidth,
+      availableHeight / contentHeight,
+      1.6,
+    ))
+    setPan({
+      x: panelInset + padding + (availableWidth - contentWidth * nextZoom) / 2 - minX * nextZoom,
+      y: padding + (availableHeight - contentHeight * nextZoom) / 2 - minY * nextZoom,
+    })
+    setZoom(nextZoom)
+  }, [visNodes, isMobile, showCasesPanel])
 
-  // A log's shape is unknown until it is fetched, so the export's fixed
-  // starting pan/zoom can leave the graph off-screen — frame it once instead.
-  const framed = useRef(false)
+  // Frame once for each direction. This also makes the layout toggle useful:
+  // switching to horizontal or vertical immediately centers the new geometry.
+  const framedLayout = useRef(null)
   useEffect(() => {
-    if (framed.current || loading || nodes.length === 0) return
-    framed.current = true
-    fitView()
-  }, [loading, nodes.length, fitView])
+    if (loading || nodes.length === 0 || framedLayout.current === layout) return
+    framedLayout.current = layout
+    const frame = requestAnimationFrame(fitView)
+    return () => cancelAnimationFrame(frame)
+  }, [layout, loading, nodes.length, fitView])
 
   if (loading) {
     return (

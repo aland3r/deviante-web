@@ -78,9 +78,10 @@ export function freqHalfW(f) { return 1.5 + Math.sqrt(clampFrequency(f)) * 6.5 }
 
 function buildArrowPath(sample, tang, baseHW, N = 32) {
   // Frequency changes the ribbon width and head flare, never the perceived
-  // length of the arrowhead.
+  // length of the arrowhead or pointed tail.
   const HEAD_LENGTH = 18
   const HEAD_FLARE = 3.5
+  const TAIL_LENGTH = 16
   const headHW = baseHW + HEAD_FLARE
 
   // Walk the arc to find the point where the fixed-length arrowhead begins.
@@ -100,15 +101,24 @@ function buildArrowPath(sample, tang, baseHW, N = 32) {
     break
   }
 
-  // A constant-width ribbon makes length purely a consequence of node
-  // distance. Nodes are painted over its source end, so it appears to emerge
-  // cleanly from the activity card.
+  // The tail reaches full ribbon width over a fixed physical distance, then
+  // stays constant until the fixed-length head. Long connections therefore
+  // never turn into long triangular arrows.
   const right = [], left = []
   for (let i = 0; i <= N; i++) {
     const t = (i / N) * NECK
     const p = sample(t), n = perp2(tang(t))
-    right.push({ x: p.x + n.x * baseHW, y: p.y + n.y * baseHW })
-    left.push({ x: p.x - n.x * baseHW, y: p.y - n.y * baseHW })
+    const samplePosition = t * S
+    const sampleIndex = Math.min(S - 1, Math.floor(samplePosition))
+    const sampleRatio = samplePosition - sampleIndex
+    const distance = t >= 1
+      ? total
+      : cum[sampleIndex] + (cum[sampleIndex + 1] - cum[sampleIndex]) * sampleRatio
+    const tailProgress = Math.min(1, distance / TAIL_LENGTH)
+    const easedTail = tailProgress * tailProgress * (3 - 2 * tailProgress)
+    const halfWidth = baseHW * easedTail
+    right.push({ x: p.x + n.x * halfWidth, y: p.y + n.y * halfWidth })
+    left.push({ x: p.x - n.x * halfWidth, y: p.y - n.y * halfWidth })
   }
 
   // Arrowhead: flare from neck to tip.
