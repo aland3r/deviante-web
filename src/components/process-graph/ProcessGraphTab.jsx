@@ -385,6 +385,7 @@ function ActivityNode({ node, isSelected }) {
  */
 function EmptyCanvas({ message, eventLog, onUploadLog }) {
   const failed = eventLog?.parseStatus === 'failed'
+  const parsedWithoutGraph = eventLog?.parseStatus === 'parsed'
   return (
     <div className="flex flex-1 items-center justify-center p-8" style={{
       backgroundColor: '#090d14',
@@ -398,13 +399,21 @@ function EmptyCanvas({ message, eventLog, onUploadLog }) {
         </div>
         <div>
           <p className="text-sm font-medium text-foreground">
-            {message ? 'Não foi possível carregar o grafo' : failed ? 'O último log não pôde ser interpretado' : 'Nenhum log de eventos neste processo'}
+            {message
+              ? 'Não foi possível carregar o grafo'
+              : failed
+                ? 'O último log não pôde ser interpretado'
+                : parsedWithoutGraph
+                  ? 'O log foi processado, mas o grafo está vazio'
+                  : 'Nenhum log de eventos neste processo'}
           </p>
           <p className="text-[12px] text-muted-foreground mt-1 leading-relaxed">
             {message
               || (failed
                 ? `${eventLog.fileName}: ${eventLog.parseError ?? 'arquivo inválido'}. Envie outro arquivo .xes ou .csv.`
-                : 'O grafo é derivado do log carregado (UC4) — envie um arquivo .xes ou .csv para desenhar este processo.')}
+                : parsedWithoutGraph
+                  ? `${eventLog.fileName} foi salvo, mas nenhuma atividade pôde ser derivada dos traces. Recarregue o log ou revise o mapeamento.`
+                  : 'O grafo é derivado do log carregado (UC4) — envie um arquivo .xes ou .csv para desenhar este processo.')}
           </p>
         </div>
         {onUploadLog && (
@@ -491,17 +500,17 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   const svgRef = useRef(null)
   const containerRef = useRef(null)
 
-  // The graph and the variant tree are two views of the same ingestion, so
-  // they load together — a canvas whose traces panel disagrees with its nodes
-  // would be worse than one that is still loading.
+  // The graph is the essential request. Trace variants and the two activity
+  // catalogs enrich the workspace, but a failure in any of them must not
+  // discard a valid graph after the Manager completes a mapping.
   useEffect(() => {
     let cancelled = false
     setLoading(true)
     Promise.all([
       api.getProcessGraph(processId),
-      api.getProcessTraces(processId),
-      api.listProcessActivities(processId),
-      api.listActivities(),
+      api.getProcessTraces(processId).catch(() => ({ variants: [] })),
+      api.listProcessActivities(processId).catch(() => []),
+      api.listActivities().catch(() => []),
     ])
       .then(([graphData, traceData, processActivities, catalog]) => {
         if (cancelled) return
@@ -509,7 +518,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
         setVariants(traceData.variants ?? [])
         setDefinedActivities(processActivities)
         setActivityCatalog(catalog)
-        setViewMode(graphData.nodes?.length ? 'observed' : 'defined')
+        setViewMode(graphData.eventLog ? 'observed' : 'defined')
         setLoadError('')
       })
       .catch((err) => {
@@ -580,6 +589,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   const activityNodeCount = model.nodes.filter((n) => !n.isStart && !n.isEnd).length
   const selectedNode = selectedId ? nodes.find((n) => n.id === selectedId && !n.isStart && !n.isEnd) ?? null : null
   const hasObservedProcess = model.nodes.length > 0
+  const hasObservedLog = Boolean(graph?.eventLog)
   const analysisEligible = (graph?.caseCount ?? 0) >= MIN_ANALYSIS_TRACES
     && !graph?.hasUnmappedOperations
 
@@ -681,9 +691,9 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
             }}>
             Modelo definido
           </button>
-          <button type="button" onClick={() => hasObservedProcess && setViewMode('observed')}
-            disabled={!hasObservedProcess}
-            title={hasObservedProcess ? 'Ver processo derivado do log' : 'Mapeie um log para gerar esta visão'}
+          <button type="button" onClick={() => hasObservedLog && setViewMode('observed')}
+            disabled={!hasObservedLog}
+            title={hasObservedLog ? 'Ver processo derivado do log' : 'Mapeie um log para gerar esta visão'}
             className="px-3 py-1.5 rounded text-[10px] transition-colors disabled:opacity-35 disabled:cursor-not-allowed"
             style={{
               background: viewMode === 'observed' ? '#1e2738' : 'transparent',
