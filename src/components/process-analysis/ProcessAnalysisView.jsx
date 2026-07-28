@@ -54,13 +54,14 @@ function TraceList({ points, driftIndexes, outliers, dismissed, selectedTrace, o
   )
 }
 
-function DriftChart({ points, drifts, outliers, dismissed, selectedDrift, selectedTrace, onSelectDrift, onSelectTrace }) {
+function DriftChart({ points, processedValues, drifts, outliers, dismissed, selectedDrift, selectedTrace, onSelectDrift, onSelectTrace }) {
   const width = 900
   const height = 410
   const pad = { left: 58, right: 24, top: 28, bottom: 42 }
   const innerW = width - pad.left - pad.right
   const innerH = height - pad.top - pad.bottom
-  const values = points.map((point) => point.durationSeconds)
+  const rawValues = points.map((point) => point.durationSeconds)
+  const values = [...rawValues, ...processedValues]
   const rawMin = Math.min(...values)
   const rawMax = Math.max(...values)
   const range = Math.max(rawMax - rawMin, rawMax * 0.1, 1)
@@ -70,6 +71,7 @@ function DriftChart({ points, drifts, outliers, dismissed, selectedDrift, select
   const x = (arrayIndex) => pad.left + (arrayIndex / lastIndex) * innerW
   const y = (metric) => pad.top + (1 - (metric - min) / Math.max(max - min, 1)) * innerH
   const linePoints = points.map((point, index) => `${x(index)},${y(point.durationSeconds)}`).join(' ')
+  const processedLinePoints = processedValues.map((value, index) => `${x(index)},${y(value)}`).join(' ')
   const yTicks = Array.from({ length: 5 }, (_, index) => min + ((max - min) * index) / 4)
   const xTicks = Array.from(new Set([0, 0.25, 0.5, 0.75, 1].map((fraction) => Math.round(lastIndex * fraction))))
 
@@ -91,7 +93,9 @@ function DriftChart({ points, drifts, outliers, dismissed, selectedDrift, select
           <p className="text-[10px] text-muted-foreground mt-0.5">Log completo · ADWIN · ordem cronológica</p>
         </div>
         <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-          <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full bg-blue-400" />Trace</span>
+          <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full bg-slate-500" />Trace original</span>
+          <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full bg-blue-400" />Série tratada</span>
+          <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full bg-amber-400" />Início da anomalia</span>
           <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full bg-amber-500" />Outlier</span>
           <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full bg-red-600" />Drift</span>
         </div>
@@ -106,18 +110,38 @@ function DriftChart({ points, drifts, outliers, dismissed, selectedDrift, select
             <text x={pad.left - 10} y={y(tick) + 3} textAnchor="end" fill="#475569" fontSize="10">{formatSeconds(tick)}</text>
           </g>
         ))}
+        {drifts.map((drift) => {
+          const startArrayIndex = points.findIndex((point) => point.index === drift.anomalyStartIndex)
+          const arrayIndex = points.findIndex((point) => point.index === drift.index)
+          return startArrayIndex >= 0 && arrayIndex >= 0 ? (
+            <rect key={`interval-${drift.index}`} x={x(startArrayIndex)} y={pad.top}
+              width={Math.max(1, x(arrayIndex) - x(startArrayIndex))} height={innerH}
+              fill="rgba(245,158,11,0.055)" />
+          ) : null
+        })}
         {drifts.map((drift, driftIndex) => {
+          const startArrayIndex = points.findIndex((point) => point.index === drift.anomalyStartIndex)
           const arrayIndex = points.findIndex((point) => point.index === drift.index)
           const selected = selectedDrift === drift.index
           return (
             <g key={drift.index} onClick={(event) => { event.stopPropagation(); onSelectDrift(drift.index) }}>
+              {startArrayIndex >= 0 && (
+                <>
+                  <line x1={x(startArrayIndex)} x2={x(startArrayIndex)} y1={pad.top} y2={height - pad.bottom}
+                    stroke="#f59e0b" strokeWidth={selected ? 1.8 : 1} strokeDasharray="3 4" />
+                  <text x={x(startArrayIndex) + 6} y={height - pad.bottom - 8} fill="#fbbf24" fontSize="9">
+                    Início #{driftIndex + 1}
+                  </text>
+                </>
+              )}
               <line x1={x(arrayIndex)} x2={x(arrayIndex)} y1={pad.top} y2={height - pad.bottom}
                 stroke="#dc2626" strokeWidth={selected ? 2 : 1} strokeDasharray="5 4" />
-              <text x={x(arrayIndex) + 6} y={pad.top + 14} fill="#fca5a5" fontSize="10">Drift #{driftIndex + 1}</text>
+              <text x={x(arrayIndex) + 6} y={pad.top + 14} fill="#fca5a5" fontSize="10">Detecção #{driftIndex + 1}</text>
             </g>
           )
         })}
-        <polyline points={linePoints} fill="none" stroke="#4a90c2" strokeWidth="1.5" opacity="0.9" />
+        <polyline points={linePoints} fill="none" stroke="#64748b" strokeWidth="1" opacity="0.42" />
+        <polyline points={processedLinePoints} fill="none" stroke="#4a90c2" strokeWidth="1.8" opacity="0.95" />
         {points.map((point, index) => outliers.has(point.index) && !dismissed.has(point.index) ? (
           <circle key={point.traceId} cx={x(index)} cy={y(point.durationSeconds)} r="3.5" fill="#f59e0b" stroke="#0d1119" strokeWidth="1.5" />
         ) : null)}
@@ -173,7 +197,15 @@ export default function ProcessAnalysisView({ processId, processName, eventLog, 
   const drifts = analysis?.drifts ?? EMPTY_LIST
   const drift = drifts.find((item) => item.index === selectedDrift) ?? null
   const selectedPoint = points.find((item) => item.index === selectedTrace) ?? null
-  const outliers = useMemo(() => findOutliers(points), [points])
+  const processedValues = analysis?.processedValues?.length === points.length
+    ? analysis.processedValues
+    : points.map((point) => point.durationSeconds)
+  const outliers = useMemo(
+    () => analysis?.outlierIndexes
+      ? new Set(analysis.outlierIndexes)
+      : findOutliers(points),
+    [analysis?.outlierIndexes, points],
+  )
   const driftIndexes = useMemo(() => new Set(drifts.map((item) => item.index)), [drifts])
   const selectedIsOutlier = selectedTrace != null && outliers.has(selectedTrace) && !dismissed.has(selectedTrace)
 
@@ -244,7 +276,7 @@ export default function ProcessAnalysisView({ processId, processName, eventLog, 
               </div>
             </div>
           ) : points.length ? (
-            <DriftChart points={points} drifts={drifts} outliers={outliers} dismissed={dismissed}
+            <DriftChart points={points} processedValues={processedValues} drifts={drifts} outliers={outliers} dismissed={dismissed}
               selectedDrift={selectedDrift} selectedTrace={selectedTrace}
               onSelectDrift={setSelectedDrift} onSelectTrace={setSelectedTrace} />
           ) : null}
@@ -276,6 +308,8 @@ export default function ProcessAnalysisView({ processId, processName, eventLog, 
                 </div>
                 {[
                   ['Ponto', `Trace ${drift.index}`],
+                  ['Início estimado', `Trace ${drift.anomalyStartIndex}`],
+                  ['Atraso da detecção', `${drift.detectionDelayTraces} traces`],
                   ['Caso', drift.caseId],
                   ['Antes', formatSeconds(drift.beforeMeanSeconds)],
                   ['Depois', formatSeconds(drift.afterMeanSeconds)],

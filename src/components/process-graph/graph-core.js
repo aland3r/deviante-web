@@ -77,12 +77,11 @@ export function freqOpacity(f) { return 0.42 + clampFrequency(f) * 0.53 }
 export function freqHalfW(f) { return 1.5 + Math.sqrt(clampFrequency(f)) * 6.5 }
 
 function buildArrowPath(sample, tang, baseHW, N = 32) {
-  // Frequency changes the ribbon width and head flare, never the perceived
-  // length of the arrowhead or pointed tail.
-  const HEAD_LENGTH = 18
-  const HEAD_FLARE = 3.5
-  const TAIL_LENGTH = 16
-  const headHW = baseHW + HEAD_FLARE
+  // The body is a cone: a pointed source grows continuously until the
+  // arrowhead. Frequency changes thickness, while node distance alone defines
+  // the total connection length. The head scales with that same thickness.
+  const HEAD_LENGTH = 8 + baseHW * 1.6
+  const headHW = baseHW * 1.55
 
   // Walk the arc to find the point where the fixed-length arrowhead begins.
   const S = N * 2
@@ -101,22 +100,13 @@ function buildArrowPath(sample, tang, baseHW, N = 32) {
     break
   }
 
-  // The tail reaches full ribbon width over a fixed physical distance, then
-  // stays constant until the fixed-length head. Long connections therefore
-  // never turn into long triangular arrows.
+  // Pointed tail to maximum neck width across the full body.
   const right = [], left = []
   for (let i = 0; i <= N; i++) {
     const t = (i / N) * NECK
     const p = sample(t), n = perp2(tang(t))
-    const samplePosition = t * S
-    const sampleIndex = Math.min(S - 1, Math.floor(samplePosition))
-    const sampleRatio = samplePosition - sampleIndex
-    const distance = t >= 1
-      ? total
-      : cum[sampleIndex] + (cum[sampleIndex + 1] - cum[sampleIndex]) * sampleRatio
-    const tailProgress = Math.min(1, distance / TAIL_LENGTH)
-    const easedTail = tailProgress * tailProgress * (3 - 2 * tailProgress)
-    const halfWidth = baseHW * easedTail
+    const coneProgress = NECK > 0 ? t / NECK : 1
+    const halfWidth = baseHW * coneProgress
     right.push({ x: p.x + n.x * halfWidth, y: p.y + n.y * halfWidth })
     left.push({ x: p.x - n.x * halfWidth, y: p.y - n.y * halfWidth })
   }
