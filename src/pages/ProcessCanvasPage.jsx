@@ -91,12 +91,7 @@ export default function ProcessCanvasPage() {
     if (!name || name === process.name) { setTitleDraft(process.name ?? ''); return }
 
     try {
-      const updated = await api.updateProcess(processId, {
-        name,
-        companyName: process.companyName ?? '',
-        description: process.description ?? '',
-        sector: process.sector ?? '',
-      })
+      const updated = await api.renameProcess(processId, name)
       setProcess(updated)
       setTitleDraft(updated.name ?? '')
       setTitleError('')

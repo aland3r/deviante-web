@@ -195,6 +195,26 @@ const mockApi = {
     return processes[index]
   },
 
+  async renameProcess(processId, name) {
+    const user = getCurrentUser()
+    if (!user) throw new ApiError('Você precisa estar autenticado.')
+
+    const nameError = validateProcessName(name)
+    if (nameError) throw new ApiError(nameError, { name: nameError })
+
+    const processes = getProcesses(user.id)
+    const index = processes.findIndex((item) => item.id === processId)
+    if (index === -1) throw new ApiError('Processo não encontrado.')
+
+    processes[index] = {
+      ...processes[index],
+      name: name.trim(),
+      updatedAt: new Date().toISOString(),
+    }
+    saveProcesses(user.id, processes)
+    return processes[index]
+  },
+
   async deleteProcess(processId, confirmation) {
     const user = getCurrentUser()
     if (!user) throw new ApiError('Você precisa estar autenticado.')
@@ -307,6 +327,9 @@ export const api = {
   updateProcess: (id, data) => shouldUseRemoteProcesses()
     ? request(`/processes/${id}`, { method: 'PUT', body: JSON.stringify({ name: data.name, companyName: data.companyName, description: data.description, sector: data.sector }) })
     : mockApi.updateProcess(id, data),
+  renameProcess: (id, name) => shouldUseRemoteProcesses()
+    ? request(`/processes/${id}/name`, { method: 'PATCH', body: JSON.stringify({ name }) })
+    : mockApi.renameProcess(id, name),
   deleteProcess: (id, confirmation) => shouldUseRemoteProcesses()
     ? request(`/processes/${id}`, { method: 'DELETE', body: JSON.stringify(confirmation) })
     : mockApi.deleteProcess(id, confirmation),
