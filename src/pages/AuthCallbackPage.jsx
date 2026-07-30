@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArcadeLoadingScreen, isDevQuestEnabled } from '@gestalt/dev-quest'
 import Alert from '../components/ui/LegacyAlert'
 import { useAuth } from '../context/AuthContext'
 import { completeOAuthCallback, isOAuthReturn } from '../lib/auth'
@@ -91,11 +90,9 @@ export default function AuthCallbackPage() {
     )
   }
 
-  return isDevQuestEnabled()
-    ? <ArcadeLoadingScreen label="OAUTH" />
-    : (
-      <div className="loading-screen">
-        <p>Concluindo login...</p>
-      </div>
-    )
+  return (
+    <div className="loading-screen">
+      <p>Concluindo login...</p>
+    </div>
+  )
 }

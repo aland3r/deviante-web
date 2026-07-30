@@ -51,7 +51,7 @@ export default function LoginPage() {
       {error ? <Alert className="auth-split__alert">{error}</Alert> : null}
 
       <p className="auth-split__divider">
-        O acesso ao Deviante é liberado pelo responsável, conta por conta.
+        O acesso é liberado pelo responsável, conta por conta.
         Entre com a conta Google autorizada.
       </p>
 

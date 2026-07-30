@@ -18,7 +18,6 @@ export default function BrandMark({ to = '/dashboard' }) {
           <line x1="5" y1="7.8" x2="9" y2="10.2" stroke="white" strokeWidth="1.2" opacity="0.5" />
         </svg>
       </div>
-      <span className="text-sm font-semibold text-foreground" style={{ letterSpacing: '-0.01em' }}>Deviante</span>
     </>
   )
 

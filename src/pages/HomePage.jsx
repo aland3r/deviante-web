@@ -67,7 +67,6 @@ export default function HomePage() {
             DV
           </span>
           <span className="flex flex-col leading-tight">
-            <strong className="text-foreground">Deviante</strong>
             <small className="text-muted-foreground text-xs">Inteligência em manutenção</small>
           </span>
         </Link>
@@ -93,7 +92,7 @@ export default function HomePage() {
               Detecte falhas antes da quebra.
             </h1>
             <p className="mt-4 max-w-xl text-muted-foreground leading-relaxed">
-              O Deviante apoia gestores de manutenção com mineração de processos e aprendizado de
+              Apoio a gestores de manutenção com mineração de processos e aprendizado de
               máquina para antecipar problemas nos equipamentos e reduzir paradas não planejadas.
             </p>
             <div className="mt-7">
@@ -157,13 +156,13 @@ export default function HomePage() {
             </p>
           </div>
           <Button asChild size="lg">
-            <Link to="/login">Entrar no Deviante</Link>
+            <Link to="/login">Entrar</Link>
           </Button>
         </section>
       </main>
 
       <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
-        <p>Deviante · Alander Brands and Products</p>
+        <p>Alander Brands and Products</p>
       </footer>
     </div>
   )
