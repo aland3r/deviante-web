@@ -13,11 +13,6 @@ import { useAuth } from '../../context/AuthContext'
   while the canvas already wore the dark/red one from the Figma Make export.
 */
 
-const NAV_ITEMS = [
-  { to: '/dashboard', label: 'Painel' },
-  { to: '/account', label: 'Conta' },
-]
-
 export default function AppLayout() {
   const { user, logout } = useAuth()
 
@@ -28,31 +23,22 @@ export default function AppLayout() {
 
         <BrandMark />
 
-        <div className="hidden sm:block w-px h-5 bg-border" />
-
-        <nav className="flex items-center gap-0.5 rounded-lg p-0.5 shrink-0"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-          {NAV_ITEMS.map((item) => (
-            <NavLink key={item.to} to={item.to} end
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all no-underline"
-              style={({ isActive }) => ({
-                background: isActive ? '#1e2738' : 'transparent',
-                color: isActive ? '#e2e8f0' : '#64748b',
-                fontFamily: "'JetBrains Mono',monospace",
-                textDecoration: 'none',
-              })}>
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-
         <div className="flex-1" />
 
         <div className="hidden sm:flex items-center gap-2 shrink-0">
-          <span className="px-3 py-1 rounded-full text-xs font-semibold text-foreground truncate"
-            style={{ background: '#1e2738', border: '1px solid rgba(255,255,255,0.09)', maxWidth: 220 }}>
+          <NavLink to="/account" end
+            title="Conta"
+            className="px-3 py-1 rounded-full text-xs font-semibold truncate no-underline transition-colors"
+            style={({ isActive }) => ({
+              background: isActive ? '#243044' : '#1e2738',
+              border: isActive ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.09)',
+              color: '#e2e8f0',
+              maxWidth: 220,
+              textDecoration: 'none',
+              cursor: 'pointer',
+            })}>
             {user?.fullName || user?.email || 'Gestor'}
-          </span>
+          </NavLink>
           <button type="button" onClick={() => logout()}
             className="px-2.5 py-1.5 rounded text-xs font-medium border border-border text-muted-foreground hover:text-foreground transition-colors"
             style={{ background: 'transparent', cursor: 'pointer', fontFamily: "'JetBrains Mono',monospace" }}>

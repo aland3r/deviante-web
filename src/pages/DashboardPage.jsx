@@ -347,20 +347,20 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
             <NewProjectButton
               type="processo"
-              label="Novo processo"
+              label="Processo"
               description="Defina atividades e carregue um log."
               onClick={handleCreateProcess}
               busy={creating}
             />
             <NewProjectButton
               type="analise"
-              label="Nova análise"
+              label="Análise"
               description="Escolha um processo com log mapeado."
               onClick={() => setAnalysisPickerOpen(true)}
             />
             <NewProjectButton
               type="monitoramento"
-              label="Novo monitoramento"
+              label="Monitoramento"
               description="Acompanhe desvios ao longo do tempo."
               disabled
             />
