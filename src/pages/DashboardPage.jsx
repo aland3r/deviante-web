@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Activity,
@@ -15,16 +15,10 @@ import { api, ApiError } from '../lib/api'
 /*
   Ported from the Figma Make export "Process Mining Canvas Design"
   (ZZKdwxgmeCNJFG64zGbADe), HomeScreen — figma is the style reference.
-  Figma's own navbar (logo/search/user-chip) is dropped here since
-  AppLayout already provides that role site-wide; everything below it
-  (Criar novo cards, Recentes/Compartilhados/Favoritos tabs, project
-  grid) is ported. Wired to the real Kotlin-backed API — cards and
-  "Novo processo" both route to /processes/:id (ProcessCanvasPage), which
-  is the open-project screen: graph canvas + Processos tab.
 
-  Compartilhados/Favoritos have no backend concept yet (no sharing or
-  favoriting on processes) — tabs render, but stay empty. Analysis stays
-  process-scoped: its dashboard action first asks which process to open.
+  Grid mixes Process + Analysis cards (Figma HomeProject type). Analyses are
+  client-persisted until `deviante.analyses` ships; opening one routes to the
+  process analysis view, with the process name as provenance on the card.
 */
 
 function timeAgo(isoDate) {
@@ -64,6 +58,42 @@ function ProcessThumbnail() {
       <rect x="155" y="90" width="24" height="20" rx="5" fill="#111520" stroke="#2870a8" strokeWidth="1.5" />
       <circle cx="205" cy="65" r="10" fill="#0d1017" stroke="#4d8fc0" strokeWidth="1.2" />
       <rect x="200" y="60" width="10" height="10" rx="2" fill="#4d8fc0" opacity="0.6" />
+    </svg>
+  )
+}
+
+/** Figma Make HomeScreen — analysis card art */
+function AnaliseThumbnail() {
+  return (
+    <svg width="100%" height="100%" viewBox="0 0 220 130" fill="none" preserveAspectRatio="xMidYMid meet">
+      {[40, 70, 100].map((y) => (
+        <line key={y} x1="30" y1={y} x2="200" y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+      ))}
+      <rect x="42" y="72" width="22" height="38" rx="3" fill="#2870a8" opacity="0.75" />
+      <rect x="76" y="52" width="22" height="58" rx="3" fill="#4d8fc0" opacity="0.85" />
+      <rect x="110" y="60" width="22" height="50" rx="3" fill="#2870a8" opacity="0.75" />
+      <rect x="144" y="38" width="22" height="72" rx="3" fill="#4d8fc0" opacity="0.90" />
+      <rect x="178" y="55" width="22" height="55" rx="3" fill="#2870a8" opacity="0.70" />
+      <path d="M 30 85 L 53 80 L 87 68 L 121 72 L 155 52 L 189 65 L 200 60"
+        stroke="#c8e2f5" strokeWidth="2" fill="none" opacity="0.9" />
+      {[[53, 80], [87, 68], [121, 72], [155, 52], [189, 65]].map(([cx, cy], i) => (
+        <circle key={i} cx={cx} cy={cy} r="3.5" fill="#c8e2f5" opacity="0.85" />
+      ))}
+      <line x1="30" y1="110" x2="200" y2="110" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+      {['Jan', 'Mar', 'Mai', 'Jul', 'Set'].map((label, i) => (
+        <text key={label} x={42 + i * 34 + 11} y="122" textAnchor="middle"
+          fontSize="8" fill="rgba(255,255,255,0.25)" fontFamily="'JetBrains Mono',monospace">{label}</text>
+      ))}
+    </svg>
+  )
+}
+
+function AnalysisBarsIcon({ size = 8, fill = 'white' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 9 9" fill="none" aria-hidden>
+      <rect x="0" y="4" width="2.5" height="5" rx="1" fill={fill} />
+      <rect x="3.25" y="2" width="2.5" height="7" rx="1" fill={fill} />
+      <rect x="6.5" y="0" width="2.5" height="9" rx="1" fill={fill} />
     </svg>
   )
 }
@@ -185,7 +215,7 @@ function NewProjectButton({ type, label, description, disabled, busy, onClick })
   )
 }
 
-function AnalysisProcessPicker({ processes, onClose }) {
+function AnalysisProcessPicker({ processes, onClose, onPick }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: 'rgba(3,6,12,0.78)' }}
@@ -205,9 +235,13 @@ function AnalysisProcessPicker({ processes, onClose }) {
         </div>
         <div className="overflow-y-auto p-2" style={{ maxHeight: 'calc(min(620px, 84vh) - 70px)' }}>
           {processes.length ? processes.map((process) => (
-            <Link key={process.id} to={`/processes/${process.id}?view=analysis`}
-              className="flex items-center gap-3 px-3 py-2.5 rounded hover:bg-secondary/60"
-              style={{ textDecoration: 'none' }}>
+            <button
+              key={process.id}
+              type="button"
+              onClick={() => onPick(process)}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded hover:bg-secondary/60 text-left"
+              style={{ border: 0, background: 'transparent', cursor: 'pointer' }}
+            >
               <span className="w-8 h-8 rounded flex items-center justify-center shrink-0"
                 style={{ background: 'rgba(180,83,9,0.12)', color: '#f59e0b' }}>
                 <BarChart3 size={13} />
@@ -219,7 +253,7 @@ function AnalysisProcessPicker({ processes, onClose }) {
                 </span>
               </span>
               <ChevronRight size={13} className="text-muted-foreground shrink-0" />
-            </Link>
+            </button>
           )) : (
             <p className="px-3 py-8 text-center text-xs text-muted-foreground">
               Crie um processo antes de iniciar uma análise.
@@ -231,42 +265,72 @@ function AnalysisProcessPicker({ processes, onClose }) {
   )
 }
 
-function ProjectCard({ process }) {
+function ProjectCard({ item }) {
+  const isAnalysis = item.type === 'analise'
+  const to = isAnalysis
+    ? `/processes/${item.processId}?view=analysis&analysisId=${item.id}`
+    : `/processes/${item.id}`
+  const accent = isAnalysis ? '#6366f1' : '#2870a8'
+  const subtitle = isAnalysis
+    ? (item.processName
+      ? `Processo · ${item.processName}`
+      : 'Análise de desvios')
+    : `Editado ${timeAgo(item.updatedAt)}`
+
   return (
     <Link
-      to={`/processes/${process.id}`}
+      to={to}
       style={{ display: 'block', background: '#0f141e', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8, overflow: 'hidden', textDecoration: 'none', transition: 'border-color 0.15s' }}
       onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)' }}
       onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)' }}
     >
       <div style={{ height: 140, background: '#080c14', overflow: 'hidden', position: 'relative' }}>
-        <ProcessThumbnail />
+        {isAnalysis ? <AnaliseThumbnail /> : <ProcessThumbnail />}
       </div>
       <div style={{ padding: '10px 14px 12px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
-          <div style={{ width: 14, height: 14, borderRadius: 3, background: '#2870a8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Activity size={8} color="white" />
+          <div style={{ width: 14, height: 14, borderRadius: 3, background: accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            {isAnalysis ? <AnalysisBarsIcon size={8} /> : <Activity size={8} color="white" />}
           </div>
-          <span style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 13, color: 'white', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{process.name}</span>
+          <span style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 13, color: 'white', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
         </div>
-        <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#475569' }}>Editado {timeAgo(process.updatedAt)}</span>
+        <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#475569', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {subtitle}
+        </span>
+        {isAnalysis ? (
+          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#334155', display: 'block', marginTop: 2 }}>
+            Editado {timeAgo(item.updatedAt)}
+            {item.driftCount != null ? ` · ${item.driftCount} drift${item.driftCount !== 1 ? 's' : ''}` : ''}
+          </span>
+        ) : null}
       </div>
     </Link>
   )
 }
 
-function ProjectListItem({ process }) {
+function ProjectListItem({ item }) {
+  const isAnalysis = item.type === 'analise'
+  const to = isAnalysis
+    ? `/processes/${item.processId}?view=analysis&analysisId=${item.id}`
+    : `/processes/${item.id}`
+  const accent = isAnalysis ? '#6366f1' : '#4d8fc0'
+  const meta = isAnalysis
+    ? `${item.processName ? `Processo · ${item.processName}` : 'Análise'} · editado ${timeAgo(item.updatedAt)}`
+    : `${item.companyName || 'Empresa não definida'} · editado ${timeAgo(item.updatedAt)}`
+
   return (
-    <Link to={`/processes/${process.id}`}
+    <Link to={to}
       className="flex items-center gap-3 px-3 py-3 border-b border-border last:border-0 hover:bg-secondary/40"
       style={{ textDecoration: 'none' }}>
       <div className="w-8 h-8 rounded flex items-center justify-center shrink-0" style={{ background: '#16202e' }}>
-        <Activity size={13} color="#4d8fc0" />
+        {isAnalysis
+          ? <AnalysisBarsIcon size={12} fill="#6366f1" />
+          : <Activity size={13} color={accent} />}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold text-foreground truncate">{process.name}</p>
+        <p className="text-xs font-semibold text-foreground truncate">{item.name}</p>
         <p className="text-[10px] text-muted-foreground mt-0.5" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
-          {process.companyName || 'Empresa não definida'} · editado {timeAgo(process.updatedAt)}
+          {meta}
         </p>
       </div>
     </Link>
@@ -282,6 +346,7 @@ const HOME_TABS = [
 export default function DashboardPage() {
   const navigate = useNavigate()
   const [processes, setProcesses] = useState([])
+  const [analyses, setAnalyses] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [creating, setCreating] = useState(false)
@@ -291,12 +356,25 @@ export default function DashboardPage() {
   const [analysisPickerOpen, setAnalysisPickerOpen] = useState(false)
 
   useEffect(() => {
-    api.listProcesses()
-      .then(setProcesses)
-      .catch((err) => {
-        setError(err instanceof ApiError ? err.message : 'Não foi possível carregar os processos.')
+    let cancelled = false
+    Promise.all([
+      api.listProcesses(),
+      api.listAnalyses().catch(() => []),
+    ])
+      .then(([processRows, analysisRows]) => {
+        if (cancelled) return
+        setProcesses(processRows)
+        setAnalyses(analysisRows)
       })
-      .finally(() => setLoading(false))
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof ApiError ? err.message : 'Não foi possível carregar o painel.')
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => { cancelled = true }
   }, [])
 
   async function handleCreateProcess() {
@@ -311,14 +389,69 @@ export default function DashboardPage() {
     }
   }
 
+  async function handlePickAnalysisProcess(process) {
+    setError('')
+    try {
+      const analysis = await api.createAnalysis(process.id)
+      setAnalyses((prev) => {
+        const without = prev.filter((row) => row.id !== analysis.id)
+        return [analysis, ...without]
+      })
+      setAnalysisPickerOpen(false)
+      navigate(`/processes/${process.id}?view=analysis&analysisId=${analysis.id}`)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Não foi possível criar a análise.')
+      setAnalysisPickerOpen(false)
+    }
+  }
+
+  const items = useMemo(() => {
+    const processItems = processes.map((p) => ({
+      id: p.id,
+      type: 'processo',
+      name: p.name,
+      updatedAt: p.updatedAt,
+      companyName: p.companyName,
+    }))
+    const analysisItems = analyses.map((a) => ({
+      ...a,
+      type: 'analise',
+    }))
+    return [...processItems, ...analysisItems].sort((a, b) =>
+      String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')),
+    )
+  }, [processes, analyses])
+
   const visible = tab === 'recentes'
-    ? processes.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
+    ? items.filter((item) => {
+      const q = search.toLowerCase()
+      if (!q) return true
+      return (
+        item.name?.toLowerCase().includes(q)
+        || item.processName?.toLowerCase().includes(q)
+        || item.companyName?.toLowerCase().includes(q)
+      )
+    })
     : []
+
+  const processCount = visible.filter((i) => i.type === 'processo').length
+  const analysisCount = visible.filter((i) => i.type === 'analise').length
+  const countLabel = (() => {
+    const parts = []
+    if (processCount) parts.push(`${processCount} processo${processCount !== 1 ? 's' : ''}`)
+    if (analysisCount) parts.push(`${analysisCount} anális${analysisCount !== 1 ? 'es' : 'e'}`)
+    if (!parts.length) return '0 itens'
+    return parts.join(' · ')
+  })()
 
   return (
     <div className="flex flex-col" style={{ background: '#0d1017', margin: '-2rem calc(-50vw + 50%)', padding: '0 calc(50vw - 50%)', minHeight: 'calc(100vh - 52px)' }}>
       {analysisPickerOpen && (
-        <AnalysisProcessPicker processes={processes} onClose={() => setAnalysisPickerOpen(false)} />
+        <AnalysisProcessPicker
+          processes={processes}
+          onClose={() => setAnalysisPickerOpen(false)}
+          onPick={handlePickAnalysisProcess}
+        />
       )}
       <div className="flex-1 px-4 py-6 sm:px-6 sm:py-8"
         style={{ maxWidth: 1120, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
@@ -330,7 +463,7 @@ export default function DashboardPage() {
             </svg>
             <input
               value={search} onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar processos…"
+              placeholder="Buscar processos e análises…"
               style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 8, padding: '6px 10px 6px 30px', color: 'white', fontFamily: "'Inter',sans-serif", fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
@@ -384,7 +517,7 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-center justify-end" style={{ gap: 8, paddingBottom: 8 }}>
               <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#475569', letterSpacing: '0.04em' }}>
-                {visible.length} processo{visible.length !== 1 ? 's' : ''}
+                {countLabel}
               </span>
               <div style={{ display: 'flex', gap: 1, padding: 3, borderRadius: 6, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
                 <button type="button" onClick={() => setDisplayMode('grid')} title="Visualização em grade"
@@ -400,23 +533,25 @@ export default function DashboardPage() {
           </div>
 
           {loading ? (
-            <p className="text-sm text-muted-foreground">Carregando processos...</p>
+            <p className="text-sm text-muted-foreground">Carregando…</p>
           ) : tab !== 'recentes' ? (
             <div style={{ padding: '60px 0', textAlign: 'center', color: '#475569', fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
-              {tab === 'compartilhados' ? 'Nenhum processo compartilhado com você ainda.' : 'Nenhum favorito ainda.'}
+              {tab === 'compartilhados' ? 'Nenhum item compartilhado com você ainda.' : 'Nenhum favorito ainda.'}
             </div>
           ) : visible.length === 0 ? (
             <div style={{ padding: '60px 0', textAlign: 'center', color: '#475569', fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
-              {search ? `Nenhum processo encontrado para “${search}”` : 'Nenhum processo ainda — crie o primeiro acima.'}
+              {search
+                ? `Nenhum resultado para “${search}”`
+                : 'Nenhum processo ou análise ainda — crie o primeiro acima.'}
             </div>
           ) : displayMode === 'list' ? (
             <div className="border border-border rounded overflow-hidden" style={{ background: '#0f141e' }}>
-              {visible.map((process) => <ProjectListItem key={process.id} process={process} />)}
+              {visible.map((item) => <ProjectListItem key={`${item.type}-${item.id}`} item={item} />)}
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
-              {visible.map((p) => (
-                <ProjectCard key={p.id} process={p} />
+              {visible.map((item) => (
+                <ProjectCard key={`${item.type}-${item.id}`} item={item} />
               ))}
             </div>
           )}

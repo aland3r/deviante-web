@@ -121,11 +121,13 @@ export default function ProcessCanvasPage() {
   }
 
   if (analysisOpen) {
+    const analysisId = new URLSearchParams(location.search).get('analysisId') || undefined
     return (
       <ProcessAnalysisView
         processId={processId}
         processName={process.name || 'Processo sem nome'}
         eventLog={graphStats?.eventLog}
+        analysisId={analysisId}
         onBack={() => navigate(`/processes/${processId}`, { replace: true })}
         onGoHome={() => navigate('/dashboard')}
       />
@@ -216,7 +218,14 @@ export default function ProcessCanvasPage() {
           isMobile={isMobile}
           onStats={handleGraphStats}
           onUploadLog={() => setUploadOpen(true)}
-          onAnalyze={() => navigate(`/processes/${processId}?view=analysis`)}
+          onAnalyze={async () => {
+            try {
+              const analysis = await api.createAnalysis(processId)
+              navigate(`/processes/${processId}?view=analysis&analysisId=${analysis.id}`)
+            } catch (err) {
+              setLoadError(err instanceof ApiError ? err.message : 'Não foi possível criar a análise.')
+            }
+          }}
         />
       </div>
     </div>

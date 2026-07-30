@@ -164,7 +164,7 @@ function DriftChart({ points, processedValues, drifts, outliers, dismissed, sele
   )
 }
 
-export default function ProcessAnalysisView({ processId, processName, eventLog, onBack, onGoHome }) {
+export default function ProcessAnalysisView({ processId, processName, eventLog, analysisId, onBack, onGoHome }) {
   const [analysis, setAnalysis] = useState(null)
   const [runState, setRunState] = useState('running')
   const [error, setError] = useState('')
@@ -178,7 +178,7 @@ export default function ProcessAnalysisView({ processId, processName, eventLog, 
     setRunState('running')
     setError('')
     try {
-      const result = await api.runProcessAnalysis(processId)
+      const result = await api.runProcessAnalysis(processId, analysisId)
       setAnalysis(result)
       setSelectedDrift(result.drifts[0]?.index ?? null)
       setElapsed((performance.now() - started) / 1000)
@@ -187,11 +187,31 @@ export default function ProcessAnalysisView({ processId, processName, eventLog, 
     } finally {
       setRunState('done')
     }
-  }, [processId])
+  }, [processId, analysisId])
 
   useEffect(() => {
-    runAnalysis()
-  }, [runAnalysis])
+    let cancelled = false
+    async function load() {
+      if (analysisId) {
+        try {
+          const saved = await api.getAnalysis(analysisId)
+          if (cancelled) return
+          // Summary-only (no points) → run and persist; full payload → reopen.
+          if (Array.isArray(saved?.points) && saved.points.length > 0) {
+            setAnalysis(saved)
+            setSelectedDrift(saved.drifts?.[0]?.index ?? null)
+            setRunState('done')
+            return
+          }
+        } catch {
+          // Fall through to a fresh run.
+        }
+      }
+      if (!cancelled) runAnalysis()
+    }
+    load()
+    return () => { cancelled = true }
+  }, [analysisId, runAnalysis])
 
   const points = analysis?.points ?? EMPTY_LIST
   const drifts = analysis?.drifts ?? EMPTY_LIST

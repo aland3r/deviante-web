@@ -360,7 +360,16 @@ export const api = {
   // counterpart on purpose: an invented graph is exactly what this replaces.
   getProcessGraph: (processId) => request(`/processes/${processId}/graph`),
   getProcessTraces: (processId) => request(`/processes/${processId}/traces`),
-  runProcessAnalysis: (processId) => request(`/processes/${processId}/analysis`, { method: 'POST' }),
+  runProcessAnalysis: (processId, analysisId) => {
+    const q = analysisId ? `?analysisId=${encodeURIComponent(analysisId)}` : ''
+    return request(`/processes/${processId}/analysis${q}`, { method: 'POST' })
+  },
+  listAnalyses: () => request('/analyses'),
+  createAnalysis: (processId, name) => request('/analyses', {
+    method: 'POST',
+    body: JSON.stringify({ processId, name: name ?? null }),
+  }),
+  getAnalysis: (id) => request(`/analyses/${id}`),
   resolveMapping: (processId, mappings) => request(`/processes/${processId}/mapping`, {
     method: 'POST',
     body: JSON.stringify({ mappings }),
