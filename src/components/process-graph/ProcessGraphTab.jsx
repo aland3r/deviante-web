@@ -543,20 +543,28 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
     })
   }, [graph, definedActivities.length, onStats])
 
-  // Full layered layout over every node/edge, computed once per direction.
-  // The density sliders only hide from this stable layout — like Disco, the
-  // shape does not jump around as the Manager filters it.
-  const laid = useMemo(() => layoutGraph(model, layout), [model, layout])
-  const nodes = laid.nodes
   const actThr = (1 - actSlider / 100) * 100
   const pathThr = (1 - pathSlider / 100)
-  const visNodes = nodes.filter((n) => n.isStart || n.isEnd || n.frequency >= actThr)
-  const visIds = new Set(visNodes.map((n) => n.id))
-  const visKey = [...visIds].join('|')
-  const visEdges = useMemo(() => {
-    const visible = new Set(visKey ? visKey.split('|') : [])
-    return laid.edges.filter((e) => e.frequency >= pathThr && visible.has(e.source) && visible.has(e.target))
-  }, [laid.edges, pathThr, visKey])
+
+  // Density sliders filter *before* placement, so the layout only ever routes
+  // through nodes that are actually on screen. Re-laying out the visible
+  // subgraph is what keeps the edges short and straight: two activities that
+  // sit five ranks apart in the full log — with everything between them hidden
+  // — collapse to adjacent layers and get a direct arrow, instead of a long
+  // curve threading the side gutters of columns nobody can see. The shape
+  // tightens as the Manager reveals more activities and never wanders through
+  // empty space.
+  const visibleModel = useMemo(() => {
+    const nodes = model.nodes.filter((n) => n.isStart || n.isEnd || n.frequency >= actThr)
+    const ids = new Set(nodes.map((n) => n.id))
+    const edges = model.edges.filter((e) => e.frequency >= pathThr && ids.has(e.source) && ids.has(e.target))
+    return { nodes, edges }
+  }, [model, actThr, pathThr])
+
+  const laid = useMemo(() => layoutGraph(visibleModel, layout), [visibleModel, layout])
+  const nodes = laid.nodes
+  const visNodes = nodes
+  const visEdges = laid.edges
   // Only activity nodes carry metrics — Início/Fim are graph punctuation.
   const activityNodeCount = model.nodes.filter((n) => !n.isStart && !n.isEnd).length
   const selectedNode = selectedId ? nodes.find((n) => n.id === selectedId && !n.isStart && !n.isEnd) ?? null : null
