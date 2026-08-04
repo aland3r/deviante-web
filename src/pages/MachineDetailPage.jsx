@@ -250,8 +250,14 @@ function AnalysisPanel({ machineId, parameter, savedAnalysis, onSaved }) {
     setError('')
     setSaved(false)
     try {
-      const values = points.map((point) => point.v)
-      const raw = await api.detectMonitoringSeries(values, params)
+      // Render only the artifact returned after the server has persisted the
+      // ADWIN result, RUL, failure probability and provenance.
+      const record = await api.saveMachineAnalysis(machineId, {
+        parameterId: parameter.id,
+        delta: params.delta,
+        treatment: params.treatment,
+      })
+      const raw = record.result ?? {}
       const drifts = (raw.drifts ?? []).map((d) => ({
         index: d.index, anomalyStartIndex: d.anomaly_start_index ?? d.anomalyStartIndex, value: d.value, width: d.width, estimation: d.estimation,
       }))
@@ -264,14 +270,6 @@ function AnalysisPanel({ machineId, parameter, savedAnalysis, onSaved }) {
       setResult(mapped)
       setSelectedDrift(drifts[0]?.index ?? null)
       setSelectedPoint(null)
-      // "Gero um arquivo separado que fica vinculado" — persist the run onto the machine.
-      // The API reloads the persisted series, runs ADWIN and computes RUL/risk
-      // server-side. The browser never supplies predictive outcomes.
-      const record = await api.saveMachineAnalysis(machineId, {
-        parameterId: parameter.id,
-        delta: mapped.delta,
-        treatment: mapped.treatment,
-      })
       setSaved(true)
       onSaved?.(record)
     } catch (err) {
