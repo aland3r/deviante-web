@@ -108,6 +108,10 @@ function TraceList({ points, driftIndexes, outliers, excluded, selectedTrace, on
 }
 
 function DriftChart({ points, processedValues, drifts, outliers, excluded, selectedDrift, selectedTrace, onSelectDrift, onSelectTrace }) {
+  // The selected drift, derived from the same props the parent uses. Without
+  // this, the emphasis/label blocks below reference an undeclared `drift` and
+  // throw a ReferenceError mid-render, unmounting the whole view (blank screen).
+  const drift = drifts.find((item) => item.index === selectedDrift) ?? null
   const width = 900
   const height = 410
   const pad = { left: 58, right: 24, top: 28, bottom: 42 }
