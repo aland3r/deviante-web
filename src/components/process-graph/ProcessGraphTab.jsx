@@ -457,6 +457,10 @@ function ActivityNode({ node, isSelected, analysisSelected }) {
   const a = 0.20 + (node.frequency / 100) * 0.65
   return (<g style={{ cursor: 'pointer' }}>
     {isSelected && <rect x={-3} y={-3} width={NODE_W + 6} height={NODE_H + 6} rx={7} fill="rgba(153,27,27,0.10)" stroke="#991b1b" strokeWidth={1.5} />}
+    {isSelected && <g transform={`translate(${NODE_W / 2},${NODE_H / 2})`}>
+      <circle cx={0} cy={0} r={NODE_W * 0.7} fill="none" stroke="rgba(56,189,248,0.22)" strokeWidth={2} />
+      <circle cx={0} cy={0} r={NODE_W * 0.45} fill="none" stroke="rgba(56,189,248,0.35)" strokeWidth={1.2} />
+    </g>}
     <rect x={0} y={0} width={NODE_W} height={NODE_H} rx={5} fill={isSelected ? '#1e2840' : '#16202e'} stroke={isSelected ? '#991b1b' : 'rgba(255,255,255,0.10)'} strokeWidth={isSelected ? 1.5 : 1} />
     <rect x={0} y={0} width={NODE_W} height={3} rx={3} fill={`rgba(153,27,27,${a})`} />
     <rect x={0} y={1.5} width={NODE_W} height={1.5} fill={`rgba(153,27,27,${a})`} />
@@ -527,6 +531,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   const [actSlider, setActSlider] = useState(100)
   const [pathSlider, setPathSlider] = useState(100)
   const [cursorGrab, setCursorGrab] = useState(false)
+  const [selectionRect, setSelectionRect] = useState(null)
   const [mobileFilters, setMobileFilters] = useState(false)
   const [showCasesPanel, setShowCasesPanel] = useState(true)
   const [hiddenVariantIds, setHiddenVariantIds] = useState(() => new Set())
@@ -793,17 +798,67 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   }
   function getNodeAt(vx, vy) { const { x, y } = toCanvas(vx, vy); return visNodes.find((n) => nodeHitTest(n, x, y)) }
 
+  function normalizeRect(rect) {
+    const left = Math.min(rect.x0, rect.x1)
+    const top = Math.min(rect.y0, rect.y1)
+    const width = Math.abs(rect.x1 - rect.x0)
+    const height = Math.abs(rect.y1 - rect.y0)
+    return { left, top, width, height, right: left + width, bottom: top + height }
+  }
+
+  function getNodesInSelection(rect) {
+    const norm = normalizeRect(rect)
+    return visNodes.filter((node) => {
+      const x = node.x * zoom + pan.x
+      const y = node.y * zoom + pan.y
+      const width = (node.isStart || node.isEnd ? CIRC_R * 2 : NODE_W) * zoom
+      const height = (node.isStart || node.isEnd ? CIRC_R * 2 : NODE_H) * zoom
+      return x + width >= norm.left && x <= norm.right && y + height >= norm.top && y <= norm.bottom
+    })
+  }
+
   function onMouseDown(e) {
     if (e.button !== 0) return
     const node = getNodeAt(e.clientX, e.clientY); onNode.current = !!node
-    if (!node) { isDragging.current = true; setCursorGrab(true); dragOrigin.current = { mx: e.clientX, my: e.clientY, px: pan.x, py: pan.y } }
+    if (node) {
+      if (e.shiftKey) {
+        toggleAnalysisActivity(node.id)
+        setSelectedId(node.id)
+        setShowCasesPanel(true)
+        onNode.current = false
+        return
+      }
+      onNode.current = true
+      return
+    }
+
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (e.shiftKey && rect) {
+      setSelectionRect({ x0: e.clientX - rect.left, y0: e.clientY - rect.top, x1: e.clientX - rect.left, y1: e.clientY - rect.top })
+      return
+    }
+
+    isDragging.current = true
+    setCursorGrab(true)
+    dragOrigin.current = { mx: e.clientX, my: e.clientY, px: pan.x, py: pan.y }
   }
   function onMouseMove(e) {
+    if (selectionRect) {
+      const rect = containerRef.current?.getBoundingClientRect(); if (!rect) return
+      setSelectionRect((current) => current ? ({ ...current, x1: e.clientX - rect.left, y1: e.clientY - rect.top }) : null)
+      return
+    }
     if (!isDragging.current || onNode.current) return
     setPan({ x: dragOrigin.current.px + (e.clientX - dragOrigin.current.mx), y: dragOrigin.current.py + (e.clientY - dragOrigin.current.my) })
   }
   function onMouseUp(e) {
-    if (onNode.current) {
+    if (selectionRect) {
+      const selectedNodes = getNodesInSelection(selectionRect).map((node) => node.id)
+      setExplicitActivityIds(new Set(selectedNodes))
+      setSelectedId(selectedNodes[0] ?? null)
+      setShowCasesPanel(true)
+      setSelectionRect(null)
+    } else if (onNode.current) {
       const node = getNodeAt(e.clientX, e.clientY)
       if (node) { setSelectedId((prev) => (prev === node.id ? null : node.id)); setShowCasesPanel(true) }
     }
@@ -896,10 +951,22 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
         <svg ref={svgRef} className="w-full h-full"
           style={{ cursor: cursorGrab ? 'grabbing' : 'grab', touchAction: 'none' }}
           onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp}
-          onMouseLeave={() => { isDragging.current = false; setCursorGrab(false) }}
+          onMouseLeave={() => { isDragging.current = false; setCursorGrab(false); if (selectionRect) setSelectionRect(null) }}
           onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
           <SvgDefs />
           <rect width="100%" height="100%" fill="url(#dots)" />
+          {selectionRect && (
+            <rect
+              x={Math.min(selectionRect.x0, selectionRect.x1)}
+              y={Math.min(selectionRect.y0, selectionRect.y1)}
+              width={Math.abs(selectionRect.x1 - selectionRect.x0)}
+              height={Math.abs(selectionRect.y1 - selectionRect.y0)}
+              fill="rgba(56,189,248,0.14)"
+              stroke="rgba(56,189,248,0.75)"
+              strokeWidth={1.5}
+              strokeDasharray="4 4"
+            />
+          )}
           <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`}>
             {visEdges.map((edge) => {
               const points = edge.points
