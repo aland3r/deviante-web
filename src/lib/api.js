@@ -355,12 +355,12 @@ export const api = {
   // and a fake parse result would teach the UI nothing about real logs.
   uploadEventLog: (processId, file) => upload(`/processes/${processId}/event-logs`, file),
   listEventLogs: (processId) => request(`/processes/${processId}/event-logs`),
-  listOperations: (processId) => request(`/processes/${processId}/operations`),
+  listOperations: (processId) => request(processId ? `/processes/${processId}/operations` : '/operations'),
   // UC7 — graph + variants derived from what was actually ingested. No mock
   // counterpart on purpose: an invented graph is exactly what this replaces.
   getProcessGraph: (processId) => request(`/processes/${processId}/graph`),
   getProcessTraces: (processId) => request(`/processes/${processId}/traces`),
-  // UC12 + UC13. `params` carry the run under the subtractive filter:
+  // Analysis parameters carry the run under the subtractive filter:
   //   treatment          — 'raw' feeds ADWIN the series as read from the log
   //                        (synthetic-corpus baseline); 'treated' smooths first
   //                        (the shop-floor pipeline).
@@ -398,6 +398,119 @@ export const api = {
   resolveMapping: (processId, mappings) => request(`/processes/${processId}/mapping`, {
     method: 'POST',
     body: JSON.stringify({ mappings }),
+  }),
+
+  // ── Monitoring, equipment and maintenance ────────────────────────────
+  // Persistence belongs to the authenticated API. There is intentionally no
+  // localStorage fallback: a health record must never leak between accounts or
+  // look durable when it only exists in one browser.
+  listMonitorings: () => request('/monitorings'),
+  createMonitoring: (name) => request('/monitorings', {
+    method: 'POST', body: JSON.stringify({ name: name?.trim() || null }),
+  }),
+  getMonitoring: async (id) => {
+    const [monitoring, machines] = await Promise.all([
+      request(`/monitorings/${id}`),
+      request(`/monitorings/${id}/equipment`),
+    ])
+    return { ...monitoring, machines: Array.isArray(machines) ? machines : machines?.items ?? [] }
+  },
+  updateMonitoring: (id, patch) => request(`/monitorings/${id}`, {
+    method: 'PUT', body: JSON.stringify(patch),
+  }),
+  deleteMonitoring: (id) => request(`/monitorings/${id}`, { method: 'DELETE' }),
+  addMachine: (monitoringId, data) => request(`/monitorings/${monitoringId}/equipment`, {
+    method: 'POST', body: JSON.stringify(data),
+  }),
+  linkMonitoringEquipment: (monitoringId, equipmentId) => request(`/monitorings/${monitoringId}/equipment/${equipmentId}`, { method: 'PUT' }),
+  unlinkMonitoringEquipment: (monitoringId, equipmentId) => request(`/monitorings/${monitoringId}/equipment/${equipmentId}`, { method: 'DELETE' }),
+  getMachine: async (machineId) => {
+    const [machine, parameters, analyses, schedules] = await Promise.all([
+      request(`/equipment/${machineId}`),
+      request(`/equipment/${machineId}/parameters`),
+      request(`/equipment/${machineId}/analyses`),
+      request(`/schedules?equipmentId=${encodeURIComponent(machineId)}`),
+    ])
+    const parameterRows = Array.isArray(parameters) ? parameters : parameters?.items ?? []
+    const detailedParameters = await Promise.all(parameterRows.map(async (parameter) => {
+      const readings = await request(`/monitoring-parameters/${parameter.id}/readings`)
+      return { ...parameter, readings: Array.isArray(readings) ? readings : readings?.items ?? [] }
+    }))
+    const analysisRows = Array.isArray(analyses) ? analyses : analyses?.items ?? []
+    const scheduleRows = Array.isArray(schedules) ? schedules : schedules?.items ?? []
+    const normalizedAnalyses = analysisRows.map((row) => ({
+      ...row,
+      method: row.method ?? row.result?.method,
+      delta: row.delta ?? row.result?.delta,
+      driftCount: row.driftCount ?? row.result?.drifts?.length ?? 0,
+      parameterName: row.parameterName ?? detailedParameters.find((item) => item.id === row.parameterId)?.name,
+      prediction: {
+        rulValue: row.rulValue,
+        rulUnit: row.rulUnit,
+        failureProbability: row.failureProbability,
+        failureHorizonValue: row.failureHorizonValue,
+        failureHorizonUnit: row.failureHorizonUnit,
+        modelVersion: row.modelVersion,
+        recommendation: row.recommendation,
+        provenance: row.provenance?.predictionSource,
+        computedAt: row.createdAt,
+      },
+    }))
+    return {
+      ...machine,
+      parameters: detailedParameters,
+      analyses: normalizedAnalyses,
+      schedules: scheduleRows,
+      latestPrediction: normalizedAnalyses[0]?.prediction ?? null,
+    }
+  },
+  updateMachine: (machineId, patch) => request(`/equipment/${machineId}`, {
+    method: 'PUT', body: JSON.stringify(patch),
+  }),
+  deleteMachine: (machineId) => request(`/equipment/${machineId}`, { method: 'DELETE' }),
+  addParameter: (machineId, def) => request(`/equipment/${machineId}/parameters`, {
+    method: 'POST', body: JSON.stringify(def),
+  }),
+  deleteParameter: (machineId, parameterId) => request(`/equipment/${machineId}/parameters/${parameterId}`, {
+    method: 'DELETE',
+  }),
+  uploadEquipmentReadings: (machineId, file) => upload(`/equipment/${machineId}/readings`, file),
+  saveMachineAnalysis: (machineId, analysis) => request(`/equipment/${machineId}/analyses`, {
+    method: 'POST', body: JSON.stringify(analysis),
+  }),
+  getEquipmentAnalysis: (analysisId) => request(`/equipment-analyses/${analysisId}`),
+  listMachinesForProcess: (processId) => request(`/processes/${processId}/equipment`),
+  linkProcessEquipment: (processId, equipmentId) => request(`/processes/${processId}/equipment/${equipmentId}`, { method: 'PUT' }),
+  unlinkProcessEquipment: (processId, equipmentId) => request(`/processes/${processId}/equipment/${equipmentId}`, { method: 'DELETE' }),
+  listAllMachines: () => request('/equipment'),
+  createEquipment: (data) => request('/equipment', { method: 'POST', body: JSON.stringify(data) }),
+  listSchedules: (params = {}) => {
+    const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value != null && value !== '')).toString()
+    return request(`/schedules${query ? `?${query}` : ''}`).then((payload) => {
+      const rows = Array.isArray(payload) ? payload : payload?.items ?? []
+      const normalized = rows.map((row) => ({
+        ...row,
+        scheduledStart: row.scheduledStart ?? row.plannedFor ?? null,
+        scheduledEnd: row.scheduledEnd ?? null,
+      }))
+      return Array.isArray(payload) ? normalized : { ...payload, items: normalized }
+    })
+  },
+  createSchedule: (data) => request('/schedules', { method: 'POST', body: JSON.stringify(data) }),
+  updateSchedule: (id, patch) => request(`/schedules/${id}`, { method: 'PUT', body: JSON.stringify(patch) }),
+  recordMaintenanceOccurrence: (scheduleId, data) => request(`/schedules/${scheduleId}/occurrences`, {
+    method: 'POST', body: JSON.stringify(data),
+  }),
+
+  // Real IPDD/ADWIN over a machine-parameter series. `values` is the numeric
+  // series; the response is the mining service's DetectResponse (snake_case).
+  detectMonitoringSeries: (values, params = {}) => request('/monitoring/detect', {
+    method: 'POST',
+    body: JSON.stringify({
+      values,
+      delta: params.delta != null && params.delta !== '' ? Number(params.delta) : 0.002,
+      treatment: params.treatment ?? 'treated',
+    }),
   }),
 }
 

@@ -17,8 +17,8 @@ import { api, ApiError } from '../lib/api'
   (ZZKdwxgmeCNJFG64zGbADe), HomeScreen — figma is the style reference.
 
   Grid mixes Process + Analysis cards (Figma HomeProject type). Analyses are
-  client-persisted until `deviante.analyses` ships; opening one routes to the
-  process analysis view, with the process name as provenance on the card.
+  persisted by the authenticated API; opening one routes to the process
+  analysis view, with the process name as provenance on the card.
 */
 
 function timeAgo(isoDate) {
@@ -58,6 +58,28 @@ function ProcessThumbnail() {
       <rect x="155" y="90" width="24" height="20" rx="5" fill="#111520" stroke="#2870a8" strokeWidth="1.5" />
       <circle cx="205" cy="65" r="10" fill="#0d1017" stroke="#4d8fc0" strokeWidth="1.2" />
       <rect x="200" y="60" width="10" height="10" rx="2" fill="#4d8fc0" opacity="0.6" />
+    </svg>
+  )
+}
+
+/** Monitoring card art — equipment signal traces on a health baseline. */
+function MonitoramentoThumbnail() {
+  return (
+    <svg width="100%" height="100%" viewBox="0 0 220 130" fill="none" preserveAspectRatio="xMidYMid meet">
+      {[35, 65, 95].map((y) => (
+        <line key={y} x1="20" y1={y} x2="200" y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+      ))}
+      <line x1="20" y1="50" x2="200" y2="50" stroke="#f59e0b" strokeWidth="1" strokeDasharray="4 3" opacity="0.5" />
+      <path d="M 20 92 L 45 90 L 70 91 L 95 88 L 120 86 L 135 70 L 150 52 L 170 44 L 200 40"
+        stroke="#10b981" strokeWidth="2" fill="none" opacity="0.9" />
+      {[[45, 90], [95, 88], [135, 70], [170, 44]].map(([cx, cy], i) => (
+        <circle key={i} cx={cx} cy={cy} r="2.6" fill="#10b981" opacity="0.85" />
+      ))}
+      <circle cx="185" cy="42" r="4" fill="#dc2626" />
+      <circle cx="185" cy="42" r="8" fill="none" stroke="#dc2626" strokeWidth="1" opacity="0.4" />
+      <rect x="28" y="104" width="14" height="12" rx="2" fill="#111520" stroke="#4d8fc0" strokeWidth="1.2" />
+      <rect x="52" y="104" width="14" height="12" rx="2" fill="#111520" stroke="#2870a8" strokeWidth="1.2" />
+      <circle cx="80" cy="110" r="6" fill="#0d1017" stroke="#4d8fc0" strokeWidth="1.2" />
     </svg>
   )
 }
@@ -179,7 +201,7 @@ function NewProjectButton({ type, label, description, disabled, busy, onClick })
           color: '#e2e8f0',
           lineHeight: 1.25,
         }}>
-          {busy ? 'Criando processo...' : label}
+          {busy ? (type === 'monitoramento' ? 'Criando monitoramento...' : 'Criando processo...') : label}
         </span>
         <span style={{
           display: 'block',
@@ -267,30 +289,36 @@ function AnalysisProcessPicker({ processes, onClose, onPick }) {
 
 function ProjectCard({ item }) {
   const isAnalysis = item.type === 'analise'
-  const to = isAnalysis
-    ? `/processes/${item.processId}?view=analysis&analysisId=${item.id}`
-    : `/processes/${item.id}`
-  const accent = isAnalysis ? '#6366f1' : '#2870a8'
-  const subtitle = isAnalysis
-    ? (item.processName
-      ? `Processo · ${item.processName}`
-      : 'Análise de desvios')
-    : `Editado ${timeAgo(item.updatedAt)}`
+  const isMonitoring = item.type === 'monitoramento'
+  const to = isMonitoring
+    ? `/monitoring/${item.id}`
+    : isAnalysis
+      ? `/processes/${item.processId}?view=analysis&analysisId=${item.id}`
+      : `/processes/${item.id}`
+  const accent = isMonitoring ? '#059669' : isAnalysis ? '#6366f1' : '#2870a8'
+  const hoverBorder = isMonitoring ? 'rgba(16,185,129,0.35)' : 'rgba(255,255,255,0.16)'
+  const subtitle = isMonitoring
+    ? `${item.machineCount ?? 0} máquina${(item.machineCount ?? 0) !== 1 ? 's' : ''}${item.companyName ? ` · ${item.companyName}` : ''}`
+    : isAnalysis
+      ? (item.processName
+        ? `Processo · ${item.processName}`
+        : 'Análise de desvios')
+      : `Editado ${timeAgo(item.updatedAt)}`
 
   return (
     <Link
       to={to}
       style={{ display: 'block', background: '#0f141e', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8, overflow: 'hidden', textDecoration: 'none', transition: 'border-color 0.15s' }}
-      onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)' }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = hoverBorder }}
       onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)' }}
     >
       <div style={{ height: 140, background: '#080c14', overflow: 'hidden', position: 'relative' }}>
-        {isAnalysis ? <AnaliseThumbnail /> : <ProcessThumbnail />}
+        {isMonitoring ? <MonitoramentoThumbnail /> : isAnalysis ? <AnaliseThumbnail /> : <ProcessThumbnail />}
       </div>
       <div style={{ padding: '10px 14px 12px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
           <div style={{ width: 14, height: 14, borderRadius: 3, background: accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            {isAnalysis ? <AnalysisBarsIcon size={8} /> : <Activity size={8} color="white" />}
+            {isMonitoring ? <RadioTower size={8} color="white" /> : isAnalysis ? <AnalysisBarsIcon size={8} /> : <Activity size={8} color="white" />}
           </div>
           <span style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 13, color: 'white', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
         </div>
@@ -310,22 +338,29 @@ function ProjectCard({ item }) {
 
 function ProjectListItem({ item }) {
   const isAnalysis = item.type === 'analise'
-  const to = isAnalysis
-    ? `/processes/${item.processId}?view=analysis&analysisId=${item.id}`
-    : `/processes/${item.id}`
-  const accent = isAnalysis ? '#6366f1' : '#4d8fc0'
-  const meta = isAnalysis
-    ? `${item.processName ? `Processo · ${item.processName}` : 'Análise'} · editado ${timeAgo(item.updatedAt)}`
-    : `${item.companyName || 'Empresa não definida'} · editado ${timeAgo(item.updatedAt)}`
+  const isMonitoring = item.type === 'monitoramento'
+  const to = isMonitoring
+    ? `/monitoring/${item.id}`
+    : isAnalysis
+      ? `/processes/${item.processId}?view=analysis&analysisId=${item.id}`
+      : `/processes/${item.id}`
+  const accent = isMonitoring ? '#10b981' : isAnalysis ? '#6366f1' : '#4d8fc0'
+  const meta = isMonitoring
+    ? `${item.machineCount ?? 0} máquina${(item.machineCount ?? 0) !== 1 ? 's' : ''} · editado ${timeAgo(item.updatedAt)}`
+    : isAnalysis
+      ? `${item.processName ? `Processo · ${item.processName}` : 'Análise'} · editado ${timeAgo(item.updatedAt)}`
+      : `${item.companyName || 'Empresa não definida'} · editado ${timeAgo(item.updatedAt)}`
 
   return (
     <Link to={to}
       className="flex items-center gap-3 px-3 py-3 border-b border-border last:border-0 hover:bg-secondary/40"
       style={{ textDecoration: 'none' }}>
       <div className="w-8 h-8 rounded flex items-center justify-center shrink-0" style={{ background: '#16202e' }}>
-        {isAnalysis
-          ? <AnalysisBarsIcon size={12} fill="#6366f1" />
-          : <Activity size={13} color={accent} />}
+        {isMonitoring
+          ? <RadioTower size={13} color={accent} />
+          : isAnalysis
+            ? <AnalysisBarsIcon size={12} fill="#6366f1" />
+            : <Activity size={13} color={accent} />}
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-xs font-semibold text-foreground truncate">{item.name}</p>
@@ -347,9 +382,11 @@ export default function DashboardPage() {
   const navigate = useNavigate()
   const [processes, setProcesses] = useState([])
   const [analyses, setAnalyses] = useState([])
+  const [monitorings, setMonitorings] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [creating, setCreating] = useState(false)
+  const [creatingMonitoring, setCreatingMonitoring] = useState(false)
   const [tab, setTab] = useState('recentes')
   const [search, setSearch] = useState('')
   const [displayMode, setDisplayMode] = useState('grid')
@@ -360,11 +397,13 @@ export default function DashboardPage() {
     Promise.all([
       api.listProcesses(),
       api.listAnalyses().catch(() => []),
+      api.listMonitorings().catch(() => []),
     ])
-      .then(([processRows, analysisRows]) => {
+      .then(([processRows, analysisRows, monitoringRows]) => {
         if (cancelled) return
         setProcesses(processRows)
         setAnalyses(analysisRows)
+        setMonitorings(monitoringRows)
       })
       .catch((err) => {
         if (!cancelled) {
@@ -386,6 +425,18 @@ export default function DashboardPage() {
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Não foi possível criar o processo.')
       setCreating(false)
+    }
+  }
+
+  async function handleCreateMonitoring() {
+    setCreatingMonitoring(true)
+    setError('')
+    try {
+      const created = await api.createMonitoring()
+      navigate(`/monitoring/${created.id}`)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Não foi possível criar o monitoramento.')
+      setCreatingMonitoring(false)
     }
   }
 
@@ -417,10 +468,18 @@ export default function DashboardPage() {
       ...a,
       type: 'analise',
     }))
-    return [...processItems, ...analysisItems].sort((a, b) =>
+    const monitoringItems = monitorings.map((m) => ({
+      id: m.id,
+      type: 'monitoramento',
+      name: m.name,
+      updatedAt: m.updatedAt,
+      companyName: m.companyName,
+      machineCount: m.machineCount,
+    }))
+    return [...processItems, ...analysisItems, ...monitoringItems].sort((a, b) =>
       String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')),
     )
-  }, [processes, analyses])
+  }, [processes, analyses, monitorings])
 
   const visible = tab === 'recentes'
     ? items.filter((item) => {
@@ -436,10 +495,12 @@ export default function DashboardPage() {
 
   const processCount = visible.filter((i) => i.type === 'processo').length
   const analysisCount = visible.filter((i) => i.type === 'analise').length
+  const monitoringCount = visible.filter((i) => i.type === 'monitoramento').length
   const countLabel = (() => {
     const parts = []
     if (processCount) parts.push(`${processCount} processo${processCount !== 1 ? 's' : ''}`)
     if (analysisCount) parts.push(`${analysisCount} anális${analysisCount !== 1 ? 'es' : 'e'}`)
+    if (monitoringCount) parts.push(`${monitoringCount} monitoramento${monitoringCount !== 1 ? 's' : ''}`)
     if (!parts.length) return '0 itens'
     return parts.join(' · ')
   })()
@@ -494,8 +555,9 @@ export default function DashboardPage() {
             <NewProjectButton
               type="monitoramento"
               label="Monitoramento"
-              description="Acompanhe desvios ao longo do tempo."
-              disabled
+              description="Cadastre máquinas e monitore a saúde delas."
+              onClick={handleCreateMonitoring}
+              busy={creatingMonitoring}
             />
           </div>
         </div>

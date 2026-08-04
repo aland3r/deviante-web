@@ -47,11 +47,11 @@ export const ROADMAP_PHASES = [
     codename: 'BOSS FIGHT',
     title: 'Fase 2 — Drift (PIBITI)',
     quests: [
-      { id: 'UC12-1a', uc: 'UC12', label: 'Job drift ADWIN + persist report', status: 'locked' },
-      { id: 'UC13-1a', uc: 'UC13', label: 'Painel parâmetros de análise', status: 'locked' },
+      { id: '2.1', uc: null, label: 'Job drift ADWIN + persist report', status: 'locked' },
+      { id: '2.2', uc: null, label: 'Painel parâmetros de análise', status: 'locked' },
       { id: 'UC7-1a', uc: 'UC7', label: 'Investigar trace flagado', status: 'locked' },
       { id: 'UC8-1a', uc: 'UC8', label: 'Referência / dismiss / excluir baseline', status: 'locked' },
-      { id: 'UC11-1a', uc: 'UC11', label: 'Recomendar manutenção', status: 'locked' },
+      { id: '2.3', uc: null, label: 'Recomendar manutenção', status: 'locked' },
     ],
   },
   {
@@ -59,8 +59,8 @@ export const ROADMAP_PHASES = [
     codename: 'GAME CLEAR',
     title: 'Fase 3 — Manutenção',
     quests: [
-      { id: 'UC14-1a', uc: 'UC14', label: 'Agendar manutenção', status: 'locked' },
-      { id: 'UC15-1a', uc: 'UC15', label: 'Registrar ocorrência', status: 'locked' },
+      { id: '3.2', uc: null, label: 'Agendar manutenção', status: 'locked' },
+      { id: '3.3', uc: null, label: 'Registrar ocorrência', status: 'locked' },
       { id: '3.1', uc: null, label: 'Schema equipment', status: 'locked' },
     ],
   },

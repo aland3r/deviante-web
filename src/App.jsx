@@ -7,6 +7,11 @@ import DashboardPage from './pages/DashboardPage'
 import LoginPage from './pages/LoginPage'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import ProcessCanvasPage from './pages/ProcessCanvasPage'
+import MonitoringPage from './pages/MonitoringPage'
+import MachineDetailPage from './pages/MachineDetailPage'
+import OperationsPage from './pages/OperationsPage'
+import EquipmentPage from './pages/EquipmentPage'
+import SchedulesPage from './pages/SchedulesPage'
 import ProtectedRoute, { NoAccessRedirect } from './routes/ProtectedRoute'
 
 export default function App() {
@@ -27,6 +32,12 @@ export default function App() {
             <Route path="/processes/:processId/mining" element={<Navigate to=".." relative="path" replace />} />
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/monitoring/:monitoringId" element={<MonitoringPage />} />
+              <Route path="/monitoring/:monitoringId/machines/:machineId" element={<MachineDetailPage />} />
+              <Route path="/operations" element={<OperationsPage />} />
+              <Route path="/equipment" element={<EquipmentPage />} />
+              <Route path="/equipment/:machineId" element={<MachineDetailPage />} />
+              <Route path="/schedules" element={<SchedulesPage />} />
               <Route path="/account" element={<AccountSettingsPage />} />
             </Route>
           </Route>

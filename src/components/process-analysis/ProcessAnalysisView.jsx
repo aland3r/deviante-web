@@ -255,7 +255,7 @@ export default function ProcessAnalysisView({ processId, processName, eventLog, 
   const [excludedTraces, setExcludedTraces] = useState(() => new Set())
   const [excludedActivities, setExcludedActivities] = useState(() => new Set())
 
-  // UC13 — the parameters the Manager chooses before running. They are held
+  // Parameters the Manager chooses before running. They are held
   // separately from `analysis` so the panel keeps showing what is about to run
   // while the previous result stays on screen.
   const [operations, setOperations] = useState(EMPTY_LIST)

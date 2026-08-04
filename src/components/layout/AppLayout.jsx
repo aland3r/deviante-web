@@ -23,6 +23,20 @@ export default function AppLayout() {
 
         <BrandMark />
 
+        <nav className="hidden md:flex items-center gap-1 ml-2" aria-label="Navegação principal">
+          {[
+            ['/dashboard', 'Projetos'],
+            ['/operations', 'Operações'],
+            ['/equipment', 'Equipamentos'],
+            ['/schedules', 'Agendamentos'],
+          ].map(([to, label]) => (
+            <NavLink key={to} to={to} className="px-2.5 py-1.5 rounded text-[11px] no-underline"
+              style={({ isActive }) => ({ color: isActive ? '#e2e8f0' : '#64748b', background: isActive ? 'rgba(255,255,255,.06)' : 'transparent', textDecoration: 'none' })}>
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+
         <div className="flex-1" />
 
         <div className="hidden sm:flex items-center gap-2 shrink-0">

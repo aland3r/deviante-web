@@ -1,7 +1,9 @@
-import { useState } from 'react'
-import { AlertCircle, Lock, Trash2, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { AlertCircle, ChevronRight, Link2, Lock, RadioTower, Trash2, X } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { api, ApiError } from '../../lib/api'
+import { deriveMachineStatus } from '../../lib/monitoring'
 
 /*
   "Processos" tab — process metadata form + danger zone.
@@ -118,6 +120,85 @@ function ProcessDeleteDialog({ name, onConfirm, onCancel }) {
           <X size={13} />
         </button>
       </div>
+    </div>
+  )
+}
+
+const MACHINE_STATUS_COLOR = { healthy: '#10b981', watch: '#f59e0b', critical: '#dc2626', unknown: '#64748b' }
+
+/**
+ * Machines linked to this process — the process side of the bidirectional
+ * link the monitoring feature owns. Association is stored on the machine
+ * (`relatedProcessId`); here the Manager attaches an existing machine and
+ * jumps straight to its monitoring detail.
+ */
+function MachinesPanel({ processId }) {
+  const navigate = useNavigate()
+  const [linked, setLinked] = useState([])
+  const [all, setAll] = useState([])
+  const [picking, setPicking] = useState(false)
+
+  async function reload() {
+    const [linkedRows, allRows] = await Promise.all([
+      api.listMachinesForProcess(processId).catch(() => []),
+      api.listAllMachines().catch(() => []),
+    ])
+    setLinked(linkedRows)
+    setAll(allRows)
+  }
+
+  useEffect(() => { reload() }, [processId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function link(machine) {
+    await api.linkProcessEquipment(processId, machine.id)
+    setPicking(false)
+    reload()
+  }
+
+  const available = all.filter((machine) => !linked.some((item) => item.id === machine.id))
+
+  return (
+    <div className="rounded-xl border border-border p-4 flex flex-col gap-3" style={{ background: '#111520' }}>
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-foreground flex items-center gap-1.5"><RadioTower size={12} color="#059669" />Máquinas</p>
+        <button type="button" onClick={() => setPicking((open) => !open)} className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1" style={{ background: 'transparent', border: 0, cursor: 'pointer' }}>
+          <Link2 size={11} />Vincular
+        </button>
+      </div>
+
+      {picking && (
+        <div className="rounded-lg border border-border overflow-hidden" style={{ background: '#0d1017' }}>
+          {available.length ? available.map((machine) => (
+            <button key={machine.id} type="button" onClick={() => link(machine)} className="w-full flex items-center gap-2 px-2.5 py-2 hover:bg-secondary/40 text-left" style={{ background: 'transparent', border: 0, cursor: 'pointer' }}>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[11px] text-foreground truncate">{machine.name}</span>
+                <span className="block text-[9px] text-muted-foreground truncate" style={{ fontFamily: "'JetBrains Mono',monospace" }}>{machine.monitoringName}{machine.relatedProcessName ? ` · ${machine.relatedProcessName}` : ''}</span>
+              </span>
+              <Link2 size={11} className="text-muted-foreground shrink-0" />
+            </button>
+          )) : <p className="px-3 py-3 text-[10px] text-muted-foreground text-center">Nenhuma máquina disponível. Crie um monitoramento primeiro.</p>}
+        </div>
+      )}
+
+      {linked.length ? (
+        <div className="flex flex-col gap-1.5">
+          {linked.map((machine) => (
+            <button key={machine.id} type="button" onClick={() => navigate(`/equipment/${machine.id}`)}
+              className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-colors" style={{ background: '#0d1017', border: '1px solid rgba(255,255,255,0.07)', cursor: 'pointer' }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(16,185,129,0.3)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)' }}>
+              <i className="rounded-full shrink-0" style={{ width: 7, height: 7, background: MACHINE_STATUS_COLOR[deriveMachineStatus(machine)] }} />
+              <span className="min-w-0 flex-1">
+                <span className="block text-[11px] text-foreground truncate">{machine.name}</span>
+                <span className="block text-[9px] text-muted-foreground truncate" style={{ fontFamily: "'JetBrains Mono',monospace" }}>{machine.tag || machine.monitoringName}</span>
+              </span>
+              <ChevronRight size={12} className="text-muted-foreground shrink-0" />
+            </button>
+          ))}
+        </div>
+      ) : !picking ? (
+        <p className="text-[10px] text-muted-foreground">Nenhuma máquina vinculada. Associe uma máquina monitorada a este processo.</p>
+      ) : null}
     </div>
   )
 }
@@ -268,6 +349,8 @@ export default function ProcessDetailsTab({ process, onSaved, onDeleted }) {
               </div>
               <p className="text-[10px] text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>Disponíveis após enviar um log.</p>
             </div>
+
+            <MachinesPanel processId={process.id} />
 
             <div className="rounded-xl border border-border p-4 flex flex-col" style={{ background: '#111520' }}>
               <p className="text-xs font-semibold text-foreground mb-3">Métricas</p>
