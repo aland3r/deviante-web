@@ -397,7 +397,7 @@ function EventLogSelector({ eventLogs, selectedIds, onToggle }) {
         <p className="text-[10px] font-semibold uppercase text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>Logs da análise</p>
         <span className="text-[9px] text-muted-foreground">{selectedIds.size}/{parsedLogs.length}</span>
       </div>
-      <div className="space-y-1 overflow-y-auto pr-0.5" style={{ maxHeight: 'clamp(72px, 16vh, 160px)' }}>
+      <div className="space-y-1 overflow-y-auto pr-0.5" style={{ maxHeight: 'clamp(72px, 32vh, 320px)' }}>
         {eventLogs.map((log) => {
           const parsed = log.parseStatus === 'parsed'
           const checked = selectedIds.has(log.id)
@@ -406,19 +406,17 @@ function EventLogSelector({ eventLogs, selectedIds, onToggle }) {
             <button key={log.id} type="button" disabled={!parsed || isOnlySelected}
               title={!parsed ? 'Este upload ainda não está pronto para análise' : isOnlySelected ? 'Mantenha ao menos um log selecionado' : checked ? 'Remover da próxima análise' : 'Incluir na próxima análise'}
               onClick={() => onToggle(log.id)}
-              className="w-full flex items-center gap-2 rounded px-2 py-2 text-left disabled:cursor-not-allowed"
-              style={{ background: checked ? 'rgba(40,112,168,.13)' : 'rgba(255,255,255,.025)', border: `1px solid ${checked ? 'rgba(40,112,168,.32)' : 'rgba(255,255,255,.06)'}`, opacity: parsed ? 1 : 0.48 }}>
+              className="w-full grid items-center gap-2 rounded px-2 py-1.5 text-left disabled:cursor-not-allowed"
+              style={{ gridTemplateColumns: '16px 12px minmax(0, 1fr) auto', background: checked ? 'rgba(40,112,168,.13)' : 'rgba(255,255,255,.025)', border: `1px solid ${checked ? 'rgba(40,112,168,.32)' : 'rgba(255,255,255,.06)'}`, opacity: parsed ? 1 : 0.48 }}>
               <span className="w-4 h-4 rounded flex items-center justify-center shrink-0" style={{ background: checked ? '#2870a8' : 'transparent', border: `1px solid ${checked ? '#4d8fc0' : '#475569'}` }}>
                 {checked && <Check size={10} color="white" strokeWidth={3} />}
               </span>
               <FileText size={12} className="text-muted-foreground shrink-0" />
-              <span className="min-w-0 flex-1">
-                <span className="block text-[10px] text-foreground truncate">{log.fileName}</span>
-                <span className="block text-[9px] text-muted-foreground mt-0.5" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
-                  {parsed
-                    ? `${Number(log.traceCount ?? 0).toLocaleString('pt-BR')} traces · ${new Date(log.uploadedAt).toLocaleDateString('pt-BR')}`
-                    : log.parseStatus}
-                </span>
+              <span className="min-w-0 text-[10px] text-foreground truncate">{log.fileName}</span>
+              <span className="text-[9px] text-muted-foreground whitespace-nowrap" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
+                {parsed
+                  ? `${Number(log.traceCount ?? 0).toLocaleString('pt-BR')} traces · ${new Date(log.uploadedAt).toLocaleDateString('pt-BR')}`
+                  : log.parseStatus}
               </span>
             </button>
           )
