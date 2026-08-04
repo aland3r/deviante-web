@@ -352,8 +352,14 @@ export const api = {
   listOperations: (processId) => request(processId ? `/processes/${processId}/operations` : '/operations'),
   // UC7 — graph + variants derived from what was actually ingested. No mock
   // counterpart on purpose: an invented graph is exactly what this replaces.
-  getProcessGraph: (processId) => request(`/processes/${processId}/graph`),
-  getProcessTraces: (processId) => request(`/processes/${processId}/traces`),
+  getProcessGraph: (processId, eventLogIds = []) => {
+    const query = new URLSearchParams(eventLogIds.map((id) => ['eventLogId', id])).toString()
+    return request(`/processes/${processId}/graph${query ? `?${query}` : ''}`)
+  },
+  getProcessTraces: (processId, eventLogIds = []) => {
+    const query = new URLSearchParams(eventLogIds.map((id) => ['eventLogId', id])).toString()
+    return request(`/processes/${processId}/traces${query ? `?${query}` : ''}`)
+  },
   // Analysis parameters carry the run under the subtractive filter:
   //   treatment          — 'raw' feeds ADWIN the series as read from the log
   //                        (synthetic-corpus baseline); 'treated' smooths first
@@ -367,6 +373,7 @@ export const api = {
     const query = analysisId ? `?analysisId=${encodeURIComponent(analysisId)}` : ''
     const body = {
       treatment: params.treatment ?? 'treated',
+      eventLogIds: params.eventLogIds ?? [],
       excludedActivityIds: params.excludedActivityIds ?? [],
       excludedTraceIds: params.excludedTraceIds ?? [],
     }

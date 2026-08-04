@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
-import { X, ZoomIn, ZoomOut, Maximize2, SlidersHorizontal, Scan, Upload } from 'lucide-react'
+import { Check, FileText, X, ZoomIn, ZoomOut, Maximize2, SlidersHorizontal, Scan, Upload } from 'lucide-react'
 import {
   NODE_W, NODE_H, CIRC_R,
   GRAD_LIGHT, GRAD_MID, GRAD_DEEP, DASH_COLOR,
@@ -352,6 +352,7 @@ function NodeDetailPanel({ node, analysisSelected, analysisSelectionExplicit, on
 
 function AnalysisFlightDeck({ scope, onReset }) {
   const filtered = scope.selectedTraceCount !== scope.totalTraceCount
+    || scope.selectedLogCount !== scope.totalLogCount
     || scope.selectedActivityCount !== scope.totalActivityCount
     || scope.selectedVariantCount !== scope.totalVariantCount
     || scope.selectedPathCount !== scope.totalPathCount
@@ -373,6 +374,7 @@ function AnalysisFlightDeck({ scope, onReset }) {
       <div>
         <p className="text-xl font-semibold text-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>{scope.selectedTraceCount.toLocaleString('pt-BR')}</p>
         <p className="text-[10px] text-muted-foreground">de {scope.totalTraceCount.toLocaleString('pt-BR')} traces serão processados{scope.totalTraceCount > scope.selectedTraceCount ? ` · ${scope.totalTraceCount - scope.selectedTraceCount} fora` : ''}</p>
+        <p className="text-[9px] mt-1" style={{ color: '#4d8fc0', fontFamily: "'JetBrains Mono',monospace" }}>{scope.selectedLogCount} de {scope.totalLogCount} logs selecionados</p>
       </div>
       <div className="grid grid-cols-3 gap-1.5">
         {metric('Variantes', scope.selectedVariantCount, scope.totalVariantCount)}
@@ -382,6 +384,46 @@ function AnalysisFlightDeck({ scope, onReset }) {
       <div className="flex items-center justify-between text-[9px] text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
         <span>Densidade atividades {scope.activityDensity}%</span>
         <span>Caminhos {scope.pathDensity}%</span>
+      </div>
+    </div>
+  )
+}
+
+function EventLogSelector({ eventLogs, selectedIds, onToggle }) {
+  const parsedLogs = eventLogs.filter((log) => log.parseStatus === 'parsed')
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-semibold uppercase text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>Logs da análise</p>
+        <span className="text-[9px] text-muted-foreground">{selectedIds.size}/{parsedLogs.length}</span>
+      </div>
+      <div className="space-y-1 max-h-40 overflow-y-auto pr-0.5">
+        {eventLogs.map((log) => {
+          const parsed = log.parseStatus === 'parsed'
+          const checked = selectedIds.has(log.id)
+          const isOnlySelected = checked && selectedIds.size === 1
+          return (
+            <button key={log.id} type="button" disabled={!parsed || isOnlySelected}
+              title={!parsed ? 'Este upload ainda não está pronto para análise' : isOnlySelected ? 'Mantenha ao menos um log selecionado' : checked ? 'Remover da próxima análise' : 'Incluir na próxima análise'}
+              onClick={() => onToggle(log.id)}
+              className="w-full flex items-center gap-2 rounded px-2 py-2 text-left disabled:cursor-not-allowed"
+              style={{ background: checked ? 'rgba(40,112,168,.13)' : 'rgba(255,255,255,.025)', border: `1px solid ${checked ? 'rgba(40,112,168,.32)' : 'rgba(255,255,255,.06)'}`, opacity: parsed ? 1 : 0.48 }}>
+              <span className="w-4 h-4 rounded flex items-center justify-center shrink-0" style={{ background: checked ? '#2870a8' : 'transparent', border: `1px solid ${checked ? '#4d8fc0' : '#475569'}` }}>
+                {checked && <Check size={10} color="white" strokeWidth={3} />}
+              </span>
+              <FileText size={12} className="text-muted-foreground shrink-0" />
+              <span className="min-w-0 flex-1">
+                <span className="block text-[10px] text-foreground truncate">{log.fileName}</span>
+                <span className="block text-[9px] text-muted-foreground mt-0.5" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
+                  {parsed
+                    ? `${Number(log.traceCount ?? 0).toLocaleString('pt-BR')} traces · ${new Date(log.uploadedAt).toLocaleDateString('pt-BR')}`
+                    : log.parseStatus}
+                </span>
+              </span>
+            </button>
+          )
+        })}
+        {eventLogs.length === 0 && <p className="text-[10px] text-muted-foreground py-2">Nenhum upload registrado.</p>}
       </div>
     </div>
   )
@@ -498,6 +540,8 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   const [explicitActivityIds, setExplicitActivityIds] = useState(null)
   const [analysisRunning, setAnalysisRunning] = useState(false)
 
+  const [eventLogs, setEventLogs] = useState([])
+  const [selectedEventLogIds, setSelectedEventLogIds] = useState(null)
   const [graph, setGraph] = useState(null)
   const [variants, setVariants] = useState([])
   const [loading, setLoading] = useState(true)
@@ -510,14 +554,46 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   const svgRef = useRef(null)
   const containerRef = useRef(null)
 
-  // The graph is the essential request. Trace variants enrich the workspace,
-  // but a failure there must not discard a valid graph after mapping.
   useEffect(() => {
     let cancelled = false
+    api.listEventLogs(processId)
+      .then((logs) => {
+        if (cancelled) return
+        const nextLogs = Array.isArray(logs) ? logs : []
+        const parsedIds = new Set(nextLogs.filter((log) => log.parseStatus === 'parsed').map((log) => log.id))
+        setEventLogs(nextLogs)
+        setSelectedEventLogIds((current) => {
+          if (current !== null) {
+            const kept = new Set([...current].filter((id) => parsedIds.has(id)))
+            if (kept.size) return kept
+          }
+          const newest = nextLogs.find((log) => log.parseStatus === 'parsed')
+          return new Set(newest ? [newest.id] : [])
+        })
+      })
+      .catch((err) => {
+        if (!cancelled) setLoadError(err instanceof ApiError ? err.message : 'Não foi possível carregar os logs deste processo.')
+      })
+    return () => { cancelled = true }
+  }, [processId])
+
+  const selectedEventLogIdList = useMemo(() => [...(selectedEventLogIds ?? [])], [selectedEventLogIds])
+
+  // Graph, variants, counter and analysis payload all use the same selected
+  // upload ids; changing a checkmark cannot leave a stale canvas behind.
+  useEffect(() => {
+    if (selectedEventLogIds === null) return undefined
+    let cancelled = false
+    if (selectedEventLogIdList.length === 0) {
+      setGraph(null)
+      setVariants([])
+      setLoading(false)
+      return () => { cancelled = true }
+    }
     setLoading(true)
     Promise.all([
-      api.getProcessGraph(processId),
-      api.getProcessTraces(processId).catch(() => ({ variants: [] })),
+      api.getProcessGraph(processId, selectedEventLogIdList),
+      api.getProcessTraces(processId, selectedEventLogIdList).catch(() => ({ variants: [] })),
     ])
       .then(([graphData, traceData]) => {
         if (cancelled) return
@@ -530,7 +606,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
       })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [processId])
+  }, [processId, selectedEventLogIds, selectedEventLogIdList])
 
   const model = useMemo(() => buildGraphModel(graph), [graph])
 
@@ -592,6 +668,9 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
     return {
       excludedActivityIds,
       excludedTraceIds: [...excludedTraceIds],
+      eventLogIds: selectedEventLogIdList,
+      selectedLogCount: selectedEventLogIdList.length,
+      totalLogCount: eventLogs.filter((log) => log.parseStatus === 'parsed').length,
       totalTraceCount,
       selectedTraceCount: Math.max(totalTraceCount - excludedTraceIds.size, 0),
       totalActivityCount: allActivityIds.size || allActivityNodeIds.size,
@@ -605,7 +684,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
       selectionExplicit: explicitActivityIds !== null,
       selectedActivityNodeIds,
     }
-  }, [model, visibleModel, variants, hiddenVariantIds, ignoredTraceIds, explicitActivityIds, actSlider, pathSlider])
+  }, [model, visibleModel, variants, hiddenVariantIds, ignoredTraceIds, explicitActivityIds, actSlider, pathSlider, selectedEventLogIdList, eventLogs])
 
   // Report both source totals and the exact next-run selection. The header,
   // flight deck and POST payload now read the same object.
@@ -617,6 +696,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
       hasUnmappedOperations: graph?.hasUnmappedOperations ?? false,
       analysisMinimumTraces: MIN_ANALYSIS_TRACES,
       analysisEligible: analysisScope.selectedTraceCount >= MIN_ANALYSIS_TRACES
+        && analysisScope.selectedLogCount > 0
         && analysisScope.selectedActivityCount > 0
         && !(graph?.hasUnmappedOperations ?? false),
       analysisScope,
@@ -632,6 +712,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   const selectedNode = selectedId ? nodes.find((n) => n.id === selectedId && !n.isStart && !n.isEnd) ?? null : null
   const hasObservedProcess = model.nodes.length > 0
   const analysisEligible = analysisScope.selectedTraceCount >= MIN_ANALYSIS_TRACES
+    && analysisScope.selectedLogCount > 0
     && analysisScope.selectedActivityCount > 0
     && !graph?.hasUnmappedOperations
 
@@ -641,6 +722,23 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
 
   function toggleTrace(id) {
     setIgnoredTraceIds((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next })
+  }
+
+  function toggleEventLog(id) {
+    setSelectedEventLogIds((current) => {
+      const next = new Set(current ?? [])
+      if (next.has(id)) {
+        if (next.size === 1) return next
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+    setHiddenVariantIds(new Set())
+    setIgnoredTraceIds(new Set())
+    setExplicitActivityIds(null)
+    setSelectedId(null)
   }
 
   function toggleAnalysisActivity(id) {
@@ -657,6 +755,12 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
     setExplicitActivityIds(null)
     setActSlider(100)
     setPathSlider(100)
+  }
+
+
+  function useAllAnalysisInput() {
+    resetAnalysisSelection()
+    setSelectedEventLogIds(new Set(eventLogs.filter((log) => log.parseStatus === 'parsed').map((log) => log.id)))
   }
 
   async function startAnalysis() {
@@ -921,12 +1025,13 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
 
       {!isMobile && (
         <div className="shrink-0 flex flex-col border-l border-border" style={{ width: '284px', background: '#111520' }}>
-          <div className="shrink-0 p-3 border-b border-border">
+          <div className="shrink-0 p-3 border-b border-border space-y-3">
             <button type="button" onClick={onUploadLog}
               className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded text-xs font-medium transition-colors border border-border text-muted-foreground hover:text-foreground"
               style={{ fontFamily: "'JetBrains Mono',monospace" }}>
-              <Upload size={12} />{graph?.eventLog ? 'Recarregar log' : 'Carregar log de eventos'}
+              <Upload size={12} />{eventLogs.length ? 'Adicionar log de eventos' : 'Carregar log de eventos'}
             </button>
+            <EventLogSelector eventLogs={eventLogs} selectedIds={selectedEventLogIds ?? new Set()} onToggle={toggleEventLog} />
           </div>
 
           <div className="p-4 border-b border-border space-y-5">
@@ -957,11 +1062,13 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
           )}
 
           <div className="shrink-0 p-3 border-t border-border mt-auto space-y-3">
-            {graph?.eventLog && <AnalysisFlightDeck scope={analysisScope} onReset={resetAnalysisSelection} />}
+            {graph?.eventLog && <AnalysisFlightDeck scope={analysisScope} onReset={useAllAnalysisInput} />}
             <button type="button" onClick={startAnalysis}
               disabled={!analysisEligible || analysisRunning}
-              title={!graph?.caseCount
-                ? 'Carregue e mapeie um log antes de analisar'
+              title={!analysisScope.selectedLogCount
+                ? 'Selecione ao menos um log parseado'
+                : !graph?.caseCount
+                  ? 'Carregue e mapeie um log antes de analisar'
                 : graph.hasUnmappedOperations
                   ? 'Conclua o mapeamento antes de analisar'
                   : analysisScope.selectedActivityCount === 0

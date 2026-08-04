@@ -242,6 +242,7 @@ export default function ProcessCanvasPage() {
               await api.runProcessAnalysis(processId, analysis.id, {
                 treatment: 'treated',
                 delta: 0.002,
+                eventLogIds: scope.eventLogIds,
                 excludedActivityIds: scope.excludedActivityIds,
                 excludedTraceIds: scope.excludedTraceIds,
               })

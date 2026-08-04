@@ -255,6 +255,7 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
   // activity ids whose duration is filtered out of the series. Applied on run.
   const [excludedTraces, setExcludedTraces] = useState(() => new Set())
   const [excludedActivities, setExcludedActivities] = useState(() => new Set())
+  const eventLogIdsRef = useRef([])
 
   // Parameters the Manager chooses before running. They are held
   // separately from `analysis` so the panel keeps showing what is about to run
@@ -290,11 +291,13 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
     const request = {
       treatment: effective.treatment,
       delta: effective.delta,
+      eventLogIds: eventLogIdsRef.current,
       excludedActivityIds: [...excludedActivitiesRef.current],
       excludedTraceIds: [...excludedTracesRef.current],
     }
     try {
       const result = await api.runProcessAnalysis(processId, analysisId, request)
+      eventLogIdsRef.current = (result.eventLogs?.length ? result.eventLogs : [result.eventLog]).filter(Boolean).map((log) => log.id)
       setAnalysis(result)
       setSelectedDrift(result.drifts[0]?.index ?? null)
       setSelectedTrace(null)
@@ -321,6 +324,7 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
             // parameters the run used — instead of starting from all-active.
             setExcludedTraces(new Set(saved.excludedTraceIds ?? EMPTY_LIST))
             setExcludedActivities(new Set(saved.excludedActivityIds ?? EMPTY_LIST))
+            eventLogIdsRef.current = (saved.eventLogs?.length ? saved.eventLogs : [saved.eventLog]).filter(Boolean).map((log) => log.id)
             setParams((current) => ({
               ...current,
               treatment: saved.treatment ?? current.treatment,
@@ -535,10 +539,10 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
           <aside className="hidden lg:flex flex-col shrink-0 min-h-0 border-r border-border overflow-hidden" style={{ width: 238, background: '#111520' }}>
             <div className="shrink-0 px-4 py-3 border-b border-border">
               <p className="text-[10px] uppercase text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
-                Traces do log
+                Traces dos logs
               </p>
               <p className="text-[9px] text-muted-foreground mt-1">
-                {points.length} em ordem cronológica{activityFilterActive ? ` · ${seriesLabel}` : ''}
+                {points.length} em ordem cronológica · {(analysis.eventLogs?.length || 1)} log{(analysis.eventLogs?.length || 1) !== 1 ? 's' : ''}{activityFilterActive ? ` · ${seriesLabel}` : ''}
               </p>
             </div>
             <TraceList points={points} driftIndexes={driftIndexes} outliers={outliers} excluded={excludedTraces}
