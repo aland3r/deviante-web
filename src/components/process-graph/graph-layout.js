@@ -35,6 +35,9 @@ const REAL_GAP = 46 // between two activity/round columns
 const DUMMY_GAP = 24 // gutter a routed edge threads through
 const DUMMY_W = 26
 
+const GUTTER_BASE = 44 // clearance from the node columns to the first side arc
+const LANE_GAP = 34 // spacing between stacked side arcs
+
 const ORDER_SWEEPS = 8
 const PLACE_SWEEPS = 12
 
@@ -225,6 +228,32 @@ function placeRank(rank, targets) {
 }
 
 /**
+ * Ids on the heaviest source→target path over the forward (rank-increasing)
+ * edges, weighted by directly-follows frequency — the graph's main flow. This
+ * is the chain the spine straightens onto; everything off it becomes a side
+ * arc.
+ */
+function heaviestPath(realNodes, routed, members) {
+  const best = new Map(realNodes.map((n) => [n.id, { w: 0, prev: null }]))
+  const forward = routed
+    .filter((e) => members.get(e.target).layer > members.get(e.source).layer)
+    .sort((a, b) => members.get(a.source).layer - members.get(b.source).layer)
+  for (const e of forward) {
+    const s = best.get(e.source)
+    const t = best.get(e.target)
+    if (!s || !t) continue
+    const w = s.w + (e.frequency ?? 0.001)
+    if (w > t.w) { t.w = w; t.prev = e.source }
+  }
+  let endId = null
+  let endW = -Infinity
+  for (const n of realNodes) { const b = best.get(n.id); if (b.w > endW) { endW = b.w; endId = n.id } }
+  const path = new Set()
+  for (let id = endId; id; id = best.get(id).prev) path.add(id)
+  return path
+}
+
+/**
  * Full layered layout for one direction.
  *
  * @param {object} model   `buildGraphModel` output (nodes carry `rank`).
@@ -350,6 +379,25 @@ export function layoutGraph(model, layout) {
     }
   }
 
+  // Straighten the dominant path into a single spine. The heaviest
+  // source→target chain (by directly-follows frequency) is what the eye reads
+  // as "the process"; pinning its nodes to one cross-coordinate makes the main
+  // flow a straight line, so every skip or loop can then arc cleanly off to the
+  // side instead of weaving through the middle. Rank-mates yield only as far as
+  // separation forces them, keeping the rest of the placement intact.
+  const spine = heaviestPath(realNodes, routed, members)
+  if (spine.size) {
+    const crosses = [...spine].map((id) => members.get(id).c).sort((a, b) => a - b)
+    const column = crosses[Math.floor(crosses.length / 2)]
+    for (const layer of layers) {
+      const idx = layer.findIndex((m) => spine.has(m.id))
+      if (idx < 0) continue
+      layer[idx].c = column
+      for (let i = idx - 1; i >= 0; i--) layer[i].c = Math.min(layer[i].c, layer[i + 1].c - separation(layer[i], layer[i + 1]))
+      for (let i = idx + 1; i < layer.length; i++) layer[i].c = Math.max(layer[i].c, layer[i - 1].c + separation(layer[i - 1], layer[i]))
+    }
+  }
+
   // Normalise the cross axis so the drawing starts at a small margin.
   let minC = Infinity
   for (const m of members.values()) minC = Math.min(minC, m.c - m.w / 2)
@@ -371,17 +419,79 @@ export function layoutGraph(model, layout) {
   })
 
   const stub = RANK_GAP * 0.42
+
+  // Axis-agnostic helpers over a `{cx, cy}` centre: "cross" is the sibling axis
+  // (x when vertical), and side arcs live in gutters just outside the columns.
+  const crossOf = (c) => (layout === 'horizontal' ? c.cy : c.cx)
+  const rankOf = (c) => (layout === 'horizontal' ? c.cx : c.cy)
+  const makePt = (cross, rank) => (layout === 'horizontal' ? { x: rank, y: cross } : { x: cross, y: rank })
+
+  let leftBound = Infinity
+  let rightBound = -Infinity
+  for (const node of nodes) {
+    const c = crossOf(node)
+    const h = halfCross(node)
+    leftBound = Math.min(leftBound, c - h)
+    rightBound = Math.max(rightBound, c + h)
+  }
+  if (!Number.isFinite(leftBound)) { leftBound = 0; rightBound = 0 }
+
+  // Anything that is not a single forward hop — a skip, a same-rank jump, or a
+  // backward loop — leaves the main flow and is drawn as a rounded arc out in a
+  // side gutter: forward skips to the right, backward loops to the left. Longer
+  // arcs sit further out (their own lane) so they never cross each other, the
+  // spine, or a node column. The spine's own consecutive edges stay straight.
+  const arcSpan = (edge) => members.get(edge.target).layer - members.get(edge.source).layer
+  const arcMeta = new Map()
+  const sides = { right: [], left: [] }
+  for (const edge of routed) {
+    if (arcSpan(edge) === 1) continue
+    sides[arcSpan(edge) >= 0 ? 'right' : 'left'].push(edge)
+  }
+  for (const list of Object.values(sides)) {
+    // Shorter spans inner, longer spans outer — so a long arc never has to
+    // cross the shorter arcs it encloses.
+    list.sort((a, b) => Math.abs(arcSpan(a)) - Math.abs(arcSpan(b)))
+    list.forEach((edge, lane) => arcMeta.set(edge.id, lane))
+  }
+
+  const arcPoints = (edge, side, lane) => {
+    const from = members.get(edge.source)
+    const to = members.get(edge.target)
+    const cf = centreOf(from)
+    const ct = centreOf(to)
+    const dir = Math.sign(to.layer - from.layer) || 1
+    const gutter = side === 'right'
+      ? rightBound + GUTTER_BASE + lane * LANE_GAP
+      : leftBound - GUTTER_BASE - lane * LANE_GAP
+    const exitR = rankOf(cf) + dir * (halfAlong(from.node) + stub)
+    const enterR = rankOf(ct) - dir * (halfAlong(to.node) + stub)
+    return [
+      makePt(crossOf(cf), rankOf(cf) + dir * halfAlong(from.node)),
+      makePt(crossOf(cf), exitR),
+      makePt(gutter, exitR),
+      makePt(gutter, enterR),
+      makePt(crossOf(ct), enterR),
+      makePt(crossOf(ct), rankOf(ct) - dir * halfAlong(to.node)),
+    ]
+  }
+
   const edges = [
-    ...routed.map((edge) => ({
-      id: edge.id,
-      source: edge.source,
-      target: edge.target,
-      frequency: edge.frequency,
-      caseCount: edge.caseCount,
-      label: edge.label,
-      dashed: edge.dashed,
-      points: edgePoints(edge.chain, members, centreOf, layout, stub),
-    })),
+    ...routed.map((edge) => {
+      const lane = arcMeta.get(edge.id)
+      return {
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        frequency: edge.frequency,
+        caseCount: edge.caseCount,
+        label: edge.label,
+        dashed: edge.dashed,
+        points: lane === undefined
+          ? edgePoints(edge.chain, members, centreOf, layout, stub)
+          : arcPoints(edge, arcSpan(edge) >= 0 ? 'right' : 'left', lane),
+      }
+    }),
     ...selfLoops.map((edge) => ({
       id: edge.id,
       source: edge.source,
