@@ -141,7 +141,7 @@ const ACTION_APPEARANCE = {
   },
 }
 
-function NewProjectButton({ type, label, description, disabled, busy, onClick }) {
+function NewProjectButton({ type, label, disabled, busy, onClick }) {
   const appearance = ACTION_APPEARANCE[type]
   const Icon = appearance.icon
 
@@ -150,13 +150,14 @@ function NewProjectButton({ type, label, description, disabled, busy, onClick })
       type="button"
       onClick={onClick}
       disabled={disabled || busy}
+      className="w-full sm:w-[168px]"
       style={{
-        minHeight: 68,
+        minHeight: 52,
         display: 'grid',
-        gridTemplateColumns: '42px minmax(0, 1fr) 24px',
+        gridTemplateColumns: '34px minmax(0, 1fr) 20px',
         alignItems: 'center',
-        gap: 11,
-        padding: '10px 11px',
+        gap: 8,
+        padding: '8px 9px',
         borderRadius: 7,
         border: `1px solid ${appearance.border}`,
         background: '#111520',
@@ -180,8 +181,8 @@ function NewProjectButton({ type, label, description, disabled, busy, onClick })
       }}
     >
       <span style={{
-        width: 42,
-        height: 42,
+        width: 34,
+        height: 34,
         borderRadius: 6,
         display: 'flex',
         alignItems: 'center',
@@ -190,7 +191,7 @@ function NewProjectButton({ type, label, description, disabled, busy, onClick })
         border: `1px solid ${appearance.border}`,
         color: appearance.accent,
       }}>
-        <Icon size={17} />
+        <Icon size={15} />
       </span>
       <span style={{ minWidth: 0 }}>
         <span style={{
@@ -203,21 +204,10 @@ function NewProjectButton({ type, label, description, disabled, busy, onClick })
         }}>
           {busy ? (type === 'monitoramento' ? 'Criando monitoramento...' : 'Criando processo...') : label}
         </span>
-        <span style={{
-          display: 'block',
-          marginTop: 3,
-          fontFamily: "'Inter',sans-serif",
-          fontSize: 10,
-          color: '#64748b',
-          lineHeight: 1.3,
-          whiteSpace: 'normal',
-        }}>
-          {description}
-        </span>
       </span>
       <span style={{
-        width: 24,
-        height: 24,
+        width: 20,
+        height: 20,
         borderRadius: '50%',
         display: 'flex',
         alignItems: 'center',
@@ -536,26 +526,23 @@ export default function DashboardPage() {
           </div>
         ) : null}
 
-        <div style={{ marginBottom: 40 }}>
-          <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, fontWeight: 600, color: '#94a3b8', margin: '0 0 14px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Criar novo</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+        <div className="flex flex-col items-end" style={{ marginBottom: 32 }}>
+          <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 10, fontWeight: 600, color: '#64748b', margin: '0 0 9px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Criar novo</p>
+          <div className="flex w-full flex-col justify-end gap-2 sm:w-auto sm:flex-row">
             <NewProjectButton
               type="processo"
               label="Processo"
-              description="Defina atividades e carregue um log."
               onClick={handleCreateProcess}
               busy={creating}
             />
             <NewProjectButton
               type="analise"
               label="Análise"
-              description="Escolha um processo com log mapeado."
               onClick={() => setAnalysisPickerOpen(true)}
             />
             <NewProjectButton
               type="monitoramento"
               label="Monitoramento"
-              description="Cadastre máquinas e monitore a saúde delas."
               onClick={handleCreateMonitoring}
               busy={creatingMonitoring}
             />

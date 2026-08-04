@@ -405,8 +405,8 @@ export const api = {
   // localStorage fallback: a health record must never leak between accounts or
   // look durable when it only exists in one browser.
   listMonitorings: () => request('/monitorings'),
-  createMonitoring: (name) => request('/monitorings', {
-    method: 'POST', body: JSON.stringify({ name: name?.trim() || null }),
+  createMonitoring: (name = 'Novo monitoramento') => request('/monitorings', {
+    method: 'POST', body: JSON.stringify({ name: name?.trim() || 'Novo monitoramento' }),
   }),
   getMonitoring: async (id) => {
     const [monitoring, machines] = await Promise.all([

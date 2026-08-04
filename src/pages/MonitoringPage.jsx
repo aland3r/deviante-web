@@ -33,14 +33,21 @@ function StatusPill({ status }) {
 function AddMachineModal({ onClose, onCreate }) {
   const [vals, setVals] = useState({ name: '', kind: 'torno', manufacturer: '', model: '', tag: '', location: '' })
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
   const set = (key, value) => setVals((prev) => ({ ...prev, [key]: value }))
 
   async function submit(event) {
     event.preventDefault()
     if (!vals.name.trim()) return
     setBusy(true)
-    await onCreate(vals)
-    setBusy(false)
+    setError('')
+    try {
+      await onCreate(vals)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Não foi possível cadastrar a máquina.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
@@ -56,6 +63,7 @@ function AddMachineModal({ onClose, onCreate }) {
           <button type="button" onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary"><X size={13} /></button>
         </div>
         <div className="p-4 flex flex-col gap-3">
+          {error && <p className="rounded-lg border px-3 py-2 text-[11px]" style={{ color: '#fca5a5', borderColor: 'rgba(220,38,38,.25)', background: 'rgba(220,38,38,.10)' }}>{error}</p>}
           <label className="flex flex-col gap-1.5 text-xs text-muted-foreground">
             Nome da máquina *
             <input autoFocus value={vals.name} onChange={(e) => set('name', e.target.value)} style={inputBase} placeholder="Ex.: Torno CNC Prod1" />
