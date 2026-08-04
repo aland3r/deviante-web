@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft, ChevronRight, Cpu, Gauge, MapPin, Plus, RadioTower, X,
 } from 'lucide-react'
@@ -112,11 +112,12 @@ function LinkEquipmentModal({ rows, onClose, onPick }) {
   return <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(3,6,12,0.78)' }} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}><div className="w-full rounded-lg border border-border overflow-hidden" style={{ maxWidth: 460, background: '#111520' }}><div className="flex items-center justify-between px-4 py-3 border-b border-border"><div><h2 className="text-sm font-semibold text-foreground">Associar equipamento</h2><p className="text-[11px] text-muted-foreground mt-1">O equipamento continua independente e pode estar em outros monitoramentos.</p></div><button onClick={onClose} className="text-muted-foreground"><X size={13} /></button></div><div className="p-2 max-h-96 overflow-y-auto">{rows.map((row) => <button key={row.id} onClick={() => onPick(row)} className="w-full px-3 py-2.5 rounded text-left hover:bg-secondary/40"><span className="block text-xs text-foreground">{row.name}</span><span className="block text-[10px] text-muted-foreground">{row.tag || row.location || 'Sem TAG'}</span></button>)}{!rows.length && <p className="p-6 text-center text-xs text-muted-foreground">Nenhum equipamento disponível.</p>}</div></div></div>
 }
 
-function MachineCard({ machine }) {
+function MachineCard({ machine, focused }) {
   const status = deriveMachineStatus(machine)
   return (
     <Link to={`/equipment/${machine.id}`}
-      style={{ display: 'block', background: '#0f141e', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8, overflow: 'hidden', textDecoration: 'none', transition: 'border-color 0.15s' }}
+      data-machine-id={machine.id}
+      style={{ display: 'block', background: focused ? '#13212f' : '#0f141e', border: focused ? '1px solid #10b981' : '1px solid rgba(255,255,255,0.07)', borderRadius: 8, overflow: 'hidden', textDecoration: 'none', transition: 'border-color 0.15s, box-shadow 0.15s', boxShadow: focused ? '0 0 0 1px rgba(16,185,129,0.12), 0 20px 40px rgba(16,185,129,0.12)' : 'none' }}
       onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(16,185,129,0.35)' }}
       onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)' }}>
       <div style={{ height: 132, background: '#080c14', position: 'relative' }}>
@@ -145,6 +146,8 @@ function MachineCard({ machine }) {
 export default function MonitoringPage() {
   const { monitoringId } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const focusMachineId = searchParams.get('focusMachine')
   const [monitoring, setMonitoring] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -207,6 +210,14 @@ export default function MonitoringPage() {
   }
 
   const machines = useMemo(() => monitoring?.machines ?? [], [monitoring])
+  useEffect(() => {
+    if (!loading && focusMachineId) {
+      const el = document.querySelector(`[data-machine-id="${focusMachineId}"]`)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }
+  }, [loading, focusMachineId, monitoring])
   const worstCount = useMemo(() => {
     const counts = { critical: 0, watch: 0, healthy: 0, unknown: 0 }
     for (const machine of machines) counts[deriveMachineStatus(machine)] += 1
@@ -269,7 +280,7 @@ export default function MonitoringPage() {
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>
-            {machines.map((machine) => <MachineCard key={machine.id} machine={{ ...machine, monitoringId }} />)}
+            {machines.map((machine) => <MachineCard key={machine.id} focused={machine.id === focusMachineId} machine={{ ...machine, monitoringId }} />)}
           </div>
         )}
       </div>

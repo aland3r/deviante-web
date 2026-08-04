@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Check, FileText, Plus, RadioTower, X, ZoomIn, ZoomOut, Maximize2, SlidersHorizontal, Scan, Upload } from 'lucide-react'
 import {
   NODE_W, NODE_H, CIRC_R,
@@ -534,9 +535,24 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   const [selectionRect, setSelectionRect] = useState(null)
   const [mobileFilters, setMobileFilters] = useState(false)
   const [showCasesPanel, setShowCasesPanel] = useState(true)
+  const navigate = useNavigate()
   const [linkedMachines, setLinkedMachines] = useState([])
   const [showMachinePicker, setShowMachinePicker] = useState(false)
   const [hiddenVariantIds, setHiddenVariantIds] = useState(() => new Set())
+
+  const machineMonitoringIdById = useMemo(
+    () => new Map(allMachines.map((item) => [item.id, item.monitoringIds?.[0] ?? null])),
+    [allMachines],
+  )
+
+  function openMachineInMonitoring(machine) {
+    const monitoringId = machine.monitoringIds?.[0] || machineMonitoringIdById.get(machine.id)
+    if (monitoringId) {
+      navigate(`/monitoring/${monitoringId}?focusMachine=${machine.id}`)
+    } else {
+      navigate(`/equipment/${machine.id}`)
+    }
+  }
   const [ignoredTraceIds, setIgnoredTraceIds] = useState(() => new Set())
   // null = no explicit choice yet (use every density-visible Activity).
   // An empty Set is intentionally different: the Manager removed the last
@@ -1004,10 +1020,12 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             {linkedMachines.length ? linkedMachines.map((machine) => (
-              <div key={machine.id} className="rounded-full border border-border bg-[#0d1017] px-2.5 py-1 text-[10px] text-foreground flex items-center gap-2">
+              <button key={machine.id} type="button" onClick={(e) => { e.stopPropagation(); openMachineInMonitoring(machine) }}
+                className="rounded-full border border-border bg-[#0d1017] px-2.5 py-1 text-[10px] text-foreground flex items-center gap-2 hover:border-emerald-400 hover:bg-[#0f191f] transition-colors"
+                title="Abrir monitoramento desta máquina">
                 <RadioTower size={10} className="text-emerald-400" />
                 <span className="truncate" title={machine.name}>{machine.name}</span>
-              </div>
+              </button>
             )) : (
               <p className="text-[10px] text-muted-foreground">Nenhuma máquina vinculada.</p>
             )}
