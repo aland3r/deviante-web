@@ -1,7 +1,7 @@
 /*
   Turns the API's process graph (`GET /api/processes/:id/graph`) into
-  something the canvas can draw: ranked, ordered, positioned nodes and edges
-  routed as waypoints.
+  something the canvas can draw: ranked nodes, positioned, with edges as
+  waypoints.
 
   Why the positions are computed here and not stored: the Figma export ships
   hand-placed coordinates because it draws one fixed example. A real log has
@@ -9,18 +9,21 @@
   geometry constants and curve math still come from `graph-core.js`, so the
   drawing stays consistent with the export; only the placement is ours.
 
-  This is a layered (Sugiyama) layout, the same family the process-mining
-  tools people compare us to (Disco, dagre) use, so a real directly-follows
-  graph stays legible instead of collapsing into a tangle down the middle:
+  A real shop-floor log is one dominant flow with a scatter of rare side
+  activities, so this is a trunk-and-float layout, not a full Sugiyama grid:
 
-    1. rank      — longest path over an acyclic skeleton (`rankNodes`);
-    2. route     — break every multi-rank edge into one-rank segments through
-                   dummy nodes, so a long edge threads a slim gutter between
-                   node columns instead of cutting straight through them;
-    3. order     — barycenter sweeps that pull each node next to its
-                   neighbours, which is what actually removes crossings;
-    4. place     — isotonic (PAVA) coordinate assignment that straightens the
-                   busiest path into a spine while keeping columns apart.
+    1. rank   — longest path over an acyclic skeleton (`rankNodes`), used only
+                to orient "forward" and to find the trunk.
+    2. trunk  — the heaviest source→end path is a straight line of short, thick
+                segments: THE process.
+    3. float  — every other (secondary) operation hangs to the side of the
+                trunk, parked at the height between the trunk nodes it connects,
+                packed into lanes so cards never overlap.
+    4. route  — trunk→trunk steps go straight along the flow; anything that
+                leaves the trunk (a side activity, a skip, a loop) leaves from
+                the *side* face of the card and takes the short way across.
+
+  Frequency only ever sets a ribbon's thickness — never a node's position.
 */
 
 import { NODE_W, NODE_H, CIRC_R } from './graph-core'
@@ -28,15 +31,13 @@ import { NODE_W, NODE_H, CIRC_R } from './graph-core'
 export const START_ID = '__start__'
 export const END_ID = '__end__'
 
-// Rank axis: gap between successive layers (down for vertical, right for
-// horizontal). Cross axis: separation between siblings sharing a rank.
-const RANK_GAP = 96
-const REAL_GAP = 46 // between two activity/round columns
-const DUMMY_GAP = 24 // gutter a routed edge threads through
-const DUMMY_W = 26
-
-const ORDER_SWEEPS = 8
-const PLACE_SWEEPS = 12
+const RANK_GAP = 96 // gap between successive trunk steps
+const PITCH = NODE_H + RANK_GAP // one trunk step, along the flow axis
+const SIDE_GAP = 40 // trunk edge → first side lane
+const LANE_GAP = 28 // between side lanes
+const BOW = 34 // how far a same-column skip/loop bows out
+const STUB = 26 // curve stub off a card face
+const MARGIN = 40
 
 /** `9432` → `2h 37m`, `44` → `44s` — the export's metric style. */
 export function formatDuration(seconds) {
@@ -119,7 +120,7 @@ function rankNodes(nodeIds, edges) {
 /**
  * @param {object} graph  the `/graph` response
  * @returns {{nodes: Array, edges: Array}} draw-ready model, ranked but without
- *          coordinates — those depend on the layout direction (`layoutGraph`).
+ *          coordinates — those come from `layoutGraph` (vertical trunk-and-float).
  */
 export function buildGraphModel(graph) {
   const apiNodes = graph?.nodes ?? []
@@ -133,6 +134,7 @@ export function buildGraphModel(graph) {
     ...(hasStart ? [{ id: START_ID, label: 'Início', isStart: true, frequency: 100 }] : []),
     ...apiNodes.map((node) => ({
       id: node.id,
+      activityId: node.activityId,
       label: node.label,
       rawLabel: node.rawLabel,
       mappingStatus: node.mappingStatus,
@@ -172,319 +174,233 @@ export function buildGraphModel(graph) {
   return { nodes: nodes.map((n) => ({ ...n, rank: ranks.get(n.id) ?? 0 })), edges }
 }
 
-// ─── Layered placement ──────────────────────────────────────────────────────
+// ─── Trunk-and-float placement ──────────────────────────────────────────────
 
-const memberWidth = (node) => (node.isStart || node.isEnd ? CIRC_R * 2 : NODE_W)
 const halfCross = (node) => (node.isStart || node.isEnd ? CIRC_R : NODE_W / 2)
 const halfAlong = (node) => (node.isStart || node.isEnd ? CIRC_R : NODE_H / 2)
 
-/** Minimum distance between the centres of two rank-mates. */
-function separation(a, b) {
-  const pad = a.isDummy || b.isDummy ? DUMMY_GAP : REAL_GAP
-  return (a.w + b.w) / 2 + pad
-}
-
-/**
- * L2 isotonic regression (pool-adjacent-violators): the closest
- * non-decreasing sequence to `values`. Used to snap a rank's nodes onto their
- * neighbours' average position while never letting the order flip.
- */
-function isotonic(values) {
-  const level = []
-  const weight = []
-  const count = []
-  for (const raw of values) {
-    let v = raw
-    let w = 1
-    let c = 1
-    while (level.length && level[level.length - 1] > v) {
-      const pv = level.pop()
-      const pw = weight.pop()
-      const pc = count.pop()
-      v = (v * w + pv * pw) / (w + pw)
-      w += pw
-      c += pc
-    }
-    level.push(v)
-    weight.push(w)
-    count.push(c)
-  }
-  const out = []
-  level.forEach((v, i) => { for (let j = 0; j < count[i]; j++) out.push(v) })
-  return out
-}
-
-/** Places one rank's ordered members onto `targets`, keeping order + spacing. */
-function placeRank(rank, targets) {
-  const n = rank.length
-  if (n === 0) return
-  const offset = new Array(n).fill(0)
-  for (let i = 1; i < n; i++) offset[i] = offset[i - 1] + separation(rank[i - 1], rank[i])
-  const shifted = isotonic(targets.map((t, i) => t - offset[i]))
-  for (let i = 0; i < n; i++) rank[i].c = shifted[i] + offset[i]
-}
-
-/**
- * Ids on the heaviest source→target path over the forward (rank-increasing)
- * edges, weighted by directly-follows frequency — the graph's main flow. This
- * is the chain the spine straightens onto; everything off it becomes a side
- * arc.
- */
-function heaviestPath(realNodes, routed, members) {
-  const best = new Map(realNodes.map((n) => [n.id, { w: 0, prev: null }]))
-  const forward = routed
-    .filter((e) => members.get(e.target).layer > members.get(e.source).layer)
-    .sort((a, b) => members.get(a.source).layer - members.get(b.source).layer)
+/** Node ids on the heaviest source→end path, in flow order — the trunk. */
+function spinePath(nodes, edges) {
+  const rank = new Map(nodes.map((n) => [n.id, n.rank ?? 0]))
+  const best = new Map(nodes.map((n) => [n.id, { w: 0, prev: null }]))
+  const forward = edges
+    .filter((e) => best.has(e.source) && best.has(e.target) && rank.get(e.target) > rank.get(e.source))
+    .sort((a, b) => rank.get(a.source) - rank.get(b.source))
   for (const e of forward) {
     const s = best.get(e.source)
     const t = best.get(e.target)
-    if (!s || !t) continue
     const w = s.w + (e.frequency ?? 0.001)
     if (w > t.w) { t.w = w; t.prev = e.source }
   }
   let endId = null
   let endW = -Infinity
-  for (const n of realNodes) { const b = best.get(n.id); if (b.w > endW) { endW = b.w; endId = n.id } }
-  const path = new Set()
-  for (let id = endId; id; id = best.get(id).prev) path.add(id)
-  return path
+  for (const n of nodes) { const b = best.get(n.id); if (b.w > endW) { endW = b.w; endId = n.id } }
+  const order = []
+  for (let id = endId; id; id = best.get(id).prev) order.push(id)
+  return order.reverse()
 }
 
 /**
- * Full layered layout for one direction.
+ * Full trunk-and-float layout (vertical flow: start → end top-to-bottom).
  *
- * @param {object} model   `buildGraphModel` output (nodes carry `rank`).
- * @param {'vertical'|'horizontal'} layout
+ * @param {object} model  `buildGraphModel` output (nodes carry `rank`).
  * @returns {{nodes: Array, edges: Array}} real nodes with `x`/`y` (top-left)
  *          and `cx`/`cy` (centre), and edges carrying `points` — the polyline
- *          the canvas splines through, already including entry/exit stubs.
+ *          the canvas splines through.
  */
-export function layoutGraph(model, layout) {
+export function layoutGraph(model) {
   const realNodes = model.nodes ?? []
   if (realNodes.length === 0) return { nodes: [], edges: [] }
 
-  // Contiguous layer indices, so an empty rank never leaves a hole.
-  const usedRanks = [...new Set(realNodes.map((n) => n.rank))].sort((a, b) => a - b)
-  const layerOf = new Map(usedRanks.map((r, i) => [r, i]))
-  const layerCount = usedRanks.length
-  const layers = Array.from({ length: layerCount }, () => [])
+  const byId = new Map(realNodes.map((n) => [n.id, n]))
+  const modelEdges = (model.edges ?? []).filter((e) => byId.has(e.source) && byId.has(e.target))
 
-  const members = new Map()
-  const adj = new Map() // id → { up: [{id,w}], down: [{id,w}] }
-  const addMember = (m) => { members.set(m.id, m); layers[m.layer].push(m); adj.set(m.id, { up: [], down: [] }) }
+  // Axis helpers: "cross" = sibling axis (x), "rank" = flow axis (y).
+  const pt = (cross, rank) => ({ x: cross, y: rank })
+  const crossOf = (c) => c.cx
+  const rankOf = (c) => c.cy
 
-  for (const node of realNodes) {
-    addMember({ id: node.id, isDummy: false, layer: layerOf.get(node.rank), w: memberWidth(node), node })
+  // 1. Trunk — the heaviest path, one straight line, evenly spaced.
+  const spine = spinePath(realNodes, modelEdges)
+  const trunkIndex = new Map(spine.map((id, i) => [id, i]))
+  const isTrunk = (id) => trunkIndex.has(id)
+
+  // Neighbours (any direction), used to float the secondaries.
+  const preds = new Map(realNodes.map((n) => [n.id, []]))
+  const succs = new Map(realNodes.map((n) => [n.id, []]))
+  for (const e of modelEdges) {
+    if (e.source === e.target) continue
+    succs.get(e.source).push(e.target)
+    preds.get(e.target).push(e.source)
   }
 
-  // Route: split every multi-rank edge into one-rank hops through dummies.
-  const routed = []
-  const selfLoops = []
-  let dummySeq = 0
-  const strongestFirst = [...model.edges].sort((a, b) => (b.frequency ?? 0) - (a.frequency ?? 0))
-  for (const edge of strongestFirst) {
-    if (edge.source === edge.target) { selfLoops.push(edge); continue }
-    const from = members.get(edge.source)
-    const to = members.get(edge.target)
-    if (!from || !to) continue
-    const chain = [edge.source]
-    const step = Math.sign(to.layer - from.layer)
-    if (step !== 0) {
-      for (let l = from.layer + step; l !== to.layer; l += step) {
-        const id = `__dummy_${edge.id}_${dummySeq++}`
-        addMember({ id, isDummy: true, layer: l, w: DUMMY_W, edgeId: edge.id })
-        chain.push(id)
-      }
-    }
-    chain.push(edge.target)
-    routed.push({ ...edge, chain })
-  }
-
-  const link = (aId, bId, weight) => {
-    const a = members.get(aId)
-    const b = members.get(bId)
-    const [lo, hi] = a.layer <= b.layer ? [a, b] : [b, a]
-    adj.get(lo.id).down.push({ id: hi.id, w: weight })
-    adj.get(hi.id).up.push({ id: lo.id, w: weight })
-  }
-  for (const edge of routed) {
-    const w = edge.frequency ?? 0.001
-    for (let i = 0; i < edge.chain.length - 1; i++) link(edge.chain[i], edge.chain[i + 1], w)
-  }
-
-  // Order: seed by frequency, then barycenter sweeps to cut crossings.
-  const seed = (m) => (m.isDummy ? 0.5 : (m.node.frequency ?? 0))
-  for (const layer of layers) layer.sort((a, b) => seed(b) - seed(a))
-
-  const indexMap = () => {
-    const idx = new Map()
-    for (const layer of layers) layer.forEach((m, i) => idx.set(m.id, i))
-    return idx
-  }
-  // Ordering is unweighted: edge frequency must never pull an operation
-  // sideways, only thicken its ribbon. Every neighbour counts the same.
-  const barycenter = (m, idx, side) => {
-    const neighbours = adj.get(m.id)[side]
-    if (neighbours.length === 0) return null
-    let sum = 0
-    for (const { id } of neighbours) sum += idx.get(id)
-    return sum / neighbours.length
-  }
-  for (let sweep = 0; sweep < ORDER_SWEEPS; sweep++) {
-    const downward = sweep % 2 === 0
-    const order = downward ? [...layers.keys()] : [...layers.keys()].reverse()
-    const idx = indexMap()
-    const side = downward ? 'up' : 'down'
-    for (const l of order) {
-      const scored = layers[l].map((m, i) => ({ m, key: barycenter(m, idx, side) ?? i }))
-      scored.sort((a, b) => a.key - b.key)
-      layers[l] = scored.map((s) => s.m)
-      layers[l].forEach((m, i) => idx.set(m.id, i))
+  // 2. Float — a rank-axis level for every node. Trunk keeps its index;
+  //    a secondary settles at the height between the trunk nodes it connects
+  //    to. A few passes let a secondary that only touches other secondaries
+  //    catch up.
+  const level = new Map(spine.map((id, i) => [id, i]))
+  const secondary = realNodes.map((n) => n.id).filter((id) => !isTrunk(id))
+  const middle = spine.length ? (spine.length - 1) / 2 : 0
+  for (let pass = 0; pass < 4; pass++) {
+    for (const id of secondary) {
+      const up = preds.get(id).map((p) => level.get(p)).filter((v) => v != null)
+      const down = succs.get(id).map((s) => level.get(s)).filter((v) => v != null)
+      if (up.length && down.length) level.set(id, (Math.max(...up) + Math.min(...down)) / 2)
+      else if (up.length) level.set(id, Math.max(...up) + 0.5)
+      else if (down.length) level.set(id, Math.min(...down) - 0.5)
+      else level.set(id, middle)
     }
   }
 
-  // Place cross axis: pack each rank, then straighten toward neighbours.
-  for (const layer of layers) {
-    let c = 0
-    layer.forEach((m, i) => {
-      if (i > 0) c += separation(layer[i - 1], m)
-      m.c = c
+  // Secondaries that land at the same height would otherwise fan out sideways
+  // into deep lanes. Spread each such group vertically across its gap and split
+  // it across both sides (busiest first), so the graph stays narrow.
+  const groups = new Map()
+  for (const id of secondary) {
+    const key = Math.round(level.get(id) * 2) / 2
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key).push(id)
+  }
+  const side = new Map()
+  for (const [key, ids] of groups) {
+    ids.sort((a, b) => (byId.get(b).frequency ?? 0) - (byId.get(a).frequency ?? 0))
+    const m = ids.length
+    ids.forEach((id, k) => {
+      level.set(id, key + (m > 1 ? (k - (m - 1) / 2) * (0.8 / m) : 0))
+      side.set(id, k % 2 === 0 ? 1 : -1)
     })
   }
-  for (let sweep = 0; sweep < PLACE_SWEEPS; sweep++) {
-    const downward = sweep % 2 === 0
-    const order = downward ? [...layers.keys()] : [...layers.keys()].reverse()
-    for (const l of order) {
-      const targets = layers[l].map((m) => {
-        const { up, down } = adj.get(m.id)
-        const side = downward ? up : down
-        const use = side.length ? side : [...up, ...down]
-        if (use.length === 0) return m.c
-        let sum = 0
-        for (const { id } of use) sum += members.get(id).c
-        return sum / use.length
-      })
-      placeRank(layers[l], targets)
-    }
+
+  // Cross-axis — trunk at 0, secondaries packed into side lanes on their side.
+  const cross = new Map(spine.map((id) => [id, 0]))
+  const lanes = { right: [], left: [] }
+  const halfLevel = (NODE_H / 2 + 6) / PITCH
+  for (const id of [...secondary].sort((a, b) => level.get(a) - level.get(b))) {
+    const lo = level.get(id) - halfLevel
+    const hi = level.get(id) + halfLevel
+    const dir = side.get(id) ?? 1
+    const laneList = dir > 0 ? lanes.right : lanes.left
+    let lane = laneList.findIndex((iv) => iv.every(([a, b]) => hi < a || lo > b))
+    if (lane < 0) { lane = laneList.length; laneList.push([]) }
+    laneList[lane].push([lo, hi])
+    cross.set(id, dir * (NODE_W + SIDE_GAP + lane * (NODE_W + LANE_GAP)))
   }
 
-  // Straighten the dominant path into a single spine. The heaviest
-  // source→target chain (by directly-follows frequency) is what the eye reads
-  // as "the process"; pinning its nodes to one cross-coordinate makes the main
-  // flow a straight vertical line of short, thick segments. Rank-mates yield
-  // only as far as separation forces them, keeping the rest of the placement
-  // intact. Frequency picks the spine but never sets any node's position.
-  const spine = heaviestPath(realNodes, routed, members)
-  if (spine.size) {
-    const crosses = [...spine].map((id) => members.get(id).c).sort((a, b) => a - b)
-    const column = crosses[Math.floor(crosses.length / 2)]
-    for (const layer of layers) {
-      const idx = layer.findIndex((m) => spine.has(m.id))
-      if (idx < 0) continue
-      layer[idx].c = column
-      for (let i = idx - 1; i >= 0; i--) layer[i].c = Math.min(layer[i].c, layer[i + 1].c - separation(layer[i], layer[i + 1]))
-      for (let i = idx + 1; i < layer.length; i++) layer[i].c = Math.max(layer[i].c, layer[i - 1].c + separation(layer[i - 1], layer[i]))
-    }
+  // Screen centres, then normalise the cross axis to a left margin.
+  const rankPos = (lv) => MARGIN + NODE_H / 2 + lv * PITCH
+  const rawCentre = (id) => {
+    const cr = cross.get(id) ?? 0
+    const rk = rankPos(level.get(id) ?? 0)
+    return { cx: cr, cy: rk }
   }
-
-  // Normalise the cross axis so the drawing starts at a small margin.
-  let minC = Infinity
-  for (const m of members.values()) minC = Math.min(minC, m.c - m.w / 2)
-  const shift = Number.isFinite(minC) ? 40 - minC : 0
-  for (const m of members.values()) m.c += shift
-
-  // Rank axis: centre of each layer.
-  const pitch = layout === 'horizontal' ? NODE_W + RANK_GAP + 24 : NODE_H + RANK_GAP
-  const rankCentre = (layer) => 40 + (layout === 'horizontal' ? NODE_W / 2 : NODE_H / 2) + layer * pitch
-  const centreOf = (m) => (layout === 'horizontal'
-    ? { cx: rankCentre(m.layer), cy: m.c }
-    : { cx: m.c, cy: rankCentre(m.layer) })
+  let minCross = Infinity
+  for (const n of realNodes) minCross = Math.min(minCross, crossOf(rawCentre(n.id)) - halfCross(n))
+  const shift = Number.isFinite(minCross) ? MARGIN - minCross : 0
+  const centre = (id) => {
+    const c = rawCentre(id)
+    return { cx: c.cx + shift, cy: c.cy }
+  }
 
   const nodes = realNodes.map((node) => {
-    const m = members.get(node.id)
-    const { cx, cy } = centreOf(m)
-    const hw = halfCross(node)
-    return { ...node, cx, cy, x: cx - (layout === 'horizontal' ? halfAlong(node) : hw), y: cy - (layout === 'horizontal' ? hw : halfAlong(node)) }
+    const c = centre(node.id)
+    const hc = halfCross(node)
+    const ha = halfAlong(node)
+    return {
+      ...node,
+      cx: c.cx,
+      cy: c.cy,
+      x: c.cx - hc,
+      y: c.cy - ha,
+    }
   })
 
-  const stub = RANK_GAP * 0.42
-  const edges = [
-    ...routed.map((edge) => ({
-      id: edge.id,
-      source: edge.source,
-      target: edge.target,
-      frequency: edge.frequency,
-      caseCount: edge.caseCount,
-      label: edge.label,
-      dashed: edge.dashed,
-      points: edgePoints(edge.chain, members, centreOf, layout, stub),
-    })),
-    ...selfLoops.map((edge) => ({
-      id: edge.id,
-      source: edge.source,
-      target: edge.target,
-      frequency: edge.frequency,
-      caseCount: edge.caseCount,
-      label: edge.label,
-      dashed: true,
-      points: selfLoopPoints(members.get(edge.source), centreOf, layout),
-    })),
-  ]
+  // 3. Route — a point on a card's side face (left/right) or
+  //    top/bottom face, plus the edge waypoints.
+  const crossFace = (id, sign) => {
+    const c = centre(id)
+    return pt(crossOf(c) + sign * halfCross(byId.get(id)), rankOf(c))
+  }
+  const rankFace = (id, sign) => {
+    const c = centre(id)
+    return pt(crossOf(c), rankOf(c) + sign * halfAlong(byId.get(id)))
+  }
+
+  const routeEdge = (edge) => {
+    const u = edge.source
+    const v = edge.target
+    if (u === v) return selfLoopPoints(byId.get(u), centre, pt, crossOf, rankOf)
+
+    const cu = centre(u)
+    const cv = centre(v)
+    const rankU = rankOf(cu)
+    const rankV = rankOf(cv)
+    const crossU = crossOf(cu)
+    const crossV = crossOf(cv)
+
+    const consecutiveTrunk = isTrunk(u) && isTrunk(v)
+      && Math.abs(trunkIndex.get(u) - trunkIndex.get(v)) === 1
+
+    // Main-flow step: straight along the flow axis, face to face.
+    if (consecutiveTrunk && crossU === crossV) {
+      const dir = Math.sign(rankV - rankU) || 1
+      return [
+        rankFace(u, dir),
+        pt(crossU, rankU + dir * (halfAlong(byId.get(u)) + STUB)),
+        pt(crossV, rankV - dir * (halfAlong(byId.get(v)) + STUB)),
+        rankFace(v, -dir),
+      ]
+    }
+
+    // One end is off to the side: leave from the facing side faces and take the
+    // short way across.
+    if (crossU !== crossV) {
+      const su = Math.sign(crossV - crossU)
+      return [
+        crossFace(u, su),
+        pt(crossU + su * STUB, rankU),
+        pt(crossV - su * STUB, rankV),
+        crossFace(v, -su),
+      ]
+    }
+
+    // Same column but not a consecutive step (a skip or a backward loop): bow
+    // out to one side just enough to clear whatever sits between them.
+    const dir = Math.sign(rankV - rankU) || 1
+    const side = dir > 0 ? 1 : -1
+    const bulge = crossU + side * (halfCross(byId.get(u)) + BOW)
+    return [
+      crossFace(u, side),
+      pt(bulge, rankU + dir * STUB),
+      pt(bulge, rankV - dir * STUB),
+      crossFace(v, side),
+    ]
+  }
+
+  const edges = modelEdges.map((edge) => ({
+    id: edge.id,
+    source: edge.source,
+    target: edge.target,
+    frequency: edge.frequency,
+    caseCount: edge.caseCount,
+    label: edge.label,
+    dashed: edge.dashed,
+    points: routeEdge(edge),
+  }))
 
   return { nodes, edges }
 }
 
-/** Waypoints for one routed edge: exit stub, dummy centres, entry stub. */
-function edgePoints(chain, members, centreOf, layout, stub) {
-  const from = members.get(chain[0])
-  const to = members.get(chain[chain.length - 1])
-  const dir = Math.sign(to.layer - from.layer) || 1
-  const src = anchor(from, centreOf, layout, dir, true)
-  const tgt = anchor(to, centreOf, layout, -dir, false)
-
-  const pts = [src]
-  pts.push(alongStub(src, layout, dir, stub))
-  for (let i = 1; i < chain.length - 1; i++) {
-    const { cx, cy } = centreOf(members.get(chain[i]))
-    pts.push({ x: cx, y: cy })
-  }
-  pts.push(alongStub(tgt, layout, -dir, stub))
-  pts.push(tgt)
-  return pts
-}
-
-/** Where an edge meets a node, on the rank-axis face pointing at its partner. */
-function anchor(member, centreOf, layout, dir, outgoing) {
-  const { cx, cy } = centreOf(member)
-  const node = member.node
-  const half = node ? halfAlong(node) : member.w / 2
-  if (layout === 'horizontal') return { x: cx + dir * (outgoing ? half : half), y: cy }
-  return { x: cx, y: cy + dir * (outgoing ? half : half) }
-}
-
-function alongStub(point, layout, dir, stub) {
-  return layout === 'horizontal'
-    ? { x: point.x + dir * stub, y: point.y }
-    : { x: point.x, y: point.y + dir * stub }
-}
-
 /** A small side loop for an activity that directly follows itself. */
-function selfLoopPoints(member, centreOf, layout) {
-  const { cx, cy } = centreOf(member)
-  if (layout === 'horizontal') {
-    const hy = NODE_H / 2
-    return [
-      { x: cx - NODE_W * 0.25, y: cy + hy },
-      { x: cx - NODE_W * 0.25, y: cy + hy + 40 },
-      { x: cx + NODE_W * 0.25, y: cy + hy + 40 },
-      { x: cx + NODE_W * 0.25, y: cy + hy },
-    ]
-  }
-  const hx = NODE_W / 2
+function selfLoopPoints(node, centre, pt, crossOf, rankOf) {
+  const c = centre(node.id)
+  const cr = crossOf(c)
+  const rk = rankOf(c)
+  const hc = halfCross(node)
+  const ha = halfAlong(node)
   return [
-    { x: cx + hx, y: cy - NODE_H * 0.28 },
-    { x: cx + hx + 40, y: cy - NODE_H * 0.28 },
-    { x: cx + hx + 40, y: cy + NODE_H * 0.28 },
-    { x: cx + hx, y: cy + NODE_H * 0.28 },
+    pt(cr + hc, rk - ha * 0.5),
+    pt(cr + hc + BOW, rk - ha * 0.5),
+    pt(cr + hc + BOW, rk + ha * 0.5),
+    pt(cr + hc, rk + ha * 0.5),
   ]
 }

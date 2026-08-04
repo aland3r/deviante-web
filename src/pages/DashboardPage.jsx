@@ -261,7 +261,7 @@ function AnalysisProcessPicker({ processes, onClose, onPick }) {
               <span className="min-w-0 flex-1">
                 <span className="block text-xs font-medium text-foreground truncate">{process.name}</span>
                 <span className="block text-[10px] text-muted-foreground truncate mt-0.5">
-                  {process.companyName || 'Empresa não definida'}
+                  {process.sector || 'Processo produtivo'}
                 </span>
               </span>
               <ChevronRight size={13} className="text-muted-foreground shrink-0" />
@@ -288,7 +288,7 @@ function ProjectCard({ item }) {
   const accent = isMonitoring ? '#059669' : isAnalysis ? '#6366f1' : '#2870a8'
   const hoverBorder = isMonitoring ? 'rgba(16,185,129,0.35)' : 'rgba(255,255,255,0.16)'
   const subtitle = isMonitoring
-    ? `${item.machineCount ?? 0} máquina${(item.machineCount ?? 0) !== 1 ? 's' : ''}${item.companyName ? ` · ${item.companyName}` : ''}`
+    ? `${item.machineCount ?? 0} máquina${(item.machineCount ?? 0) !== 1 ? 's' : ''}`
     : isAnalysis
       ? (item.processName
         ? `Processo · ${item.processName}`
@@ -339,7 +339,7 @@ function ProjectListItem({ item }) {
     ? `${item.machineCount ?? 0} máquina${(item.machineCount ?? 0) !== 1 ? 's' : ''} · editado ${timeAgo(item.updatedAt)}`
     : isAnalysis
       ? `${item.processName ? `Processo · ${item.processName}` : 'Análise'} · editado ${timeAgo(item.updatedAt)}`
-      : `${item.companyName || 'Empresa não definida'} · editado ${timeAgo(item.updatedAt)}`
+      : `${item.sector || 'Processo produtivo'} · editado ${timeAgo(item.updatedAt)}`
 
   return (
     <Link to={to}
@@ -452,7 +452,7 @@ export default function DashboardPage() {
       type: 'processo',
       name: p.name,
       updatedAt: p.updatedAt,
-      companyName: p.companyName,
+      sector: p.sector,
     }))
     const analysisItems = analyses.map((a) => ({
       ...a,
@@ -463,7 +463,6 @@ export default function DashboardPage() {
       type: 'monitoramento',
       name: m.name,
       updatedAt: m.updatedAt,
-      companyName: m.companyName,
       machineCount: m.machineCount,
     }))
     return [...processItems, ...analysisItems, ...monitoringItems].sort((a, b) =>
@@ -478,7 +477,7 @@ export default function DashboardPage() {
       return (
         item.name?.toLowerCase().includes(q)
         || item.processName?.toLowerCase().includes(q)
-        || item.companyName?.toLowerCase().includes(q)
+        || item.sector?.toLowerCase().includes(q)
       )
     })
     : []

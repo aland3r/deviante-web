@@ -169,7 +169,7 @@ function LinkProcessModal({ processes, onClose, onPick }) {
               <span className="w-8 h-8 rounded flex items-center justify-center shrink-0" style={{ background: 'rgba(40,112,168,0.12)', color: '#4d8fc0' }}><Cpu size={13} /></span>
               <span className="min-w-0 flex-1">
                 <span className="block text-xs font-medium text-foreground truncate">{process.name}</span>
-                <span className="block text-[10px] text-muted-foreground truncate mt-0.5">{process.companyName || 'Empresa não definida'}</span>
+                <span className="block text-[10px] text-muted-foreground truncate mt-0.5">{process.sector || 'Processo produtivo'}</span>
               </span>
               <ChevronRight size={13} className="text-muted-foreground shrink-0" />
             </button>

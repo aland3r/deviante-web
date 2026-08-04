@@ -6,6 +6,7 @@ import BrandMark from '../components/layout/BrandMark'
 import ProcessGraphTab from '../components/process-graph/ProcessGraphTab'
 import EventLogUploadModal from '../components/process-graph/EventLogUploadModal'
 import ProcessAnalysisView from '../components/process-analysis/ProcessAnalysisView'
+import ProjectActionsMenu from '../components/projects/ProjectActionsMenu'
 
 /*
   The process screen — what you land on after clicking a project on the
@@ -96,10 +97,21 @@ export default function ProcessCanvasPage() {
       setTitleDraft(updated.name ?? '')
       setTitleError('')
     } catch (err) {
-      // A brand-new process has no company yet, and the API requires one —
-      // send the user to the tab that can actually fix it.
       setTitleDraft(process.name ?? '')
       setTitleError(err instanceof ApiError ? err.message : 'Não foi possível renomear o processo.')
+    }
+  }
+
+  async function deleteCurrentProcess() {
+    const processName = window.prompt(`Digite exatamente o nome do processo para excluir:\n${process.name}`)
+    if (processName == null) return
+    const confirmationPhrase = window.prompt('Digite exatamente: quero excluir este processo')
+    if (confirmationPhrase == null) return
+    try {
+      await api.deleteProcess(processId, { processName, confirmationPhrase })
+      navigate('/dashboard', { replace: true })
+    } catch (err) {
+      setTitleError(err instanceof ApiError ? err.message : 'Não foi possível excluir o processo.')
     }
   }
 
@@ -126,8 +138,16 @@ export default function ProcessCanvasPage() {
       <ProcessAnalysisView
         processId={processId}
         processName={process.name || 'Processo sem nome'}
-        eventLog={graphStats?.eventLog}
         analysisId={analysisId}
+        onDelete={analysisId ? async () => {
+          if (!window.confirm('Excluir esta análise persistida? Esta ação não pode ser desfeita.')) return
+          try {
+            await api.deleteAnalysis(analysisId)
+            navigate(`/processes/${processId}`, { replace: true })
+          } catch (err) {
+            window.alert(err instanceof ApiError ? err.message : 'Não foi possível excluir a análise.')
+          }
+        } : undefined}
         onBack={() => navigate(`/processes/${processId}`, { replace: true })}
         onGoHome={() => navigate('/dashboard')}
       />
@@ -168,20 +188,18 @@ export default function ProcessCanvasPage() {
               {process.name || 'Processo sem nome'}
             </button>
           )}
-          <span className="text-[11px] leading-none mt-0.5 truncate" style={{ color: titleError ? '#fca5a5' : undefined }}>
-            {titleError
-              ? <span>{titleError}</span>
-              : <span className="text-muted-foreground">{process.companyName || 'Empresa não definida'}</span>}
-          </span>
+          {titleError && <span className="text-[11px] leading-none mt-0.5 truncate" style={{ color: '#fca5a5' }}>{titleError}</span>}
         </div>
+        <ProjectActionsMenu onDelete={deleteCurrentProcess} deleteLabel="Excluir processo" />
 
         {!isMobile && graphStats?.caseCount > 0 && (
           <div className="flex items-center gap-1.5 px-2 py-1 rounded ml-4 shrink-0"
             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-            title={graphStats.eventLog ? `Derivado de ${graphStats.eventLog.fileName}` : undefined}>
+            title="Recorte atual da próxima análise">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
             <span className="text-[11px] text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
-              {graphStats.caseCount.toLocaleString('pt-BR')} traces
+              {(graphStats.selectedCaseCount ?? graphStats.caseCount).toLocaleString('pt-BR')}
+              {(graphStats.selectedCaseCount ?? graphStats.caseCount) !== graphStats.caseCount ? ` / ${graphStats.caseCount.toLocaleString('pt-BR')}` : ''} traces
             </span>
             {graphStats.hasUnmappedOperations && (
               <span className="text-[10px] uppercase tracking-wide" title="Operações ainda não mapeadas para atividades (UC5)"
@@ -218,9 +236,15 @@ export default function ProcessCanvasPage() {
           isMobile={isMobile}
           onStats={handleGraphStats}
           onUploadLog={() => setUploadOpen(true)}
-          onAnalyze={async () => {
+          onAnalyze={async (scope) => {
             try {
               const analysis = await api.createAnalysis(processId)
+              await api.runProcessAnalysis(processId, analysis.id, {
+                treatment: 'treated',
+                delta: 0.002,
+                excludedActivityIds: scope.excludedActivityIds,
+                excludedTraceIds: scope.excludedTraceIds,
+              })
               navigate(`/processes/${processId}?view=analysis&analysisId=${analysis.id}`)
             } catch (err) {
               setLoadError(err instanceof ApiError ? err.message : 'Não foi possível criar a análise.')

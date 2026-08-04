@@ -182,6 +182,6 @@ export function nodeHitTest(n, cx, cy) {
   return cx >= n.x && cx <= n.x + NODE_W && cy >= n.y && cy <= n.y + NODE_H
 }
 
-export function getInitialView(layout) {
-  return layout === 'horizontal' ? { pan: { x: 44, y: 120 }, zoom: 0.58 } : { pan: { x: 140, y: 36 }, zoom: 0.70 }
+export function getInitialView() {
+  return { pan: { x: 140, y: 36 }, zoom: 0.70 }
 }

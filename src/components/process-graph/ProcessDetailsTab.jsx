@@ -15,7 +15,7 @@ import { deriveMachineStatus } from '../../lib/monitoring'
   old `/processes/:id` ProcessDetailPage was removed in favour of this.
 
   Wired to the real Kotlin-backed API: Figma's mock field `company` maps
-  to the real `companyName`. Figma's `activities`/`eventLogs`/
+  to the persisted process metadata. Figma's `activities`/`eventLogs`/
   `mappingStatus` have no equivalent on the real ProcessDto yet (UC3/UC4
   not built), so the Métricas card shows placeholders and says so.
 
@@ -208,7 +208,6 @@ export default function ProcessDetailsTab({ process, onSaved, onDeleted }) {
   const isOwner = user?.role === 'owner'
   const [vals, setVals] = useState({
     name: process.name ?? '',
-    company: process.companyName ?? '',
     description: process.description ?? '',
     sector: process.sector ?? '',
   })
@@ -233,7 +232,6 @@ export default function ProcessDetailsTab({ process, onSaved, onDeleted }) {
     event.preventDefault()
     const next = {}
     if (!vals.name.trim()) next.name = 'Campo obrigatório.'
-    if (!vals.company.trim()) next.company = 'Campo obrigatório.'
     if (Object.keys(next).length) { setErrs(next); return }
 
     setSaving(true)
@@ -241,7 +239,7 @@ export default function ProcessDetailsTab({ process, onSaved, onDeleted }) {
     setError('')
     try {
       const updated = await api.updateProcess(process.id, {
-        name: vals.name, companyName: vals.company, description: vals.description, sector: vals.sector,
+        name: vals.name, description: vals.description, sector: vals.sector,
       })
       onSaved(updated)
       setSaved(true)
@@ -269,8 +267,6 @@ export default function ProcessDetailsTab({ process, onSaved, onDeleted }) {
     }
   }
 
-  const companyErr = errs.company ?? errs.companyName
-
   return (
     <div className="flex-1 min-w-0 overflow-y-auto" style={{ background: '#0d1017' }}>
       <div className="p-6">
@@ -291,14 +287,6 @@ export default function ProcessDetailsTab({ process, onSaved, onDeleted }) {
                   style={errs.name ? pInputErr : pInputBase}
                   onFocus={(e) => { e.target.style.borderColor = errs.name ? 'rgba(220,38,38,0.60)' : 'rgba(255,255,255,0.20)' }}
                   onBlur={(e) => { e.target.style.borderColor = errs.name ? 'rgba(220,38,38,0.60)' : 'rgba(255,255,255,0.09)' }} />
-              </ProcessFormField>
-
-              <ProcessFormField label="Nome da empresa" required error={companyErr}>
-                <input type="text" value={vals.company} onChange={(e) => sf('company', e.target.value)}
-                  placeholder="Ex.: Acme Indústria Ltda." maxLength={255}
-                  style={companyErr ? pInputErr : pInputBase}
-                  onFocus={(e) => { e.target.style.borderColor = companyErr ? 'rgba(220,38,38,0.60)' : 'rgba(255,255,255,0.20)' }}
-                  onBlur={(e) => { e.target.style.borderColor = companyErr ? 'rgba(220,38,38,0.60)' : 'rgba(255,255,255,0.09)' }} />
               </ProcessFormField>
 
               <ProcessFormField label="Descrição">

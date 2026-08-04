@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
-import { X, ZoomIn, ZoomOut, Maximize2, SlidersHorizontal, RotateCcw, Scan, Upload } from 'lucide-react'
+import { X, ZoomIn, ZoomOut, Maximize2, SlidersHorizontal, Scan, Upload } from 'lucide-react'
 import {
   NODE_W, NODE_H, CIRC_R,
   GRAD_LIGHT, GRAD_MID, GRAD_DEEP, DASH_COLOR,
@@ -9,16 +9,14 @@ import {
 } from './graph-core'
 import { buildGraphModel, layoutGraph, formatDuration, formatCount } from './graph-layout'
 import { api, ApiError } from '../../lib/api'
-import ProcessActivitiesPanel from './ProcessActivitiesPanel'
 
 const MIN_ANALYSIS_TRACES = Number(import.meta.env.VITE_MIN_ANALYSIS_TRACES ?? 32)
 
 /*
   "Grafo do Processo" tab — the canvas plus its two side panels. Visual
   language ported from the Figma Make export "Process Mining Canvas Design"
-  (ZZKdwxgmeCNJFG64zGbADe), including the newer export's dotted canvas, the
-  traces window and the Horizontal/Vertical toggle sitting INSIDE the canvas
-  rather than in the app header.
+  (ZZKdwxgmeCNJFG64zGbADe), including the newer export's dotted canvas and
+  the traces window sitting INSIDE the canvas rather than in the app header.
 
   Everything drawn here comes from the process's latest parsed event log via
   `GET /api/processes/:id/graph` and `/traces` — the seed PCB line that used
@@ -70,20 +68,25 @@ function Histogram({ data }) {
 
 // ─── Cases / layers panel (Figma-layers-style overlay on the left) ──────────
 
-function CasesLayersPanel({ node, variants, onClose }) {
+function CasesLayersPanel({
+  node, variants, hiddenVariants, ignoredTraces, onToggleVariant, onToggleTrace, onResetSelection, onClose,
+}) {
   const relevantVariants = useMemo(
     () => node ? variants.filter((v) => v.nodeIds.includes(node.id)) : variants,
     [variants, node],
   )
   const totalCases = relevantVariants.reduce((s, v) => s + v.caseCount, 0)
+  const excludedTraceCount = useMemo(() => {
+    const ids = new Set(ignoredTraces)
+    relevantVariants.filter((variant) => hiddenVariants.has(variant.id)).forEach((variant) => variant.cases.forEach((trace) => ids.add(trace.id)))
+    return ids.size
+  }, [relevantVariants, hiddenVariants, ignoredTraces])
 
   const [filter, setFilter] = useState('')
   // Collapsed by default: a real log has dozens of variants, and the export's
   // all-open tree only reads well with the three it invented.
   const [expanded, setExpanded] = useState({})
   const [selectedCase, setSelectedCase] = useState(null)
-  const [hiddenVariants, setHiddenVariants] = useState(() => new Set())
-  const [ignoredTraces, setIgnoredTraces] = useState(() => new Set())
   const [hoveredCase, setHoveredCase] = useState(null)
 
   const visibleVariants = useMemo(() => {
@@ -98,7 +101,7 @@ function CasesLayersPanel({ node, variants, onClose }) {
   const toggleExpand = (id) => setExpanded((p) => ({ ...p, [id]: !p[id] }))
   const toggleHide = (id, e) => {
     e.stopPropagation()
-    setHiddenVariants((p) => { const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n })
+    onToggleVariant(id)
   }
 
   const ROW_H = 28
@@ -143,12 +146,12 @@ function CasesLayersPanel({ node, variants, onClose }) {
           <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filtrar traces…"
             style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'white', fontFamily: "'Inter',sans-serif", fontSize: 11, padding: 0 }} />
         </div>
-        {ignoredTraces.size > 0 && (
+        {excludedTraceCount > 0 && (
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
             <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: '#475569' }}>
-              {ignoredTraces.size} ignorado{ignoredTraces.size !== 1 ? 's' : ''}
+              {excludedTraceCount} fora da próxima análise
             </span>
-            <button type="button" onClick={() => setIgnoredTraces(new Set())}
+            <button type="button" onClick={onResetSelection}
               style={{ border: 0, padding: 0, background: 'transparent', color: '#2870a8', fontSize: 9, cursor: 'pointer' }}>
               resetar
             </button>
@@ -175,6 +178,7 @@ function CasesLayersPanel({ node, variants, onClose }) {
                 onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}>
 
                 <button onClick={(e) => toggleHide(variant.id, e)}
+                  title={isHidden ? 'Reincluir variante na próxima análise' : 'Excluir variante da próxima análise'}
                   style={{ width: 16, height: 16, border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', color: isHidden ? '#1e2738' : '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
                   onMouseEnter={(e) => { e.currentTarget.style.color = 'white' }}
                   onMouseLeave={(e) => { e.currentTarget.style.color = isHidden ? '#1e2738' : '#475569' }}>
@@ -231,11 +235,7 @@ function CasesLayersPanel({ node, variants, onClose }) {
                     <button type="button" title={isIgnored ? 'Reincluir trace' : 'Ignorar trace nesta análise'}
                       onClick={(event) => {
                         event.stopPropagation()
-                        setIgnoredTraces((current) => {
-                          const next = new Set(current)
-                          if (next.has(c.id)) next.delete(c.id); else next.add(c.id)
-                          return next
-                        })
+                        onToggleTrace(c.id)
                       }}
                       style={{
                         width: 16, height: 16, border: 0, padding: 0, background: 'transparent',
@@ -290,7 +290,7 @@ function CasesLayersPanel({ node, variants, onClose }) {
 
 // ─── Right-rail activity detail ─────────────────────────────────────────────
 
-function NodeDetailPanel({ node, onClose }) {
+function NodeDetailPanel({ node, analysisSelected, analysisSelectionExplicit, onToggleAnalysis, onClose }) {
   const [tab, setTab] = useState('freq')
   const m = node.metrics
   return (
@@ -310,6 +310,18 @@ function NodeDetailPanel({ node, onClose }) {
             {tab === t && <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-800" />}
           </button>
         ))}
+      </div>
+      <div className="px-4 py-3 border-b border-border">
+        <button type="button" onClick={() => onToggleAnalysis(node.id)}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded text-[11px] font-medium"
+          style={{
+            background: analysisSelected && analysisSelectionExplicit ? 'rgba(40,112,168,0.22)' : 'rgba(255,255,255,0.04)',
+            color: analysisSelected && analysisSelectionExplicit ? '#c8e2f5' : '#94a3b8',
+            border: `1px solid ${analysisSelected && analysisSelectionExplicit ? 'rgba(40,112,168,0.45)' : 'rgba(255,255,255,0.09)'}`,
+          }}>
+          {analysisSelected && analysisSelectionExplicit ? '✓ Incluída na análise' : 'Analisar esta atividade'}
+        </button>
+        <p className="text-[9px] text-muted-foreground mt-1.5 text-center">Selecione outras atividades no grafo para compor um recorte múltiplo.</p>
       </div>
       <div className="flex-1 overflow-y-auto p-4">
         {tab === 'freq' ? (
@@ -338,6 +350,43 @@ function NodeDetailPanel({ node, onClose }) {
   )
 }
 
+function AnalysisFlightDeck({ scope, onReset }) {
+  const filtered = scope.selectedTraceCount !== scope.totalTraceCount
+    || scope.selectedActivityCount !== scope.totalActivityCount
+    || scope.selectedVariantCount !== scope.totalVariantCount
+    || scope.selectedPathCount !== scope.totalPathCount
+  const metric = (label, selected, total) => (
+    <div className="rounded px-2 py-2" style={{ background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <p className="text-[9px] uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-xs font-semibold text-foreground mt-0.5" style={{ fontFamily: "'JetBrains Mono',monospace" }}>{selected.toLocaleString('pt-BR')} <span className="text-[9px] font-normal text-muted-foreground">/ {total.toLocaleString('pt-BR')}</span></p>
+    </div>
+  )
+  return (
+    <div className="rounded-lg p-3 space-y-3" style={{ background: '#0d1017', border: '1px solid rgba(245,158,11,0.20)' }}>
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="text-[9px] uppercase tracking-[0.12em]" style={{ color: '#fbbf24', fontFamily: "'JetBrains Mono',monospace" }}>Entrada da próxima análise</p>
+          <p className="text-[10px] text-muted-foreground mt-1">Recorte efetivo enviado ao IPDD/ADWIN</p>
+        </div>
+        {filtered && <button type="button" onClick={onReset} className="text-[9px] hover:underline" style={{ color: '#4d8fc0' }}>usar tudo</button>}
+      </div>
+      <div>
+        <p className="text-xl font-semibold text-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>{scope.selectedTraceCount.toLocaleString('pt-BR')}</p>
+        <p className="text-[10px] text-muted-foreground">de {scope.totalTraceCount.toLocaleString('pt-BR')} traces serão processados{scope.totalTraceCount > scope.selectedTraceCount ? ` · ${scope.totalTraceCount - scope.selectedTraceCount} fora` : ''}</p>
+      </div>
+      <div className="grid grid-cols-3 gap-1.5">
+        {metric('Variantes', scope.selectedVariantCount, scope.totalVariantCount)}
+        {metric('Atividades', scope.selectedActivityCount, scope.totalActivityCount)}
+        {metric('Caminhos', scope.selectedPathCount, scope.totalPathCount)}
+      </div>
+      <div className="flex items-center justify-between text-[9px] text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
+        <span>Densidade atividades {scope.activityDensity}%</span>
+        <span>Caminhos {scope.pathDensity}%</span>
+      </div>
+    </div>
+  )
+}
+
 // ─── SVG node shapes ────────────────────────────────────────────────────────
 
 function SvgDefs() {
@@ -353,9 +402,9 @@ function SvgDefs() {
   )
 }
 
-function StartNode({ isSelected, layout }) {
+function StartNode({ isSelected }) {
   const cx = CIRC_R, cy = CIRC_R
-  const play = layout === 'horizontal' ? `${cx - 8},${cy - 10} ${cx + 11},${cy} ${cx - 8},${cy + 10}` : `${cx - 10},${cy - 8} ${cx + 10},${cy - 8} ${cx},${cy + 11}`
+  const play = `${cx - 10},${cy - 8} ${cx + 10},${cy - 8} ${cx},${cy + 11}`
   return (<g style={{ cursor: 'pointer' }}>{isSelected && <circle cx={cx} cy={cy} r={CIRC_R + 6} fill="rgba(16,185,129,0.15)" stroke="#10b981" strokeWidth={1.5} />}<circle cx={cx} cy={cy} r={CIRC_R} fill="#064e3b" stroke="#10b981" strokeWidth={2} /><polygon points={play} fill="#34d399" /></g>)
 }
 
@@ -364,13 +413,14 @@ function EndNode({ isSelected }) {
   return (<g style={{ cursor: 'pointer' }}>{isSelected && <circle cx={cx} cy={cy} r={CIRC_R + 6} fill="rgba(153,27,27,0.15)" stroke="#991b1b" strokeWidth={1.5} />}<circle cx={cx} cy={cy} r={CIRC_R} fill="#3b0a0a" stroke="#991b1b" strokeWidth={2} /><circle cx={cx} cy={cy} r={CIRC_R - 7} fill="#991b1b" /></g>)
 }
 
-function ActivityNode({ node, isSelected }) {
+function ActivityNode({ node, isSelected, analysisSelected }) {
   const a = 0.20 + (node.frequency / 100) * 0.65
   return (<g style={{ cursor: 'pointer' }}>
     {isSelected && <rect x={-3} y={-3} width={NODE_W + 6} height={NODE_H + 6} rx={7} fill="rgba(153,27,27,0.10)" stroke="#991b1b" strokeWidth={1.5} />}
     <rect x={0} y={0} width={NODE_W} height={NODE_H} rx={5} fill={isSelected ? '#1e2840' : '#16202e'} stroke={isSelected ? '#991b1b' : 'rgba(255,255,255,0.10)'} strokeWidth={isSelected ? 1.5 : 1} />
     <rect x={0} y={0} width={NODE_W} height={3} rx={3} fill={`rgba(153,27,27,${a})`} />
     <rect x={0} y={1.5} width={NODE_W} height={1.5} fill={`rgba(153,27,27,${a})`} />
+    {analysisSelected && <g transform={`translate(${NODE_W - 19},9)`}><circle cx={6} cy={6} r={6} fill="#2870a8" /><path d="M3 6l2 2 4-4" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></g>}
     <text x={12} y={24} fontSize={12} fontFamily="'Inter',sans-serif" fontWeight="500" fill="#e2e8f0" letterSpacing="-0.01em">{node.label.length > 22 ? node.label.slice(0, 21) + '…' : node.label}</text>
     <text x={12} y={43} fontSize={11} fontFamily="'JetBrains Mono',monospace" fill={isSelected ? '#fca5a5' : '#64748b'} letterSpacing="0.01em">{node.displayMetric}</text>
   </g>)
@@ -428,68 +478,28 @@ function EmptyCanvas({ message, eventLog, onUploadLog }) {
   )
 }
 
-function DefinedModelCanvas({ activities, onUploadLog }) {
-  return (
-    <div className="relative flex-1 overflow-auto p-8" style={{
-      backgroundColor: '#090d14',
-      backgroundImage: 'radial-gradient(rgba(255,255,255,0.11) 1px, transparent 1px)',
-      backgroundSize: '24px 24px',
-    }}>
-      {activities.length ? (
-        <div className="grid gap-5 content-start mx-auto" style={{
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 220px))',
-          maxWidth: 920,
-        }}>
-          {activities.map((activity) => (
-            <div key={activity.id} className="relative overflow-hidden border border-border"
-              style={{ minHeight: 64, borderRadius: 5, background: '#16202e' }}>
-              <div className="h-[3px]" style={{ background: 'rgba(40,112,168,0.85)' }} />
-              <div className="px-3 py-2.5">
-                <p className="text-xs font-medium text-foreground truncate">{activity.name}</p>
-                <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2"
-                  style={{ fontFamily: "'JetBrains Mono',monospace" }}>
-                  {activity.description || 'Atividade definida no processo'}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="h-full flex items-center justify-center">
-          <div className="text-center max-w-sm">
-            <p className="text-sm font-medium text-foreground">O modelo definido está vazio</p>
-            <p className="text-[12px] text-muted-foreground mt-1 leading-relaxed">
-              Crie atividades no painel lateral ou carregue um log para descobrir o processo observado.
-            </p>
-            <button type="button" onClick={onUploadLog}
-              className="inline-flex items-center gap-2 mt-4 py-2 px-3 rounded text-xs border border-border text-muted-foreground hover:text-foreground">
-              <Upload size={12} />Carregar log
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
 // ─── Tab body ───────────────────────────────────────────────────────────────
 
 export default function ProcessGraphTab({ processId, isMobile, onStats, onUploadLog, onAnalyze }) {
-  const [layout, setLayout] = useState('vertical')
-  const [pan, setPan] = useState(() => getInitialView('vertical').pan)
-  const [zoom, setZoom] = useState(() => getInitialView('vertical').zoom)
+  const [pan, setPan] = useState(() => getInitialView().pan)
+  const [zoom, setZoom] = useState(() => getInitialView().zoom)
   const [selectedId, setSelectedId] = useState(null)
   const [actSlider, setActSlider] = useState(100)
   const [pathSlider, setPathSlider] = useState(100)
   const [cursorGrab, setCursorGrab] = useState(false)
   const [mobileFilters, setMobileFilters] = useState(false)
   const [showCasesPanel, setShowCasesPanel] = useState(true)
+  const [hiddenVariantIds, setHiddenVariantIds] = useState(() => new Set())
+  const [ignoredTraceIds, setIgnoredTraceIds] = useState(() => new Set())
+  // null = no explicit choice yet (use every density-visible Activity).
+  // An empty Set is intentionally different: the Manager removed the last
+  // selected Activity, so the next analysis must remain disabled instead of
+  // silently expanding back to the whole process.
+  const [explicitActivityIds, setExplicitActivityIds] = useState(null)
+  const [analysisRunning, setAnalysisRunning] = useState(false)
 
   const [graph, setGraph] = useState(null)
   const [variants, setVariants] = useState([])
-  const [definedActivities, setDefinedActivities] = useState([])
-  const [activityCatalog, setActivityCatalog] = useState([])
-  const [viewMode, setViewMode] = useState('defined')
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
 
@@ -500,25 +510,19 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   const svgRef = useRef(null)
   const containerRef = useRef(null)
 
-  // The graph is the essential request. Trace variants and the two activity
-  // catalogs enrich the workspace, but a failure in any of them must not
-  // discard a valid graph after the Manager completes a mapping.
+  // The graph is the essential request. Trace variants enrich the workspace,
+  // but a failure there must not discard a valid graph after mapping.
   useEffect(() => {
     let cancelled = false
     setLoading(true)
     Promise.all([
       api.getProcessGraph(processId),
       api.getProcessTraces(processId).catch(() => ({ variants: [] })),
-      api.listProcessActivities(processId).catch(() => []),
-      api.listActivities().catch(() => []),
     ])
-      .then(([graphData, traceData, processActivities, catalog]) => {
+      .then(([graphData, traceData]) => {
         if (cancelled) return
         setGraph(graphData)
         setVariants(traceData.variants ?? [])
-        setDefinedActivities(processActivities)
-        setActivityCatalog(catalog)
-        setViewMode(graphData.eventLog ? 'observed' : 'defined')
         setLoadError('')
       })
       .catch((err) => {
@@ -529,19 +533,6 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   }, [processId])
 
   const model = useMemo(() => buildGraphModel(graph), [graph])
-
-  // Report upwards so the header badge counts the same cases the canvas draws.
-  useEffect(() => {
-    onStats?.({
-      caseCount: graph?.caseCount ?? 0,
-      eventLog: graph?.eventLog ?? null,
-      hasUnmappedOperations: graph?.hasUnmappedOperations ?? false,
-      definedActivityCount: definedActivities.length,
-      analysisMinimumTraces: MIN_ANALYSIS_TRACES,
-      analysisEligible: (graph?.caseCount ?? 0) >= MIN_ANALYSIS_TRACES
-        && !(graph?.hasUnmappedOperations ?? false),
-    })
-  }, [graph, definedActivities.length, onStats])
 
   const actThr = (1 - actSlider / 100) * 100
   const pathThr = (1 - pathSlider / 100)
@@ -561,7 +552,78 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
     return { nodes, edges }
   }, [model, actThr, pathThr])
 
-  const laid = useMemo(() => layoutGraph(visibleModel, layout), [visibleModel, layout])
+  const analysisScope = useMemo(() => {
+    const activityNodes = model.nodes.filter((node) => !node.isStart && !node.isEnd)
+    const allActivityNodeIds = new Set(activityNodes.map((node) => node.id))
+    const allActivityIds = new Set(activityNodes.map((node) => node.activityId).filter(Boolean))
+    const densityActivityNodeIds = new Set(visibleModel.nodes.filter((node) => !node.isStart && !node.isEnd).map((node) => node.id))
+    const requestedActivityNodeIds = explicitActivityIds !== null
+      ? new Set([...explicitActivityIds].filter((id) => densityActivityNodeIds.has(id)))
+      : densityActivityNodeIds
+    const selectedActivityIds = new Set(
+      activityNodes
+        .filter((node) => requestedActivityNodeIds.has(node.id))
+        .map((node) => node.activityId)
+        .filter(Boolean),
+    )
+    // More than one raw log operation may map to the same Activity. Selecting
+    // that Activity therefore includes every corresponding operation node.
+    const selectedActivityNodeIds = new Set(
+      activityNodes
+        .filter((node) => selectedActivityIds.has(node.activityId))
+        .map((node) => node.id),
+    )
+    // Graph nodes are Operation UUIDs, but the analysis repository filters by
+    // ActivitiesTable ids. Sending node ids used to be accepted yet selected
+    // no Activity at all.
+    const excludedActivityIds = [...allActivityIds].filter((id) => !selectedActivityIds.has(id))
+    const visiblePairs = new Set(visibleModel.edges.map((edge) => `${edge.source}→${edge.target}`))
+    const selectedVariants = variants.filter((variant) => {
+      if (hiddenVariantIds.has(variant.id)) return false
+      if (!variant.nodeIds.some((id) => selectedActivityNodeIds.has(id))) return false
+      return variant.nodeIds.slice(1).every((target, index) => visiblePairs.has(`${variant.nodeIds[index]}→${target}`))
+    })
+    const selectedVariantIds = new Set(selectedVariants.map((variant) => variant.id))
+    const excludedTraceIds = new Set(ignoredTraceIds)
+    variants.forEach((variant) => {
+      if (!selectedVariantIds.has(variant.id)) variant.cases.forEach((trace) => excludedTraceIds.add(trace.id))
+    })
+    const totalTraceCount = variants.reduce((total, variant) => total + variant.cases.length, 0)
+    return {
+      excludedActivityIds,
+      excludedTraceIds: [...excludedTraceIds],
+      totalTraceCount,
+      selectedTraceCount: Math.max(totalTraceCount - excludedTraceIds.size, 0),
+      totalActivityCount: allActivityIds.size || allActivityNodeIds.size,
+      selectedActivityCount: selectedActivityIds.size,
+      totalVariantCount: variants.length,
+      selectedVariantCount: selectedVariants.length,
+      totalPathCount: model.edges.length,
+      selectedPathCount: visibleModel.edges.length,
+      activityDensity: actSlider,
+      pathDensity: pathSlider,
+      selectionExplicit: explicitActivityIds !== null,
+      selectedActivityNodeIds,
+    }
+  }, [model, visibleModel, variants, hiddenVariantIds, ignoredTraceIds, explicitActivityIds, actSlider, pathSlider])
+
+  // Report both source totals and the exact next-run selection. The header,
+  // flight deck and POST payload now read the same object.
+  useEffect(() => {
+    onStats?.({
+      caseCount: graph?.caseCount ?? 0,
+      selectedCaseCount: analysisScope.selectedTraceCount,
+      eventLog: graph?.eventLog ?? null,
+      hasUnmappedOperations: graph?.hasUnmappedOperations ?? false,
+      analysisMinimumTraces: MIN_ANALYSIS_TRACES,
+      analysisEligible: analysisScope.selectedTraceCount >= MIN_ANALYSIS_TRACES
+        && analysisScope.selectedActivityCount > 0
+        && !(graph?.hasUnmappedOperations ?? false),
+      analysisScope,
+    })
+  }, [graph, analysisScope, onStats])
+
+  const laid = useMemo(() => layoutGraph(visibleModel), [visibleModel])
   const nodes = laid.nodes
   const visNodes = nodes
   const visEdges = laid.edges
@@ -569,9 +631,39 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   const activityNodeCount = model.nodes.filter((n) => !n.isStart && !n.isEnd).length
   const selectedNode = selectedId ? nodes.find((n) => n.id === selectedId && !n.isStart && !n.isEnd) ?? null : null
   const hasObservedProcess = model.nodes.length > 0
-  const hasObservedLog = Boolean(graph?.eventLog)
-  const analysisEligible = (graph?.caseCount ?? 0) >= MIN_ANALYSIS_TRACES
+  const analysisEligible = analysisScope.selectedTraceCount >= MIN_ANALYSIS_TRACES
+    && analysisScope.selectedActivityCount > 0
     && !graph?.hasUnmappedOperations
+
+  function toggleVariant(id) {
+    setHiddenVariantIds((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next })
+  }
+
+  function toggleTrace(id) {
+    setIgnoredTraceIds((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next })
+  }
+
+  function toggleAnalysisActivity(id) {
+    setExplicitActivityIds((current) => {
+      const next = new Set(current ?? [])
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  function resetAnalysisSelection() {
+    setHiddenVariantIds(new Set())
+    setIgnoredTraceIds(new Set())
+    setExplicitActivityIds(null)
+    setActSlider(100)
+    setPathSlider(100)
+  }
+
+  async function startAnalysis() {
+    if (!analysisEligible || analysisRunning) return
+    setAnalysisRunning(true)
+    try { await onAnalyze?.(analysisScope) } finally { setAnalysisRunning(false) }
+  }
 
   const handleWheel = useCallback((e) => {
     e.preventDefault()
@@ -661,15 +753,14 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
     setZoom(nextZoom)
   }, [visNodes, isMobile, showCasesPanel])
 
-  // Frame once for each direction. This also makes the layout toggle useful:
-  // switching to horizontal or vertical immediately centers the new geometry.
-  const framedLayout = useRef(null)
+  // Frame once when the graph first lands (or is replaced after a re-upload).
+  const framedGraph = useRef(null)
   useEffect(() => {
-    if (loading || nodes.length === 0 || framedLayout.current === layout) return
-    framedLayout.current = layout
+    if (loading || nodes.length === 0 || framedGraph.current === processId) return
+    framedGraph.current = processId
     const frame = requestAnimationFrame(fitView)
     return () => cancelAnimationFrame(frame)
-  }, [layout, loading, nodes.length, fitView])
+  }, [processId, loading, nodes.length, fitView])
 
   if (loading) {
     return (
@@ -682,39 +773,22 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   return (
     <>
       <div className="relative flex flex-1 min-w-0 overflow-hidden" style={{ background: '#090d14' }}>
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 flex items-center p-0.5 rounded border border-border"
-          style={{ background: '#111520' }}>
-          <button type="button" onClick={() => setViewMode('defined')}
-            className="px-3 py-1.5 rounded text-[10px] transition-colors"
-            style={{
-              background: viewMode === 'defined' ? '#1e2738' : 'transparent',
-              color: viewMode === 'defined' ? '#e2e8f0' : '#64748b',
-              fontFamily: "'JetBrains Mono',monospace",
-            }}>
-            Modelo definido
-          </button>
-          <button type="button" onClick={() => hasObservedLog && setViewMode('observed')}
-            disabled={!hasObservedLog}
-            title={hasObservedLog ? 'Ver processo derivado do log' : 'Mapeie um log para gerar esta visão'}
-            className="px-3 py-1.5 rounded text-[10px] transition-colors disabled:opacity-35 disabled:cursor-not-allowed"
-            style={{
-              background: viewMode === 'observed' ? '#1e2738' : 'transparent',
-              color: viewMode === 'observed' ? '#e2e8f0' : '#64748b',
-              fontFamily: "'JetBrains Mono',monospace",
-            }}>
-            Processo observado
-          </button>
-        </div>
-
-        {viewMode === 'defined' ? (
-          <DefinedModelCanvas activities={definedActivities} onUploadLog={onUploadLog} />
-        ) : loadError || !hasObservedProcess ? (
+        {loadError || !hasObservedProcess ? (
           <EmptyCanvas message={loadError} eventLog={graph?.eventLog ?? null} onUploadLog={onUploadLog} />
         ) : (
       <div ref={containerRef} className="relative flex-1 min-w-0 overflow-hidden" style={{ background: '#090d14' }}>
 
         {!isMobile && showCasesPanel && (
-          <CasesLayersPanel node={selectedNode} variants={variants} onClose={() => setShowCasesPanel(false)} />
+          <CasesLayersPanel
+            node={selectedNode}
+            variants={variants}
+            hiddenVariants={hiddenVariantIds}
+            ignoredTraces={ignoredTraceIds}
+            onToggleVariant={toggleVariant}
+            onToggleTrace={toggleTrace}
+            onResetSelection={resetAnalysisSelection}
+            onClose={() => setShowCasesPanel(false)}
+          />
         )}
 
         <svg ref={svgRef} className="w-full h-full"
@@ -778,9 +852,9 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
             })}
             {visNodes.map((node) => (
               <g key={node.id} transform={`translate(${node.x},${node.y})`}>
-                {node.isStart ? <StartNode node={node} isSelected={selectedId === node.id} layout={layout} />
+                {node.isStart ? <StartNode node={node} isSelected={selectedId === node.id} />
                   : node.isEnd ? <EndNode node={node} isSelected={selectedId === node.id} />
-                    : <ActivityNode node={node} isSelected={selectedId === node.id} />}
+                    : <ActivityNode node={node} isSelected={selectedId === node.id} analysisSelected={analysisScope.selectionExplicit && analysisScope.selectedActivityNodeIds.has(node.id)} />}
               </g>
             ))}
           </g>
@@ -802,24 +876,6 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
           style={{ fontFamily: "'JetBrains Mono',monospace" }}>
           {Math.round(zoom * 100)}%
         </div>
-
-        {/* Direction toggle — inside the canvas, per the newer Figma export;
-            it steers the drawing, not the app shell, so it lives with it. */}
-        {!isMobile && (
-          <button onClick={() => setLayout((l) => (l === 'horizontal' ? 'vertical' : 'horizontal'))}
-            title="Alternar direção do grafo"
-            style={{
-              position: 'absolute', bottom: 154, right: 20, zIndex: 20,
-              width: 32, height: 32, borderRadius: '50%',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              border: '1px solid rgba(255,255,255,0.09)', background: '#161c28', color: '#64748b',
-              cursor: 'pointer', transition: 'all 0.15s',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)'; e.currentTarget.style.color = '#94a3b8' }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'; e.currentTarget.style.color = '#64748b' }}>
-            <RotateCcw size={13} style={{ transform: layout === 'horizontal' ? 'rotate(90deg)' : 'none', transition: 'transform 0.3s' }} />
-          </button>
-        )}
 
         {/* Traces window toggle — only meaningful with an activity selected,
             since the panel lists the variants that pass through it. */}
@@ -873,60 +929,49 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
             </button>
           </div>
 
-          {viewMode === 'defined' ? (
-            <ProcessActivitiesPanel
-              processId={processId}
-              activities={definedActivities}
-              catalog={activityCatalog}
-              onActivitiesChange={setDefinedActivities}
-              onCatalogChange={setActivityCatalog}
-            />
+          <div className="p-4 border-b border-border space-y-5">
+            <p className="text-[10px] font-semibold uppercase text-muted-foreground"
+              style={{ fontFamily: "'JetBrains Mono',monospace" }}>Densidade do grafo</p>
+            <Slider label="Atividades" value={actSlider} onChange={setActSlider} />
+            <Slider label="Caminhos" value={pathSlider} onChange={setPathSlider} />
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-[11px] text-muted-foreground"><span className="text-foreground font-medium">{visNodes.filter((n) => !n.isStart && !n.isEnd).length}</span> de {activityNodeCount}</span>
+              <span className="text-[11px] text-muted-foreground"><span className="text-foreground font-medium">{visEdges.length}</span> caminhos</span>
+            </div>
+          </div>
+          {selectedNode ? (
+            <div className="flex-1 min-h-0 overflow-hidden">
+            <NodeDetailPanel node={selectedNode}
+              analysisSelected={analysisScope.selectedActivityNodeIds.has(selectedNode.id)}
+              analysisSelectionExplicit={analysisScope.selectionExplicit}
+              onToggleAnalysis={toggleAnalysisActivity}
+              onClose={() => setSelectedId(null)} />
+            </div>
           ) : (
-            <>
-              <div className="p-4 border-b border-border space-y-5">
-                <p className="text-[10px] font-semibold uppercase text-muted-foreground"
-                  style={{ fontFamily: "'JetBrains Mono',monospace" }}>Densidade do grafo</p>
-                <Slider label="Atividades" value={actSlider} onChange={setActSlider} />
-                <Slider label="Caminhos" value={pathSlider} onChange={setPathSlider} />
-                <div className="flex items-center justify-between pt-1">
-                  <span className="text-[11px] text-muted-foreground"><span className="text-foreground font-medium">{visNodes.filter((n) => !n.isStart && !n.isEnd).length}</span> de {activityNodeCount}</span>
-                  <span className="text-[11px] text-muted-foreground"><span className="text-foreground font-medium">{visEdges.length}</span> caminhos</span>
-                </div>
+            <div className="flex-1 flex items-center justify-center p-6 text-center">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Selecione uma atividade</p>
+                <p className="text-[11px] text-muted-foreground mt-1 opacity-60">Inspecione frequência e desempenho.</p>
               </div>
-              {selectedNode ? (
-                <div className="flex-1 min-h-0 overflow-hidden">
-                  <NodeDetailPanel node={selectedNode} onClose={() => setSelectedId(null)} />
-                </div>
-              ) : (
-                <div className="flex-1 flex items-center justify-center p-6 text-center">
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground">Selecione uma atividade</p>
-                    <p className="text-[11px] text-muted-foreground mt-1 opacity-60">Inspecione frequência e desempenho.</p>
-                  </div>
-                </div>
-              )}
-            </>
+            </div>
           )}
 
-          <div className="shrink-0 p-3 border-t border-border mt-auto space-y-2">
-            {graph?.eventLog && (
-              <p className="text-[10px] text-muted-foreground truncate"
-                style={{ fontFamily: "'JetBrains Mono',monospace" }}>
-                {graph.eventLog.fileName} · {formatCount(graph.caseCount)} traces
-              </p>
-            )}
-            <button type="button" onClick={() => onAnalyze?.(selectedNode)}
-              disabled={!analysisEligible}
+          <div className="shrink-0 p-3 border-t border-border mt-auto space-y-3">
+            {graph?.eventLog && <AnalysisFlightDeck scope={analysisScope} onReset={resetAnalysisSelection} />}
+            <button type="button" onClick={startAnalysis}
+              disabled={!analysisEligible || analysisRunning}
               title={!graph?.caseCount
                 ? 'Carregue e mapeie um log antes de analisar'
                 : graph.hasUnmappedOperations
                   ? 'Conclua o mapeamento antes de analisar'
-                  : graph.caseCount < MIN_ANALYSIS_TRACES
-                    ? `São necessários ao menos ${MIN_ANALYSIS_TRACES} traces`
+                  : analysisScope.selectedActivityCount === 0
+                    ? 'Selecione ao menos uma atividade'
+                    : analysisScope.selectedTraceCount < MIN_ANALYSIS_TRACES
+                      ? `O recorte precisa de ao menos ${MIN_ANALYSIS_TRACES} traces`
                     : 'Gerar análise de desvios'}
               className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded text-xs font-medium disabled:opacity-35 disabled:cursor-not-allowed"
               style={{ background: 'rgba(180,83,9,0.16)', color: '#fbbf24', border: '1px solid rgba(180,83,9,0.42)' }}>
-              <Scan size={12} />Gerar análise de desvios
+              <Scan size={12} />{analysisRunning ? 'Processando recorte…' : 'Gerar análise de desvios'}
             </button>
           </div>
         </div>
@@ -938,7 +983,11 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
             style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(0,0,0,0.55)', opacity: selectedNode ? 1 : 0, pointerEvents: selectedNode ? 'auto' : 'none', transition: 'opacity 0.3s ease' }} />
           <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 50, background: '#161c28', borderTop: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px 20px 0 0', maxHeight: '78vh', display: 'flex', flexDirection: 'column', transform: selectedNode ? 'translateY(0)' : 'translateY(100%)', transition: 'transform 0.38s cubic-bezier(0.32,0.72,0,1)', boxShadow: '0 -8px 40px rgba(0,0,0,0.6)' }}>
             <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}><div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)' }} /></div>
-            {selectedNode && <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}><NodeDetailPanel node={selectedNode} onClose={() => setSelectedId(null)} /></div>}
+            {selectedNode && <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}><NodeDetailPanel node={selectedNode}
+              analysisSelected={analysisScope.selectedActivityNodeIds.has(selectedNode.id)}
+              analysisSelectionExplicit={analysisScope.selectionExplicit}
+              onToggleAnalysis={toggleAnalysisActivity}
+              onClose={() => setSelectedId(null)} /></div>}
           </div>
         </>
       )}

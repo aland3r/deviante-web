@@ -24,12 +24,6 @@ export function validateProcessName(name) {
   return null
 }
 
-export function validateCompanyName(name) {
-  if (!name?.trim()) return 'O nome da empresa é obrigatório.'
-  if (name.trim().length > 255) return 'O nome da empresa deve ter no máximo 255 caracteres.'
-  return null
-}
-
 const LANGUAGE_PATTERN = /^[a-z]{2}(-[A-Z]{2})?$/
 
 export function validateLanguageCode(value, label) {

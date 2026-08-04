@@ -6,6 +6,7 @@ import {
 import { api, ApiError } from '../lib/api'
 import { MACHINE_KINDS, deriveMachineStatus } from '../lib/monitoring'
 import MachineIllustration from '../components/monitoring/MachineIllustration'
+import ProjectActionsMenu from '../components/projects/ProjectActionsMenu'
 
 const STATUS = {
   healthy: { label: 'Saudável', color: '#10b981', soft: 'rgba(16,185,129,0.14)' },
@@ -195,6 +196,16 @@ export default function MonitoringPage() {
     }
   }
 
+  async function deleteMonitoring() {
+    if (!window.confirm(`Excluir o monitoramento “${monitoring.name}”? Esta ação não pode ser desfeita.`)) return
+    try {
+      await api.deleteMonitoring(monitoringId)
+      navigate('/dashboard', { replace: true })
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Não foi possível excluir o monitoramento.')
+    }
+  }
+
   const machines = useMemo(() => monitoring?.machines ?? [], [monitoring])
   const worstCount = useMemo(() => {
     const counts = { critical: 0, watch: 0, healthy: 0, unknown: 0 }
@@ -237,12 +248,12 @@ export default function MonitoringPage() {
                   <h1 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: 20, color: 'white', letterSpacing: '-0.01em' }}>{monitoring.name}</h1>
                 </button>
               )}
+              <ProjectActionsMenu onDelete={deleteMonitoring} deleteLabel="Excluir monitoramento" />
             </div>
             <p className="text-xs text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
               {machines.length} máquina{machines.length !== 1 ? 's' : ''}
               {worstCount.critical > 0 && <span style={{ color: '#dc2626' }}> · {worstCount.critical} crítica{worstCount.critical !== 1 ? 's' : ''}</span>}
               {worstCount.watch > 0 && <span style={{ color: '#f59e0b' }}> · {worstCount.watch} em atenção</span>}
-              {monitoring.companyName && <span> · {monitoring.companyName}</span>}
             </p>
           </div>
           <div className="flex gap-2"><button type="button" onClick={openLinkEquipment} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold shrink-0" style={{ background: '#111520', color: '#94a3b8', border: '1px solid rgba(255,255,255,.1)' }}><Cpu size={13} />Associar existente</button><button type="button" onClick={() => setShowAdd(true)} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold shrink-0" style={{ background: '#059669', color: 'white' }}><Plus size={13} />Novo equipamento</button></div>

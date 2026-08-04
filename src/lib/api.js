@@ -18,7 +18,6 @@ import {
   validateEmail,
   validatePassword,
   validateProcessName,
-  validateCompanyName,
   validateLanguageCode,
   validateBasedIn,
   validateRequired,
@@ -148,7 +147,6 @@ const mockApi = {
     const process = {
       id: createId(),
       name: 'Processo sem título',
-      companyName: '',
       description: '',
       sector: '',
       createdAt: new Date().toISOString(),
@@ -175,9 +173,6 @@ const mockApi = {
     const nameError = validateProcessName(data.name)
     if (nameError) throw new ApiError(nameError, { name: nameError })
 
-    const companyError = validateCompanyName(data.companyName)
-    if (companyError) throw new ApiError(companyError, { companyName: companyError })
-
     const processes = getProcesses(user.id)
     const index = processes.findIndex((item) => item.id === processId)
     if (index === -1) throw new ApiError('Processo não encontrado.')
@@ -185,7 +180,6 @@ const mockApi = {
     processes[index] = {
       ...processes[index],
       name: data.name.trim(),
-      companyName: data.companyName.trim(),
       description: data.description?.trim() ?? '',
       sector: data.sector?.trim() ?? '',
       updatedAt: new Date().toISOString(),
@@ -325,7 +319,7 @@ export const api = {
   createProcess: () => shouldUseRemoteProcesses() ? request('/processes', { method: 'POST' }) : mockApi.createProcess(),
   getProcess: (id) => shouldUseRemoteProcesses() ? request(`/processes/${id}`) : mockApi.getProcess(id),
   updateProcess: (id, data) => shouldUseRemoteProcesses()
-    ? request(`/processes/${id}`, { method: 'PUT', body: JSON.stringify({ name: data.name, companyName: data.companyName, description: data.description, sector: data.sector }) })
+    ? request(`/processes/${id}`, { method: 'PUT', body: JSON.stringify({ name: data.name, description: data.description, sector: data.sector }) })
     : mockApi.updateProcess(id, data),
   renameProcess: (id, name) => shouldUseRemoteProcesses()
     ? request(`/processes/${id}/name`, { method: 'PATCH', body: JSON.stringify({ name }) })
@@ -388,6 +382,7 @@ export const api = {
     body: JSON.stringify({ processId, name: name ?? null }),
   }),
   getAnalysis: (id) => request(`/analyses/${id}`),
+  deleteAnalysis: (id) => request(`/analyses/${id}`, { method: 'DELETE' }),
   // Persist the Manager's subtractive filter (excluded activities/traces) on a
   // saved run, so reopening restores it without a rerun. `filter` is
   // { excludedActivityIds, excludedTraceIds }.

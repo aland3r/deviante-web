@@ -4,6 +4,7 @@ import {
   Layers, Play, RefreshCw, Scan, SkipForward, SlidersHorizontal, XCircle,
 } from 'lucide-react'
 import BrandMark from '../layout/BrandMark'
+import ProjectActionsMenu from '../projects/ProjectActionsMenu'
 import { api } from '../../lib/api'
 
 const formatSeconds = (value) => `${Number(value ?? 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} s`
@@ -242,7 +243,7 @@ function DriftChart({ points, processedValues, drifts, outliers, excluded, selec
   )
 }
 
-export default function ProcessAnalysisView({ processId, processName, eventLog, analysisId, onBack, onGoHome }) {
+export default function ProcessAnalysisView({ processId, processName, analysisId, onBack, onGoHome, onDelete }) {
   const [analysis, setAnalysis] = useState(null)
   const [runState, setRunState] = useState('running')
   const [error, setError] = useState('')
@@ -430,8 +431,7 @@ export default function ProcessAnalysisView({ processId, processName, eventLog, 
         <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
           <Scan size={13} /><span className="hidden sm:inline">Análise de desvios</span>
         </span>
-        <span className="hidden lg:block px-2 py-0.5 rounded text-[10px] text-muted-foreground border border-border"
-          style={{ fontFamily: "'JetBrains Mono',monospace" }}>{analysis?.eventLog?.fileName ?? eventLog?.fileName ?? 'log de eventos'}</span>
+        {onDelete && <ProjectActionsMenu onDelete={onDelete} deleteLabel="Excluir análise" />}
         <div className="flex-1" />
         <button type="button" onClick={() => setShowParams((open) => !open)}
           className="flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded text-[11px] border border-border text-muted-foreground hover:text-foreground"
