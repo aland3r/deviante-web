@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
-import { Check, FileText, X, ZoomIn, ZoomOut, Maximize2, SlidersHorizontal, Scan, Upload } from 'lucide-react'
+import { Check, FileText, Plus, RadioTower, X, ZoomIn, ZoomOut, Maximize2, SlidersHorizontal, Scan, Upload } from 'lucide-react'
 import {
   NODE_W, NODE_H, CIRC_R,
   GRAD_LIGHT, GRAD_MID, GRAD_DEEP, DASH_COLOR,
@@ -534,6 +534,8 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   const [selectionRect, setSelectionRect] = useState(null)
   const [mobileFilters, setMobileFilters] = useState(false)
   const [showCasesPanel, setShowCasesPanel] = useState(true)
+  const [linkedMachines, setLinkedMachines] = useState([])
+  const [showMachinePicker, setShowMachinePicker] = useState(false)
   const [hiddenVariantIds, setHiddenVariantIds] = useState(() => new Set())
   const [ignoredTraceIds, setIgnoredTraceIds] = useState(() => new Set())
   // null = no explicit choice yet (use every density-visible Activity).
@@ -547,6 +549,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   const [selectedEventLogIds, setSelectedEventLogIds] = useState(null)
   const [graph, setGraph] = useState(null)
   const [variants, setVariants] = useState([])
+  const [allMachines, setAllMachines] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
 
@@ -577,6 +580,27 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
       .catch((err) => {
         if (!cancelled) setLoadError(err instanceof ApiError ? err.message : 'Não foi possível carregar os logs deste processo.')
       })
+    return () => { cancelled = true }
+  }, [processId])
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadMachines() {
+      try {
+        const [linked, all] = await Promise.all([
+          api.listMachinesForProcess(processId).catch(() => []),
+          api.listAllMachines().catch(() => []),
+        ])
+        if (cancelled) return
+        setLinkedMachines(Array.isArray(linked) ? linked : [])
+        setAllMachines(Array.isArray(all) ? all : [])
+      } catch (err) {
+        if (!cancelled) {
+          // Silently ignore machine loading errors; the canvas still works.
+        }
+      }
+    }
+    loadMachines()
     return () => { cancelled = true }
   }, [processId])
 
@@ -766,6 +790,21 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
     setSelectedEventLogIds(new Set(eventLogs.filter((log) => log.parseStatus === 'parsed').map((log) => log.id)))
   }
 
+  async function linkMachine(machine) {
+    try {
+      await api.linkProcessEquipment(processId, machine.id)
+      const [linked, all] = await Promise.all([
+        api.listMachinesForProcess(processId).catch(() => []),
+        api.listAllMachines().catch(() => []),
+      ])
+      setLinkedMachines(Array.isArray(linked) ? linked : [])
+      setAllMachines(Array.isArray(all) ? all : [])
+      setShowMachinePicker(false)
+    } catch (err) {
+      // Ignore errors here; the picker remains open so the Manager can retry.
+    }
+  }
+
   async function startAnalysis() {
     if (!analysisEligible || analysisRunning) return
     setAnalysisRunning(true)
@@ -948,6 +987,50 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
           />
         )}
 
+        <div className="absolute left-5 top-5 z-20 rounded-xl border border-border p-2.5 bg-[#111520] shadow-lg" style={{ minWidth: 170 }}>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <RadioTower size={14} className="text-emerald-400" />
+              <div>
+                <p className="text-[11px] font-semibold text-foreground">Máquinas</p>
+                <p className="text-[10px] text-muted-foreground">Vinculadas ao processo</p>
+              </div>
+            </div>
+            <button type="button" onClick={(e) => { e.stopPropagation(); setShowMachinePicker((open) => !open) }}
+              className="rounded-full p-1 border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              title="Vincular máquina">
+              <Plus size={14} />
+            </button>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {linkedMachines.length ? linkedMachines.map((machine) => (
+              <div key={machine.id} className="rounded-full border border-border bg-[#0d1017] px-2.5 py-1 text-[10px] text-foreground flex items-center gap-2">
+                <RadioTower size={10} className="text-emerald-400" />
+                <span className="truncate" title={machine.name}>{machine.name}</span>
+              </div>
+            )) : (
+              <p className="text-[10px] text-muted-foreground">Nenhuma máquina vinculada.</p>
+            )}
+          </div>
+          {showMachinePicker && (
+            <div className="mt-3 rounded-xl border border-border bg-[#090d14] p-2">
+              <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-2">Escolher máquina</p>
+              {allMachines.filter((machine) => !linkedMachines.some((item) => item.id === machine.id)).length ? (
+                <div className="space-y-1 max-h-48 overflow-y-auto">
+                  {allMachines.filter((machine) => !linkedMachines.some((item) => item.id === machine.id)).map((machine) => (
+                    <button key={machine.id} type="button" onClick={(e) => { e.stopPropagation(); linkMachine(machine) }}
+                      className="w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-[11px] text-foreground hover:bg-secondary/30 transition-colors">
+                      <span className="min-w-0 truncate">{machine.name}</span>
+                      <Plus size={12} className="text-emerald-400" />
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[10px] text-muted-foreground">Sem máquinas disponíveis.</p>
+              )}
+            </div>
+          )}
+        </div>
         <svg ref={svgRef} className="w-full h-full"
           style={{ cursor: cursorGrab ? 'grabbing' : 'grab', touchAction: 'none' }}
           onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp}
