@@ -360,9 +360,23 @@ export const api = {
   // counterpart on purpose: an invented graph is exactly what this replaces.
   getProcessGraph: (processId) => request(`/processes/${processId}/graph`),
   getProcessTraces: (processId) => request(`/processes/${processId}/traces`),
-  runProcessAnalysis: (processId, analysisId) => {
-    const q = analysisId ? `?analysisId=${encodeURIComponent(analysisId)}` : ''
-    return request(`/processes/${processId}/analysis${q}`, { method: 'POST' })
+  // UC12 + UC13. `params` are the analysis parameters the Manager chooses:
+  //   operationId — analyse one operation's sojourn time instead of the whole
+  //                 trace duration. This is the scope the research scripts use.
+  //   delta       — ADWIN's sensitivity.
+  //   treatment   — 'raw' feeds ADWIN the series as read from the log (the
+  //                 synthetic-corpus baseline); 'treated' replaces isolated
+  //                 spikes and smooths first (the shop-floor pipeline).
+  // Omitting all three reproduces the behaviour this endpoint had before.
+  runProcessAnalysis: (processId, analysisId, params = {}) => {
+    const query = new URLSearchParams()
+    if (analysisId) query.set('analysisId', analysisId)
+    if (params.operationId) query.set('operationId', params.operationId)
+    if (params.activityId) query.set('activityId', params.activityId)
+    if (params.treatment) query.set('treatment', params.treatment)
+    if (params.delta != null && params.delta !== '') query.set('delta', String(params.delta))
+    const q = query.toString()
+    return request(`/processes/${processId}/analysis${q ? `?${q}` : ''}`, { method: 'POST' })
   },
   listAnalyses: () => request('/analyses'),
   createAnalysis: (processId, name) => request('/analyses', {
@@ -370,6 +384,12 @@ export const api = {
     body: JSON.stringify({ processId, name: name ?? null }),
   }),
   getAnalysis: (id) => request(`/analyses/${id}`),
+  // Persist the traces the Manager marked "pra sumir" on a saved run, so
+  // reopening the analysis restores the same desconsiderados without a rerun.
+  updateDismissedTraces: (id, dismissedIndexes) => request(`/analyses/${id}/dismissed`, {
+    method: 'PUT',
+    body: JSON.stringify({ dismissedIndexes }),
+  }),
   resolveMapping: (processId, mappings) => request(`/processes/${processId}/mapping`, {
     method: 'POST',
     body: JSON.stringify({ mappings }),

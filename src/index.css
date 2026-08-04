@@ -113,6 +113,65 @@
   border-color: var(--border);
 }
 
+/*
+ * Scrollbars.
+ *
+ * Every scrollable surface in the app sits on a dark chrome (#0d1017/#111520),
+ * but nothing styled the scrollbar, so the browser drew its native one — a
+ * light, wide, platform-shaped bar that reads as a piece of the operating
+ * system pasted into the product. It was most visible in the trace list of the
+ * analysis screen, which is the only panel long enough to always show it.
+ *
+ * The rule is global rather than scoped to that list on purpose: a scrollbar
+ * styled in one panel and native in the next is the same inconsistency, just
+ * harder to notice. Widths stay narrow because these are dense, low-chrome
+ * panels; the thumb borrows the existing border and muted-foreground tokens so
+ * it tracks the theme instead of hardcoding a second palette.
+ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.38) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.32);
+  border-radius: 999px;
+  /* Inset the thumb so it reads as floating over the panel rather than
+     filling a gutter the panel does not otherwise have. */
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.55);
+  background-clip: content-box;
+}
+
+/* Without this the two bars meet in an empty light square in the corner. */
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/*
+ * Tells the engine the app is dark, so every remaining native widget — the
+ * scrollbar on engines that ignore the rules above, `select` popups, date and
+ * number spinners, form autofill — renders in its dark variant instead of a
+ * light one dropped onto a dark panel. This is the part the custom scrollbar
+ * rules cannot reach, because those popups are drawn by the OS.
+ */
+:root {
+  color-scheme: dark;
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);
