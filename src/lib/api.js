@@ -360,23 +360,27 @@ export const api = {
   // counterpart on purpose: an invented graph is exactly what this replaces.
   getProcessGraph: (processId) => request(`/processes/${processId}/graph`),
   getProcessTraces: (processId) => request(`/processes/${processId}/traces`),
-  // UC12 + UC13. `params` are the analysis parameters the Manager chooses:
-  //   operationId — analyse one operation's sojourn time instead of the whole
-  //                 trace duration. This is the scope the research scripts use.
-  //   delta       — ADWIN's sensitivity.
-  //   treatment   — 'raw' feeds ADWIN the series as read from the log (the
-  //                 synthetic-corpus baseline); 'treated' replaces isolated
-  //                 spikes and smooths first (the shop-floor pipeline).
-  // Omitting all three reproduces the behaviour this endpoint had before.
+  // UC12 + UC13. `params` carry the run under the subtractive filter:
+  //   treatment          — 'raw' feeds ADWIN the series as read from the log
+  //                        (synthetic-corpus baseline); 'treated' smooths first
+  //                        (the shop-floor pipeline).
+  //   delta              — ADWIN's sensitivity.
+  //   excludedActivityIds — activities whose per-event duration is filtered out
+  //                        of the series (empty = whole-trace duration).
+  //   excludedTraceIds    — cases dropped from the series entirely.
+  // An empty body reproduces the historical whole-trace behaviour.
   runProcessAnalysis: (processId, analysisId, params = {}) => {
-    const query = new URLSearchParams()
-    if (analysisId) query.set('analysisId', analysisId)
-    if (params.operationId) query.set('operationId', params.operationId)
-    if (params.activityId) query.set('activityId', params.activityId)
-    if (params.treatment) query.set('treatment', params.treatment)
-    if (params.delta != null && params.delta !== '') query.set('delta', String(params.delta))
-    const q = query.toString()
-    return request(`/processes/${processId}/analysis${q ? `?${q}` : ''}`, { method: 'POST' })
+    const query = analysisId ? `?analysisId=${encodeURIComponent(analysisId)}` : ''
+    const body = {
+      treatment: params.treatment ?? 'treated',
+      excludedActivityIds: params.excludedActivityIds ?? [],
+      excludedTraceIds: params.excludedTraceIds ?? [],
+    }
+    if (params.delta != null && params.delta !== '') body.delta = Number(params.delta)
+    return request(`/processes/${processId}/analysis${query}`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
   },
   listAnalyses: () => request('/analyses'),
   createAnalysis: (processId, name) => request('/analyses', {
@@ -384,11 +388,12 @@ export const api = {
     body: JSON.stringify({ processId, name: name ?? null }),
   }),
   getAnalysis: (id) => request(`/analyses/${id}`),
-  // Persist the traces the Manager marked "pra sumir" on a saved run, so
-  // reopening the analysis restores the same desconsiderados without a rerun.
-  updateDismissedTraces: (id, dismissedIndexes) => request(`/analyses/${id}/dismissed`, {
+  // Persist the Manager's subtractive filter (excluded activities/traces) on a
+  // saved run, so reopening restores it without a rerun. `filter` is
+  // { excludedActivityIds, excludedTraceIds }.
+  updateAnalysisFilter: (id, filter) => request(`/analyses/${id}/filter`, {
     method: 'PUT',
-    body: JSON.stringify({ dismissedIndexes }),
+    body: JSON.stringify(filter),
   }),
   resolveMapping: (processId, mappings) => request(`/processes/${processId}/mapping`, {
     method: 'POST',

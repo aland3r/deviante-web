@@ -4,10 +4,10 @@ import {
   NODE_W, NODE_H, CIRC_R,
   GRAD_LIGHT, GRAD_MID, GRAD_DEEP, DASH_COLOR,
   STATUS_DOT, STATUS_LABEL,
-  freqOpacity, freqHalfW, computeEdgeCPs, edgeArrowPath,
-  nodeById, nodeHitTest, getInitialView,
+  freqOpacity, freqHalfW, makeSampler, segsToPath, ribbonFromSampler,
+  nodeHitTest, getInitialView,
 } from './graph-core'
-import { buildGraphModel, positionNodes, withEdgeOffsets, formatDuration, formatCount } from './graph-layout'
+import { buildGraphModel, layoutGraph, formatDuration, formatCount } from './graph-layout'
 import { api, ApiError } from '../../lib/api'
 import ProcessActivitiesPanel from './ProcessActivitiesPanel'
 
@@ -543,42 +543,20 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
     })
   }, [graph, definedActivities.length, onStats])
 
-  const nodes = useMemo(() => positionNodes(model.nodes, layout), [model.nodes, layout])
+  // Full layered layout over every node/edge, computed once per direction.
+  // The density sliders only hide from this stable layout — like Disco, the
+  // shape does not jump around as the Manager filters it.
+  const laid = useMemo(() => layoutGraph(model, layout), [model, layout])
+  const nodes = laid.nodes
   const actThr = (1 - actSlider / 100) * 100
   const pathThr = (1 - pathSlider / 100)
   const visNodes = nodes.filter((n) => n.isStart || n.isEnd || n.frequency >= actThr)
   const visIds = new Set(visNodes.map((n) => n.id))
-  // Keyed on the visible set itself, not on `nodes`: raising the activity
-  // slider hides nodes, and their edges have to go with them.
   const visKey = [...visIds].join('|')
   const visEdges = useMemo(() => {
     const visible = new Set(visKey ? visKey.split('|') : [])
-    return withEdgeOffsets(
-      model.edges.filter((e) => e.frequency >= pathThr && visible.has(e.source) && visible.has(e.target)),
-      nodes, layout,
-    )
-  }, [model.edges, pathThr, visKey, nodes, layout])
-  const sideExitMap = useMemo(() => {
-    if (layout !== 'vertical') return {}
-    const bySource = {}
-    visEdges.forEach((edge) => { (bySource[edge.source] ??= []).push(edge) })
-    const exits = {}
-    Object.entries(bySource).forEach(([sourceId, edges]) => {
-      if (edges.length <= 1) return
-      const source = nodeById(nodes, sourceId)
-      ;[...edges].sort((a, b) => b.frequency - a.frequency).forEach((edge, index) => {
-        if (index === 0) {
-          exits[edge.id] = 'bottom'
-          return
-        }
-        const target = nodeById(nodes, edge.target)
-        if (source && target) {
-          exits[edge.id] = target.x + NODE_W / 2 < source.x + NODE_W / 2 ? 'left' : 'right'
-        }
-      })
-    })
-    return exits
-  }, [layout, nodes, visEdges])
+    return laid.edges.filter((e) => e.frequency >= pathThr && visible.has(e.source) && visible.has(e.target))
+  }, [laid.edges, pathThr, visKey])
   // Only activity nodes carry metrics — Início/Fim are graph punctuation.
   const activityNodeCount = model.nodes.filter((n) => !n.isStart && !n.isEnd).length
   const selectedNode = selectedId ? nodes.find((n) => n.id === selectedId && !n.isStart && !n.isEnd) ?? null : null
@@ -740,22 +718,20 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
           <rect width="100%" height="100%" fill="url(#dots)" />
           <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`}>
             {visEdges.map((edge) => {
-              const src = nodeById(nodes, edge.source), tgt = nodeById(nodes, edge.target)
-              if (!src || !tgt) return null
-              const offset = layout === 'horizontal' ? (edge.offsetH ?? 0) : (edge.offsetV ?? 0)
-              const cps = computeEdgeCPs(src, tgt, layout, offset, sideExitMap[edge.id])
-              const { midX, midY } = cps
+              const points = edge.points
+              if (!points || points.length < 2) return null
+              const sampler = makeSampler(points)
+              const mid = sampler.sample(0.5)
+              const midX = mid.x, midY = mid.y
               const opacity = freqOpacity(edge.frequency)
 
               // Gradient runs source → target in the transformed canvas space.
-              const gSrc = cps.p0
-              const gTgt = cps.kind === 'cubic' ? cps.p3 : cps.p2
+              const gSrc = points[0]
+              const gTgt = points[points.length - 1]
               const gid = `fg-${edge.id}`, dgid = `dg-${edge.id}`
 
               if (edge.dashed) {
-                let d
-                if (cps.kind === 'cubic') { const { p0, p1, p2, p3 } = cps; d = `M ${p0.x} ${p0.y} C ${p1.x} ${p1.y}, ${p2.x} ${p2.y}, ${p3.x} ${p3.y}` }
-                else { const { p0, p1, p2 } = cps; d = `M ${p0.x} ${p0.y} Q ${p1.x} ${p1.y}, ${p2.x} ${p2.y}` }
+                const d = segsToPath(sampler.segs)
                 return (
                   <g key={edge.id} opacity={opacity * 0.60}>
                     <defs>
@@ -773,7 +749,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
                 )
               }
 
-              const halfW = freqHalfW(edge.frequency), arrowD = edgeArrowPath(cps, halfW)
+              const halfW = freqHalfW(edge.frequency), arrowD = ribbonFromSampler(sampler, halfW)
               const labelAlpha = (0.40 + edge.frequency * 0.55).toFixed(2)
               return (
                 <g key={edge.id} opacity={opacity}>

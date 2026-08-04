@@ -54,14 +54,6 @@ function cubicTang(p0, p1, p2, p3, t) {
   const m = 1 - t
   return norm({ x: 3 * (m * m * (p1.x - p0.x) + 2 * m * t * (p2.x - p1.x) + t * t * (p3.x - p2.x)), y: 3 * (m * m * (p1.y - p0.y) + 2 * m * t * (p2.y - p1.y) + t * t * (p3.y - p2.y)) })
 }
-function quadAt(p0, p1, p2, t) {
-  const m = 1 - t
-  return { x: m * m * p0.x + 2 * m * t * p1.x + t * t * p2.x, y: m * m * p0.y + 2 * m * t * p1.y + t * t * p2.y }
-}
-function quadTang(p0, p1, p2, t) {
-  return norm({ x: 2 * ((1 - t) * (p1.x - p0.x) + t * (p2.x - p1.x)), y: 2 * ((1 - t) * (p1.y - p0.y) + t * (p2.y - p1.y)) })
-}
-
 function clampFrequency(f) {
   return Math.min(1, Math.max(0, Number(f) || 0))
 }
@@ -127,47 +119,60 @@ function buildArrowPath(sample, tang, baseHW, N = 32) {
   ].join(' ')
 }
 
-function srcPoint(n, layout) {
-  if (n.isStart) return layout === 'horizontal' ? { x: n.x + CIRC_R * 2 - 4, y: n.y + CIRC_R } : { x: n.x + CIRC_R, y: n.y + CIRC_R * 2 - 4 }
-  return layout === 'horizontal' ? { x: n.x + NODE_W, y: n.y + NODE_H / 2 } : { x: n.x + NODE_W / 2, y: n.y + NODE_H }
-}
-function tgtPoint(n, layout) {
-  if (n.isEnd) return layout === 'horizontal' ? { x: n.x + 4, y: n.y + CIRC_R } : { x: n.x + CIRC_R, y: n.y + 4 }
-  return layout === 'horizontal' ? { x: n.x, y: n.y + NODE_H / 2 } : { x: n.x + NODE_W / 2, y: n.y }
+/**
+ * A routed edge arrives as a polyline (`graph-layout` waypoints). Turn it into
+ * a smooth Catmull-Rom spline expressed as cubic Bézier segments, so the same
+ * cone/arrowhead drawing and the dashed path both follow the routed gutters
+ * instead of cutting a straight line through the node columns.
+ */
+export function makeSampler(points) {
+  const pts = []
+  for (const p of points) {
+    const last = pts[pts.length - 1]
+    if (!last || Math.hypot(p.x - last.x, p.y - last.y) > 0.5) pts.push(p)
+  }
+  if (pts.length < 2) {
+    const only = pts[0] ?? { x: 0, y: 0 }
+    return { segs: [], sample: () => only, tang: () => ({ x: 0, y: 1 }) }
+  }
+  const segs = []
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] ?? pts[i]
+    const p1 = pts[i]
+    const p2 = pts[i + 1]
+    const p3 = pts[i + 2] ?? pts[i + 1]
+    segs.push({
+      p0: p1,
+      p1: { x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6 },
+      p2: { x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6 },
+      p3: p2,
+    })
+  }
+  const k = segs.length
+  const at = (t) => {
+    const scaled = Math.min(0.999999, Math.max(0, t)) * k
+    const i = Math.min(k - 1, Math.floor(scaled))
+    return { seg: segs[i], local: scaled - i }
+  }
+  return {
+    segs,
+    sample: (t) => { const { seg, local } = at(t); return cubicAt(seg.p0, seg.p1, seg.p2, seg.p3, local) },
+    tang: (t) => { const { seg, local } = at(t); return cubicTang(seg.p0, seg.p1, seg.p2, seg.p3, local) },
+  }
 }
 
-export function computeEdgeCPs(src, tgt, layout, offset = 0, exitSide) {
-  if (layout === 'vertical' && exitSide && exitSide !== 'bottom') {
-    const s = exitSide === 'right'
-      ? { x: src.x + NODE_W, y: src.y + NODE_H / 2 }
-      : { x: src.x, y: src.y + NODE_H / 2 }
-    const e = tgtPoint(tgt, layout)
-    const dx = Math.abs(e.x - s.x) * 0.55
-    const dy = Math.abs(e.y - s.y) * 0.5
-    const p1 = { x: s.x + (exitSide === 'right' ? dx : -dx), y: s.y }
-    const p2 = { x: e.x, y: e.y - dy }
-    return { kind: 'cubic', p0: s, p1, p2, p3: e, midX: (s.x + e.x) / 2, midY: (s.y + e.y) / 2 }
-  }
-  const s = srcPoint(src, layout), e = tgtPoint(tgt, layout)
-  if (layout === 'horizontal') {
-    const dx = Math.abs(e.x - s.x) * 0.46, p1 = { x: s.x + dx, y: s.y }, p2 = { x: e.x - dx, y: e.y }
-    return { kind: 'cubic', p0: s, p1, p2, p3: e, midX: (s.x + e.x) / 2, midY: (s.y + e.y) / 2 }
-  }
-  if (offset !== 0) {
-    const p1 = { x: (s.x + e.x) / 2 + offset, y: (s.y + e.y) / 2 }
-    return { kind: 'quad', p0: s, p1, p2: e, midX: (s.x + 2 * p1.x + e.x) / 4, midY: (s.y + 2 * p1.y + e.y) / 4 }
-  }
-  const dy = Math.abs(e.y - s.y) * 0.48, p1 = { x: s.x, y: s.y + dy }, p2 = { x: e.x, y: e.y - dy }
-  return { kind: 'cubic', p0: s, p1, p2, p3: e, midX: (s.x + e.x) / 2, midY: (s.y + e.y) / 2 }
+/** SVG path string for a sampler's Bézier segments (dashed loop/edge lines). */
+export function segsToPath(segs) {
+  if (segs.length === 0) return ''
+  const f = (p) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`
+  let d = `M ${f(segs[0].p0)}`
+  for (const s of segs) d += ` C ${f(s.p1)}, ${f(s.p2)}, ${f(s.p3)}`
+  return d
 }
 
-export function edgeArrowPath(cps, halfW) {
-  if (cps.kind === 'cubic') {
-    const { p0, p1, p2, p3 } = cps
-    return buildArrowPath((t) => cubicAt(p0, p1, p2, p3, t), (t) => cubicTang(p0, p1, p2, p3, t), halfW)
-  }
-  const { p0, p1, p2 } = cps
-  return buildArrowPath((t) => quadAt(p0, p1, p2, t), (t) => quadTang(p0, p1, p2, t), halfW)
+/** Cone-with-arrowhead ribbon along a sampler, for solid frequency edges. */
+export function ribbonFromSampler(sampler, halfW) {
+  return buildArrowPath(sampler.sample, sampler.tang, halfW)
 }
 
 export function nodeById(list, id) { return list.find((n) => n.id === id) }

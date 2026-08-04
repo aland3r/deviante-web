@@ -9,12 +9,8 @@ import { api } from '../../lib/api'
 const formatSeconds = (value) => `${Number(value ?? 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} s`
 const EMPTY_LIST = []
 
-/** The `scope` select value that reproduces a saved run's series. */
-const scopeToValue = (scope) => {
-  if (scope?.kind === 'operation' && scope.operationId) return `op:${scope.operationId}`
-  if (scope?.kind === 'activity' && scope.activityId) return `act:${scope.activityId}`
-  return ''
-}
+/** Whether two id sets hold the same members — used to detect a dirty filter. */
+const sameMembers = (a, b) => a.size === b.size && [...a].every((item) => b.has(item))
 
 /**
  * Maintenance is scheduled against a calendar, so a drift located only by its
@@ -70,14 +66,14 @@ function findOutliers(points) {
   return new Set(points.filter((point) => point.durationSeconds < low || point.durationSeconds > high).map((point) => point.index))
 }
 
-function TraceList({ points, driftIndexes, outliers, dismissed, selectedTrace, onSelect }) {
+function TraceList({ points, driftIndexes, outliers, excluded, selectedTrace, onSelect }) {
   return (
     // Sized by the flex parent instead of a `calc(100vh - 155px)` guess: that
     // number assumed a fixed chrome height and stopped being true the moment
     // the parameters panel could push the list down.
     <div className="flex-1 min-h-0 overflow-y-auto">
       {points.map((point) => {
-        const isDismissed = dismissed.has(point.index)
+        const isDismissed = excluded.has(point.traceId)
         const isOutlier = outliers.has(point.index) && !isDismissed
         const isDrift = driftIndexes.has(point.index) && !isDismissed
         return (
@@ -110,7 +106,7 @@ function TraceList({ points, driftIndexes, outliers, dismissed, selectedTrace, o
   )
 }
 
-function DriftChart({ points, processedValues, drifts, outliers, dismissed, selectedDrift, selectedTrace, onSelectDrift, onSelectTrace }) {
+function DriftChart({ points, processedValues, drifts, outliers, excluded, selectedDrift, selectedTrace, onSelectDrift, onSelectTrace }) {
   const width = 900
   const height = 410
   const pad = { left: 58, right: 24, top: 28, bottom: 42 }
@@ -197,7 +193,7 @@ function DriftChart({ points, processedValues, drifts, outliers, dismissed, sele
         })}
         <polyline points={linePoints} fill="none" stroke="#64748b" strokeWidth="1" opacity="0.42" />
         <polyline points={processedLinePoints} fill="none" stroke="#4a90c2" strokeWidth="1.8" opacity="0.95" />
-        {points.map((point, index) => outliers.has(point.index) && !dismissed.has(point.index) ? (
+        {points.map((point, index) => outliers.has(point.index) && !excluded.has(point.traceId) ? (
           <circle key={point.traceId} cx={x(index)} cy={y(point.durationSeconds)} r="2.4" fill="#f59e0b" opacity="0.72" />
         ) : null)}
         {selectedTrace != null && (() => {
@@ -253,15 +249,17 @@ export default function ProcessAnalysisView({ processId, processName, eventLog, 
   const [elapsed, setElapsed] = useState(0)
   const [selectedDrift, setSelectedDrift] = useState(null)
   const [selectedTrace, setSelectedTrace] = useState(null)
-  const [dismissed, setDismissed] = useState(new Set())
+  // The subtractive filter: everything is active by default. `excludedTraces`
+  // holds trace ids (stable across recompute); `excludedActivities` holds
+  // activity ids whose duration is filtered out of the series. Applied on run.
+  const [excludedTraces, setExcludedTraces] = useState(() => new Set())
+  const [excludedActivities, setExcludedActivities] = useState(() => new Set())
 
   // UC13 — the parameters the Manager chooses before running. They are held
   // separately from `analysis` so the panel keeps showing what is about to run
   // while the previous result stays on screen.
   const [operations, setOperations] = useState(EMPTY_LIST)
-  // `scope` selects what series ADWIN runs on: '' = whole-trace duration,
-  // `act:<id>` = one Activity's sojourn, `op:<id>` = one raw operation's.
-  const [params, setParams] = useState({ scope: '', treatment: 'treated', delta: '0.002' })
+  const [params, setParams] = useState({ treatment: 'treated', delta: '0.002' })
   const [showParams, setShowParams] = useState(false)
 
   useEffect(() => {
@@ -276,28 +274,29 @@ export default function ProcessAnalysisView({ processId, processName, eventLog, 
   // the effect below and silently launch a run the Manager did not ask for.
   const paramsRef = useRef(params)
   useEffect(() => { paramsRef.current = params }, [params])
+  // Read the filter through refs too, so runAnalysis always applies the current
+  // selection without the callback (and the run effect) depending on it.
+  const excludedTracesRef = useRef(excludedTraces)
+  useEffect(() => { excludedTracesRef.current = excludedTraces }, [excludedTraces])
+  const excludedActivitiesRef = useRef(excludedActivities)
+  useEffect(() => { excludedActivitiesRef.current = excludedActivities }, [excludedActivities])
 
   const runAnalysis = useCallback(async (overrides) => {
     const started = performance.now()
     setRunState('running')
     setError('')
     const effective = { ...paramsRef.current, ...(overrides ?? {}) }
-    const scope = effective.scope ?? ''
     const request = {
-      operationId: scope.startsWith('op:') ? scope.slice(3) : '',
-      activityId: scope.startsWith('act:') ? scope.slice(4) : '',
       treatment: effective.treatment,
       delta: effective.delta,
+      excludedActivityIds: [...excludedActivitiesRef.current],
+      excludedTraceIds: [...excludedTracesRef.current],
     }
     try {
       const result = await api.runProcessAnalysis(processId, analysisId, request)
       setAnalysis(result)
       setSelectedDrift(result.drifts[0]?.index ?? null)
       setSelectedTrace(null)
-      // A fresh run recomputes outliers from scratch, so trace indexes the
-      // Manager had desconsiderado no longer refer to the same points. Clear
-      // them, otherwise the "traces analisados" count would subtract stale ids.
-      setDismissed(new Set())
       setElapsed((performance.now() - started) / 1000)
     } catch (requestError) {
       setError(requestError.message)
@@ -317,13 +316,12 @@ export default function ProcessAnalysisView({ processId, processName, eventLog, 
           if (Array.isArray(saved?.points) && saved.points.length > 0) {
             setAnalysis(saved)
             setSelectedDrift(saved.drifts?.[0]?.index ?? null)
-            // Restore where the Manager left off — the desconsiderados persisted
-            // with the run, and the parameters it was executed with — instead of
-            // starting from an empty set and the default series.
-            setDismissed(new Set(saved.dismissedIndexes ?? EMPTY_LIST))
+            // Restore where the Manager left off — the subtractive filter and the
+            // parameters the run used — instead of starting from all-active.
+            setExcludedTraces(new Set(saved.excludedTraceIds ?? EMPTY_LIST))
+            setExcludedActivities(new Set(saved.excludedActivityIds ?? EMPTY_LIST))
             setParams((current) => ({
               ...current,
-              scope: scopeToValue(saved.scope),
               treatment: saved.treatment ?? current.treatment,
               delta: saved.delta != null ? String(saved.delta) : current.delta,
             }))
@@ -340,18 +338,21 @@ export default function ProcessAnalysisView({ processId, processName, eventLog, 
     return () => { cancelled = true }
   }, [analysisId, runAnalysis])
 
-  // Persist the desconsiderados (debounced) onto the saved run, so a reload or
-  // reopen restores them. The first pass after a load/run is skipped: it would
-  // only echo the value we just hydrated or the empty set a fresh run cleared.
-  const dismissedSynced = useRef(false)
+  // Persist the filter (debounced) onto the saved run, so a reload or reopen
+  // restores it. The first pass after a load/run is skipped: it would only echo
+  // the value we just hydrated or the run applied.
+  const filterSynced = useRef(false)
   useEffect(() => {
     if (!analysisId || !analysis) return undefined
-    if (!dismissedSynced.current) { dismissedSynced.current = true; return undefined }
+    if (!filterSynced.current) { filterSynced.current = true; return undefined }
     const handle = setTimeout(() => {
-      api.updateDismissedTraces(analysisId, [...dismissed]).catch(() => {})
+      api.updateAnalysisFilter(analysisId, {
+        excludedActivityIds: [...excludedActivities],
+        excludedTraceIds: [...excludedTraces],
+      }).catch(() => {})
     }, 500)
     return () => clearTimeout(handle)
-  }, [dismissed, analysisId, analysis])
+  }, [excludedActivities, excludedTraces, analysisId, analysis])
 
   const points = analysis?.points ?? EMPTY_LIST
   const drifts = analysis?.drifts ?? EMPTY_LIST
@@ -367,22 +368,28 @@ export default function ProcessAnalysisView({ processId, processName, eventLog, 
     [analysis?.outlierIndexes, points],
   )
   const driftIndexes = useMemo(() => new Set(drifts.map((item) => item.index)), [drifts])
-  const selectedIsDismissed = selectedTrace != null && dismissed.has(selectedTrace)
-  const selectedIsOutlier = selectedTrace != null && outliers.has(selectedTrace) && !selectedIsDismissed
+  const selectedIsExcluded = selectedPoint != null && excludedTraces.has(selectedPoint.traceId)
+  const selectedIsOutlier = selectedTrace != null && outliers.has(selectedTrace) && !selectedIsExcluded
 
-  // How many traces the Manager marked "pra sumir": only those that are still
-  // actual points, so the count never drops below the real population.
-  const dismissedCount = useMemo(
-    () => points.reduce((total, point) => (dismissed.has(point.index) ? total + 1 : total), 0),
-    [points, dismissed],
+  // Traces toggled off but not yet applied: only those still in the current
+  // series count, so the live number previews the next run without dropping
+  // below the real population.
+  const pendingExcludedTraces = useMemo(
+    () => points.reduce((total, point) => (excludedTraces.has(point.traceId) ? total + 1 : total), 0),
+    [points, excludedTraces],
   )
-  const totalTraces = analysis?.traceCount ?? points.length
-  const remainingTraces = Math.max(totalTraces - dismissedCount, 0)
-  const outliersRemaining = outliers.size - [...dismissed].filter((item) => outliers.has(item)).length
+  const remainingTraces = Math.max(points.length - pendingExcludedTraces, 0)
+  const outliersRemaining = useMemo(
+    () => points.reduce(
+      (total, point) => (outliers.has(point.index) && !excludedTraces.has(point.traceId) ? total + 1 : total),
+      0,
+    ),
+    [points, outliers, excludedTraces],
+  )
 
   // Distinct Activities the mapped operations resolve to (many raw aliases can
-  // share one Activity). Doubles as the "por atividade" options in the filter
-  // and the "atividades diferentes" count — no extra request.
+  // share one Activity). Drives both the filter toggles and the counts — no
+  // extra request.
   const activities = useMemo(() => {
     const byId = new Map()
     for (const operation of operations) {
@@ -392,16 +399,22 @@ export default function ProcessAnalysisView({ processId, processName, eventLog, 
     }
     return [...byId.entries()].map(([id, name]) => ({ id, name }))
   }, [operations])
-  const activityCount = activities.length
+  const activeActivityCount = activities.reduce(
+    (total, activity) => (excludedActivities.has(activity.id) ? total : total + 1),
+    0,
+  )
+  const activityFilterActive = activities.length > 0 && activeActivityCount < activities.length
 
-  // Persistent readout of the parameters this run was executed with.
-  const seriesLabel = analysis?.scope?.kind === 'operation'
-    ? (analysis.scope.operationLabel ?? 'operação')
-    : analysis?.scope?.kind === 'activity'
-      ? (analysis.scope.activityLabel ?? 'atividade')
-      : 'trace total'
-  const isSojournScope = analysis?.scope?.kind === 'operation' || analysis?.scope?.kind === 'activity'
+  // The filter differs from what the shown result was computed with, so the
+  // Manager must reexecute for it to take effect.
+  const appliedActivityIds = useMemo(() => new Set(analysis?.excludedActivityIds ?? EMPTY_LIST), [analysis?.excludedActivityIds])
+  const appliedTraceIds = useMemo(() => new Set(analysis?.excludedTraceIds ?? EMPTY_LIST), [analysis?.excludedTraceIds])
+  const filterDirty = analysis != null
+    && (!sameMembers(excludedActivities, appliedActivityIds) || !sameMembers(excludedTraces, appliedTraceIds))
+
   const treatmentLabel = analysis?.treatment === 'raw' ? 'crua' : 'tratada'
+  const seriesLabel = activityFilterActive ? `${activeActivityCount}/${activities.length} atividades` : 'trace total'
+  const durationLabel = activityFilterActive ? 'Atividades ativas' : 'Duração total'
 
   return (
     <div className="flex flex-col w-full overflow-hidden" style={{ height: '100vh', background: '#0d1017', fontFamily: "'Inter',sans-serif" }}>
@@ -426,44 +439,56 @@ export default function ProcessAnalysisView({ processId, processName, eventLog, 
           <SlidersHorizontal size={12} /><span className="hidden sm:inline">Parâmetros</span>
         </button>
         <button type="button" onClick={() => runAnalysis()} disabled={runState === 'running'}
+          title={filterDirty ? 'Filtro alterado — reexecute para aplicá-lo' : 'Reexecutar a análise'}
           className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded text-xs font-medium text-white disabled:opacity-60"
-          style={{ background: '#991b1b' }}>
+          style={{ background: filterDirty ? '#b45309' : '#991b1b' }}>
           {runState === 'running'
             ? <><RefreshCw size={12} className="animate-spin" /><span className="hidden sm:inline">Processando...</span></>
-            : <><Play size={12} /><span className="hidden sm:inline">Reexecutar análise</span></>}
+            : <><Play size={12} /><span className="hidden sm:inline">{filterDirty ? 'Aplicar filtro' : 'Reexecutar análise'}</span></>}
         </button>
       </header>
 
       {showParams && (
         <div className="shrink-0 border-b border-border px-3 sm:px-5 py-3" style={{ background: '#111520' }}>
           <div className="flex flex-wrap items-end gap-4">
-            <label className="flex flex-col gap-1">
-              <span className="text-[9px] uppercase text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>Série analisada</span>
-              <select value={params.scope}
-                onChange={(event) => setParams((current) => ({ ...current, scope: event.target.value }))}
-                className="px-2 py-1.5 rounded text-[11px] text-foreground border border-border"
-                style={{ background: '#0d1017', minWidth: 240 }}>
-                <option value="">Duração total do trace</option>
+            <div className="flex flex-col gap-1">
+              <span className="text-[9px] uppercase text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
+                Atividades na análise
                 {activities.length > 0 && (
-                  <optgroup label="Por atividade">
-                    {activities.map((activity) => (
-                      <option key={activity.id} value={`act:${activity.id}`}>
-                        Atividade · {activity.name}
-                      </option>
-                    ))}
-                  </optgroup>
+                  <span className="ml-2 normal-case text-[9px]" style={{ color: '#4a90c2' }}>
+                    {activeActivityCount}/{activities.length} ativas
+                  </span>
                 )}
-                {operations.length > 0 && (
-                  <optgroup label="Por operação (rótulo cru)">
-                    {operations.map((operation) => (
-                      <option key={operation.id} value={`op:${operation.id}`}>
-                        Sojourn · {operation.rawLabel}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-              </select>
-            </label>
+              </span>
+              {activities.length === 0 ? (
+                <span className="text-[10px] text-muted-foreground py-1.5">Nenhuma atividade mapeada ainda.</span>
+              ) : (
+                <div className="flex flex-wrap items-center gap-1.5" style={{ maxWidth: 460 }}>
+                  {activities.map((activity) => {
+                    const active = !excludedActivities.has(activity.id)
+                    return (
+                      <button key={activity.id} type="button"
+                        onClick={() => setExcludedActivities((current) => {
+                          const next = new Set(current)
+                          if (next.has(activity.id)) next.delete(activity.id)
+                          else next.add(activity.id)
+                          return next
+                        })}
+                        title={active ? 'Ativa · clique para tirar da análise' : 'Fora da análise · clique para reincluir'}
+                        className="px-2 py-1 rounded text-[10px] border transition-colors"
+                        style={{
+                          borderColor: active ? 'rgba(40,112,168,0.4)' : 'rgba(100,116,139,0.3)',
+                          background: active ? 'rgba(40,112,168,0.18)' : 'transparent',
+                          color: active ? '#e2e8f0' : '#64748b',
+                          textDecoration: active ? 'none' : 'line-through',
+                        }}>
+                        {activity.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
 
             <div className="flex flex-col gap-1">
               <span className="text-[9px] uppercase text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>Tratamento</span>
@@ -498,7 +523,9 @@ export default function ProcessAnalysisView({ processId, processName, eventLog, 
             </button>
           </div>
           <p className="mt-2 text-[10px] text-muted-foreground">
-            {TREATMENTS.find((option) => option.id === params.treatment)?.hint}
+            {filterDirty
+              ? 'O filtro mudou desde a última execução — reexecute para aplicá-lo à série.'
+              : TREATMENTS.find((option) => option.id === params.treatment)?.hint}
           </p>
         </div>
       )}
@@ -508,15 +535,13 @@ export default function ProcessAnalysisView({ processId, processName, eventLog, 
           <aside className="hidden lg:flex flex-col shrink-0 min-h-0 border-r border-border overflow-hidden" style={{ width: 238, background: '#111520' }}>
             <div className="shrink-0 px-4 py-3 border-b border-border">
               <p className="text-[10px] uppercase text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
-                {isSojournScope ? 'Sojourn time' : 'Traces do log'}
+                Traces do log
               </p>
               <p className="text-[9px] text-muted-foreground mt-1">
-                {isSojournScope
-                  ? `${seriesLabel} · ${points.length} execuções`
-                  : `${points.length} em ordem cronológica`}
+                {points.length} em ordem cronológica{activityFilterActive ? ` · ${seriesLabel}` : ''}
               </p>
             </div>
-            <TraceList points={points} driftIndexes={driftIndexes} outliers={outliers} dismissed={dismissed}
+            <TraceList points={points} driftIndexes={driftIndexes} outliers={outliers} excluded={excludedTraces}
               selectedTrace={selectedTrace} onSelect={setSelectedTrace} />
           </aside>
         )}
@@ -527,13 +552,18 @@ export default function ProcessAnalysisView({ processId, processName, eventLog, 
               {[
                 [
                   remainingTraces,
-                  dismissedCount > 0
-                    ? `de ${totalTraces} · ${dismissedCount} desconsiderado${dismissedCount > 1 ? 's' : ''}`
+                  pendingExcludedTraces > 0
+                    ? `de ${points.length} · ${pendingExcludedTraces} desconsiderado${pendingExcludedTraces > 1 ? 's' : ''}`
                     : 'traces analisados',
                   CheckCircle2,
                   '#10b981',
                 ],
-                [activityCount, 'atividades diferentes', Layers, '#4a90c2'],
+                [
+                  activityFilterActive ? `${activeActivityCount}/${activities.length}` : activities.length,
+                  activityFilterActive ? 'atividades ativas' : 'atividades diferentes',
+                  Layers,
+                  '#4a90c2',
+                ],
                 [drifts.length, 'mudanças detectadas', Scan, '#dc2626'],
                 [outliersRemaining, 'outliers estatísticos', AlertTriangle, '#f59e0b'],
                 [
@@ -563,7 +593,7 @@ export default function ProcessAnalysisView({ processId, processName, eventLog, 
               </div>
             </div>
           ) : points.length ? (
-            <DriftChart points={points} processedValues={processedValues} drifts={drifts} outliers={outliers} dismissed={dismissed}
+            <DriftChart points={points} processedValues={processedValues} drifts={drifts} outliers={outliers} excluded={excludedTraces}
               selectedDrift={selectedDrift} selectedTrace={selectedTrace}
               onSelectDrift={setSelectedDrift} onSelectTrace={setSelectedTrace} />
           ) : null}
@@ -578,23 +608,21 @@ export default function ProcessAnalysisView({ processId, processName, eventLog, 
               <div className="p-4 border-b border-border">
                 <p className="text-xs font-semibold text-foreground truncate">{selectedPoint.caseId}</p>
                 <p className="text-[10px] text-muted-foreground mt-1">
-                  {isSojournScope
-                    ? `${seriesLabel} · ${formatSeconds(selectedPoint.durationSeconds)}`
-                    : `Duração total · ${formatSeconds(selectedPoint.durationSeconds)}`}
+                  {`${durationLabel} · ${formatSeconds(selectedPoint.durationSeconds)}`}
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">Início · {formatDateTime(selectedPoint.startedAt)}</p>
-                {selectedIsDismissed ? (
+                {selectedIsExcluded ? (
                   <button type="button"
-                    onClick={() => setDismissed((items) => {
+                    onClick={() => setExcludedTraces((items) => {
                       const next = new Set(items)
-                      next.delete(selectedTrace)
+                      next.delete(selectedPoint.traceId)
                       return next
                     })}
                     className="mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded text-[11px] border border-border text-muted-foreground hover:text-foreground">
                     <RefreshCw size={11} />Reconsiderar trace
                   </button>
                 ) : (
-                  <button type="button" onClick={() => setDismissed((items) => new Set([...items, selectedTrace]))}
+                  <button type="button" onClick={() => setExcludedTraces((items) => new Set([...items, selectedPoint.traceId]))}
                     className="mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded text-[11px] border"
                     style={{ borderColor: 'rgba(245,158,11,0.25)', color: '#f59e0b', background: 'rgba(120,53,15,0.12)' }}>
                     <SkipForward size={11} />{selectedIsOutlier ? 'Desconsiderar outlier' : 'Desconsiderar trace'}
