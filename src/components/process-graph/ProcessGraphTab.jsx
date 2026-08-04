@@ -397,7 +397,7 @@ function EventLogSelector({ eventLogs, selectedIds, onToggle }) {
         <p className="text-[10px] font-semibold uppercase text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>Logs da análise</p>
         <span className="text-[9px] text-muted-foreground">{selectedIds.size}/{parsedLogs.length}</span>
       </div>
-      <div className="space-y-1 max-h-40 overflow-y-auto pr-0.5">
+      <div className="space-y-1 overflow-y-auto pr-0.5" style={{ maxHeight: 'clamp(72px, 16vh, 160px)' }}>
         {eventLogs.map((log) => {
           const parsed = log.parseStatus === 'parsed'
           const checked = selectedIds.has(log.id)
@@ -964,7 +964,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
           </g>
         </svg>
 
-        <div className="absolute bottom-5 right-5 flex flex-col rounded overflow-hidden border border-border" style={{ background: '#161c28' }}>
+        <div className={`absolute right-5 flex flex-col rounded overflow-hidden border border-border ${isMobile ? 'bottom-24' : 'bottom-5'}`} style={{ background: '#161c28' }}>
           {[
             { icon: <ZoomIn size={13} />, fn: () => setZoom((z) => Math.min(3, z * 1.2)), title: 'Aumentar zoom' },
             { icon: <ZoomOut size={13} />, fn: () => setZoom((z) => Math.max(0.2, z * 0.8)), title: 'Reduzir zoom' },
@@ -976,7 +976,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
             </button>
           ))}
         </div>
-        <div className="absolute bottom-[122px] right-5 w-8 text-center text-[9px] text-muted-foreground"
+        <div className={`absolute right-5 w-8 text-center text-[9px] text-muted-foreground ${isMobile ? 'bottom-[174px]' : 'bottom-[122px]'}`}
           style={{ fontFamily: "'JetBrains Mono',monospace" }}>
           {Math.round(zoom * 100)}%
         </div>
@@ -1012,7 +1012,12 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
             </button>
             {mobileFilters && (
               <div className="absolute top-full right-0 mt-2 p-4 rounded-xl border border-border space-y-5"
-                style={{ background: '#161c28', width: '220px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+                style={{ background: '#161c28', width: '270px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+                <button type="button" onClick={onUploadLog}
+                  className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded text-xs font-medium border border-border text-muted-foreground">
+                  <Upload size={12} />Adicionar log
+                </button>
+                <EventLogSelector eventLogs={eventLogs} selectedIds={selectedEventLogIds ?? new Set()} onToggle={toggleEventLog} />
                 <Slider label="Atividades" value={actSlider} onChange={setActSlider} />
                 <Slider label="Caminhos" value={pathSlider} onChange={setPathSlider} />
               </div>
@@ -1061,7 +1066,8 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
             </div>
           )}
 
-          <div className="shrink-0 p-3 border-t border-border mt-auto space-y-3">
+          <div className="shrink-0 p-3 border-t border-border mt-auto space-y-3 sticky bottom-0 z-20"
+            style={{ background: '#111520', boxShadow: '0 -10px 24px rgba(0,0,0,.28)' }}>
             {graph?.eventLog && <AnalysisFlightDeck scope={analysisScope} onReset={useAllAnalysisInput} />}
             <button type="button" onClick={startAnalysis}
               disabled={!analysisEligible || analysisRunning}
@@ -1081,6 +1087,21 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
               <Scan size={12} />{analysisRunning ? 'Processando recorte…' : 'Gerar análise de desvios'}
             </button>
           </div>
+        </div>
+      )}
+
+      {isMobile && graph?.eventLog && (
+        <div className="fixed left-3 right-3 bottom-3 z-30 flex items-center gap-3 rounded-xl p-2.5"
+          style={{ background: 'rgba(17,21,32,.97)', border: '1px solid rgba(245,158,11,.28)', boxShadow: '0 14px 36px rgba(0,0,0,.55)', backdropFilter: 'blur(12px)' }}>
+          <div className="min-w-0 flex-1 pl-1">
+            <p className="text-sm font-semibold text-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>{analysisScope.selectedTraceCount.toLocaleString('pt-BR')} traces</p>
+            <p className="text-[9px] text-muted-foreground truncate">{analysisScope.selectedLogCount} log{analysisScope.selectedLogCount !== 1 ? 's' : ''} · {analysisScope.selectedActivityCount} atividades</p>
+          </div>
+          <button type="button" onClick={startAnalysis} disabled={!analysisEligible || analysisRunning}
+            className="shrink-0 flex items-center justify-center gap-2 py-2.5 px-3 rounded text-xs font-medium disabled:opacity-35 disabled:cursor-not-allowed"
+            style={{ background: '#9a5b09', color: '#fff7d6', border: '1px solid rgba(251,191,36,.42)' }}>
+            <Scan size={12} />{analysisRunning ? 'Processando…' : 'Gerar análise'}
+          </button>
         </div>
       )}
 
