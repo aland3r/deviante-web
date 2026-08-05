@@ -323,12 +323,6 @@ function ProjectListItem({ item }) {
   )
 }
 
-const HOME_TABS = [
-  { id: 'recentes', label: 'Visualizados recentemente', shortLabel: 'Recentes' },
-  { id: 'compartilhados', label: 'Compartilhados comigo', shortLabel: 'Compartilhados' },
-  { id: 'favoritos', label: 'Favoritos' },
-]
-
 export default function DashboardPage() {
   const navigate = useNavigate()
   const [processes, setProcesses] = useState([])
@@ -338,7 +332,6 @@ export default function DashboardPage() {
   const [error, setError] = useState('')
   const [creating, setCreating] = useState(false)
   const [creatingMonitoring, setCreatingMonitoring] = useState(false)
-  const [tab, setTab] = useState('recentes')
   const [search, setSearch] = useState('')
   
   const [analysisPickerOpen, setAnalysisPickerOpen] = useState(false)
@@ -431,17 +424,15 @@ export default function DashboardPage() {
     )
   }, [processes, analyses, monitorings])
 
-  const visible = tab === 'recentes'
-    ? items.filter((item) => {
-      const q = search.toLowerCase()
-      if (!q) return true
-      return (
-        item.name?.toLowerCase().includes(q)
-        || item.processName?.toLowerCase().includes(q)
-        || item.sector?.toLowerCase().includes(q)
-      )
-    })
-    : []
+  const visible = items.filter((item) => {
+    const q = search.toLowerCase()
+    if (!q) return true
+    return (
+      item.name?.toLowerCase().includes(q)
+      || item.processName?.toLowerCase().includes(q)
+      || item.sector?.toLowerCase().includes(q)
+    )
+  })
 
   const processCount = visible.filter((i) => i.type === 'processo').length
   const analysisCount = visible.filter((i) => i.type === 'analise').length
@@ -475,7 +466,7 @@ export default function DashboardPage() {
             <input
               value={search} onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar processos e análises…"
-              style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 8, height: 44, padding: '8px 12px 8px 36px', color: 'white', fontFamily: "'Inter',sans-serif", fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+              style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 8, height: 34, padding: '4px 12px 4px 32px', color: 'white', fontFamily: "'Inter',sans-serif", fontSize: 12, outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
 
@@ -483,21 +474,21 @@ export default function DashboardPage() {
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', width: '100%' }}>
               <NewProjectButton
                 type="processo"
-                label="Novo processo"
+                label="Processo"
                 disabled={creating || creatingMonitoring}
                 busy={creating}
                 onClick={handleCreateProcess}
               />
               <NewProjectButton
                 type="analise"
-                label="Nova análise"
+                label="Análise"
                 disabled={creating || creatingMonitoring || processes.length === 0}
                 busy={false}
                 onClick={() => setAnalysisPickerOpen(true)}
               />
               <NewProjectButton
                 type="monitoramento"
-                label="Novo monitoramento"
+                label="Monitoramento"
                 disabled={creating || creatingMonitoring}
                 busy={creatingMonitoring}
                 onClick={handleCreateMonitoring}
@@ -506,20 +497,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <div className="flex flex-wrap items-center gap-2">
-            {HOME_TABS.map((homeTab) => (
-              <button
-                key={homeTab.id}
-                type="button"
-                onClick={() => setTab(homeTab.id)}
-                className={`text-xs font-medium rounded px-3 py-2 ${tab === homeTab.id ? 'bg-white/10 text-white' : 'text-muted-foreground hover:bg-white/5'}`}
-                style={{ border: '1px solid rgba(255,255,255,0.08)' }}
-              >
-                {homeTab.shortLabel || homeTab.label}
-              </button>
-            ))}
-          </div>
+        <div className="flex flex-wrap items-center justify-end gap-3 mb-4">
           <span className="text-[11px] text-muted-foreground">{countLabel}</span>
         </div>
 

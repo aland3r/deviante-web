@@ -52,13 +52,6 @@ export function getProductAppUrl(productCode) {
   return `${productOrigin(product)}${product.dashboardPath}`
 }
 
-export function getProductLandingUrl(productCode) {
-  const product = getProductByCode(productCode)
-  if (!product) return 'https://alander.io/apps'
-  const path = product.landingPath ?? '/'
-  return `${productOrigin(product)}${path}`
-}
-
 export function getProductTryUrl(productCode) {
   const product = getProductByCode(productCode)
   if (!product) return 'https://alander.io/apps'

@@ -92,21 +92,24 @@ function buildArrowPath(sample, tang, baseHW, N = 32) {
     break
   }
 
-  // Pointed tail to maximum neck width across the full body.
+  // Soft tail: start with a blunt stump instead of a needle tip, then
+  // grow to full body width at the neck.
+  const TAIL_MIN = 0.38
   const right = [], left = []
   for (let i = 0; i <= N; i++) {
     const t = (i / N) * NECK
     const p = sample(t), n = perp2(tang(t))
     const coneProgress = NECK > 0 ? t / NECK : 1
-    const halfWidth = baseHW * coneProgress
+    const halfWidth = baseHW * (TAIL_MIN + (1 - TAIL_MIN) * coneProgress)
     right.push({ x: p.x + n.x * halfWidth, y: p.y + n.y * halfWidth })
     left.push({ x: p.x - n.x * halfWidth, y: p.y - n.y * halfWidth })
   }
 
-  // Arrowhead: flare from neck to tip.
+  // Arrowhead: milder flare (less dagger-like) from neck to tip.
   const pN = sample(NECK), nN = perp2(tang(NECK))
-  const aR = { x: pN.x + nN.x * headHW, y: pN.y + nN.y * headHW }
-  const aL = { x: pN.x - nN.x * headHW, y: pN.y - nN.y * headHW }
+  const softHeadHW = headHW * 0.82
+  const aR = { x: pN.x + nN.x * softHeadHW, y: pN.y + nN.y * softHeadHW }
+  const aL = { x: pN.x - nN.x * softHeadHW, y: pN.y - nN.y * softHeadHW }
   const tip = sample(1)
 
   const f = (p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`

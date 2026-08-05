@@ -19,7 +19,6 @@ export {
   GESTALT_PRODUCTS,
   getProductByCode,
   getProductAppUrl,
-  getProductLandingUrl,
   getProductTryUrl,
   getProductArticlesUrl,
   getPortfolioOrigin,

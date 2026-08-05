@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, FileText, Plus, RadioTower, X, ZoomIn, ZoomOut, Maximize2, SlidersHorizontal, Scan, Upload } from 'lucide-react'
+import { Check, CircleDot, FileText, Plus, RadioTower, X, ZoomIn, ZoomOut, Maximize2, SlidersHorizontal, Scan, Upload } from 'lucide-react'
 import {
   NODE_W, NODE_H, CIRC_R,
   GRAD_LIGHT, GRAD_MID, GRAD_DEEP, DASH_COLOR,
@@ -14,15 +14,9 @@ import { api, ApiError } from '../../lib/api'
 const MIN_ANALYSIS_TRACES = Number(import.meta.env.VITE_MIN_ANALYSIS_TRACES ?? 32)
 
 /*
-  "Grafo do Processo" tab — the canvas plus its two side panels. Visual
-  language ported from the Figma Make export "Process Mining Canvas Design"
-  (ZZKdwxgmeCNJFG64zGbADe), including the newer export's dotted canvas and
-  the traces window sitting INSIDE the canvas rather than in the app header.
-
-  Everything drawn here comes from the process's latest parsed event log via
-  `GET /api/processes/:id/graph` and `/traces` — the seed PCB line that used
-  to live in graph-core.js is gone. A process with no ingested log gets an
-  empty state, not a demo graph.
+  "Grafo do Processo" tab — canvas between two rails (Figma-style):
+  left = logs + density tools; right = traces filter + analysis flight deck.
+  Machines and zoom/fit float inside the canvas, outside the columns.
 */
 
 // ─── Small shared bits ──────────────────────────────────────────────────────
@@ -110,7 +104,7 @@ function CasesLayersPanel({
 
   return (
     <div style={{
-      width: '100%', background: '#090c13', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16,
+      width: '100%', height: '100%', minHeight: 240, background: '#090c13', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16,
       display: 'flex', flexDirection: 'column', fontFamily: "'Inter',sans-serif",
       boxShadow: '0 0 24px rgba(0,0,0,0.18)', userSelect: 'none',
     }}>
@@ -179,14 +173,10 @@ function CasesLayersPanel({
 
                 <button onClick={(e) => toggleHide(variant.id, e)}
                   title={isHidden ? 'Reincluir variante na próxima análise' : 'Excluir variante da próxima análise'}
-                  style={{ width: 16, height: 16, border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', color: isHidden ? '#1e2738' : '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                  style={{ width: 16, height: 16, border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', color: isHidden ? '#334155' : '#4d8fc0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
                   onMouseEnter={(e) => { e.currentTarget.style.color = 'white' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = isHidden ? '#1e2738' : '#475569' }}>
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    {isHidden
-                      ? <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></>
-                      : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>}
-                  </svg>
+                  onMouseLeave={(e) => { e.currentTarget.style.color = isHidden ? '#334155' : '#4d8fc0' }}>
+                  <CircleDot size={12} strokeWidth={isHidden ? 1.5 : 2} />
                 </button>
 
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2.5" style={{ flexShrink: 0, transform: isOpen ? 'rotate(90deg)' : 'rotate(0)', transition: 'transform 0.15s' }}>
@@ -239,10 +229,10 @@ function CasesLayersPanel({
                       }}
                       style={{
                         width: 16, height: 16, border: 0, padding: 0, background: 'transparent',
-                        color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: isIgnored ? '#334155' : '#4d8fc0', display: 'flex', alignItems: 'center', justifyContent: 'center',
                         visibility: isHovered || isIgnored ? 'visible' : 'hidden', cursor: 'pointer',
                       }}>
-                      <X size={9} />
+                      <CircleDot size={11} strokeWidth={isIgnored ? 1.5 : 2} />
                     </button>
                   </div>
                 )
@@ -319,7 +309,8 @@ function NodeDetailPanel({ node, analysisSelected, analysisSelectionExplicit, on
             color: analysisSelected && analysisSelectionExplicit ? '#c8e2f5' : '#94a3b8',
             border: `1px solid ${analysisSelected && analysisSelectionExplicit ? 'rgba(40,112,168,0.45)' : 'rgba(255,255,255,0.09)'}`,
           }}>
-          {analysisSelected && analysisSelectionExplicit ? '✓ Incluída na análise' : 'Analisar esta atividade'}
+          <CircleDot size={12} />
+          {analysisSelected && analysisSelectionExplicit ? 'Incluída na análise' : 'Analisar esta atividade'}
         </button>
         <p className="text-[9px] text-muted-foreground mt-1.5 text-center">Selecione outras atividades no grafo para compor um recorte múltiplo.</p>
       </div>
@@ -390,39 +381,32 @@ function AnalysisFlightDeck({ scope, onReset }) {
 }
 
 function EventLogSelector({ eventLogs, selectedIds, onToggle }) {
-  const parsedLogs = eventLogs.filter((log) => log.parseStatus === 'parsed')
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <p className="text-[10px] font-semibold uppercase text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>Logs da análise</p>
-        <span className="text-[9px] text-muted-foreground">{selectedIds.size}/{parsedLogs.length}</span>
-      </div>
-      <div className="space-y-1 overflow-y-auto pr-0.5" style={{ maxHeight: 'clamp(72px, 32vh, 320px)' }}>
-        {eventLogs.map((log) => {
-          const parsed = log.parseStatus === 'parsed'
-          const checked = selectedIds.has(log.id)
-          const isOnlySelected = checked && selectedIds.size === 1
-          return (
-            <button key={log.id} type="button" disabled={!parsed || isOnlySelected}
-              title={!parsed ? 'Este upload ainda não está pronto para análise' : isOnlySelected ? 'Mantenha ao menos um log selecionado' : checked ? 'Remover da próxima análise' : 'Incluir na próxima análise'}
-              onClick={() => onToggle(log.id)}
-              className="w-full grid items-center gap-2 rounded px-2 py-1.5 text-left disabled:cursor-not-allowed"
-              style={{ gridTemplateColumns: '16px 12px minmax(0, 1fr) auto', background: checked ? 'rgba(40,112,168,.13)' : 'rgba(255,255,255,.025)', border: `1px solid ${checked ? 'rgba(40,112,168,.32)' : 'rgba(255,255,255,.06)'}`, opacity: parsed ? 1 : 0.48 }}>
-              <span className="w-4 h-4 rounded flex items-center justify-center shrink-0" style={{ background: checked ? '#2870a8' : 'transparent', border: `1px solid ${checked ? '#4d8fc0' : '#475569'}` }}>
-                {checked && <Check size={10} color="white" strokeWidth={3} />}
-              </span>
-              <FileText size={12} className="text-muted-foreground shrink-0" />
-              <span className="min-w-0 text-[10px] text-foreground truncate">{log.fileName}</span>
-              <span className="text-[9px] text-muted-foreground whitespace-nowrap" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
-                {parsed
-                  ? `${Number(log.traceCount ?? 0).toLocaleString('pt-BR')} traces · ${new Date(log.uploadedAt).toLocaleDateString('pt-BR')}`
-                  : log.parseStatus}
-              </span>
-            </button>
-          )
-        })}
-        {eventLogs.length === 0 && <p className="text-[10px] text-muted-foreground py-2">Nenhum upload registrado.</p>}
-      </div>
+    <div className="space-y-0.5 overflow-y-auto pr-0.5" style={{ maxHeight: 'clamp(64px, 24vh, 220px)' }}>
+      {eventLogs.map((log) => {
+        const parsed = log.parseStatus === 'parsed'
+        const checked = selectedIds.has(log.id)
+        const isOnlySelected = checked && selectedIds.size === 1
+        return (
+          <button key={log.id} type="button" disabled={!parsed || isOnlySelected}
+            title={!parsed ? 'Este upload ainda não está pronto para análise' : isOnlySelected ? 'Mantenha ao menos um log selecionado' : checked ? 'Remover da próxima análise' : 'Incluir na próxima análise'}
+            onClick={() => onToggle(log.id)}
+            className="w-full grid items-center gap-2 rounded px-1.5 py-1.5 text-left disabled:cursor-not-allowed hover:bg-white/[0.04] transition-colors"
+            style={{ gridTemplateColumns: '15px 12px minmax(0, 1fr) auto', opacity: parsed ? 1 : 0.48 }}>
+            <span className="w-[15px] h-[15px] rounded-[3px] flex items-center justify-center shrink-0" style={{ background: checked ? '#2870a8' : 'transparent', border: `1px solid ${checked ? '#4d8fc0' : '#3a4657'}` }}>
+              {checked && <Check size={9} color="white" strokeWidth={3} />}
+            </span>
+            <FileText size={12} className="shrink-0" style={{ color: checked ? '#94a3b8' : '#475569' }} />
+            <span className="min-w-0 text-[11px] truncate" style={{ color: checked ? '#e2e8f0' : '#94a3b8' }}>{log.fileName}</span>
+            <span className="text-[9px] text-muted-foreground whitespace-nowrap" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
+              {parsed
+                ? `${Number(log.traceCount ?? 0).toLocaleString('pt-BR')} traces · ${new Date(log.uploadedAt).toLocaleDateString('pt-BR')}`
+                : log.parseStatus}
+            </span>
+          </button>
+        )
+      })}
+      {eventLogs.length === 0 && <p className="text-[10px] text-muted-foreground py-2">Nenhum upload registrado.</p>}
     </div>
   )
 }
@@ -435,8 +419,8 @@ function SvgDefs() {
       <pattern id="dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
         <circle cx="1" cy="1" r="1" fill="rgba(255,255,255,0.11)" />
       </pattern>
-      <marker id="arrow-dashed" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto">
-        <path d="M 0 1 L 8 4 L 0 7 Z" fill={DASH_COLOR} />
+      <marker id="arrow-dashed" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto">
+        <path d="M 0.5 1.5 L 7.5 4 L 0.5 6.5 Z" fill={DASH_COLOR} />
       </marker>
     </defs>
   )
@@ -533,7 +517,6 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   const [cursorGrab, setCursorGrab] = useState(false)
   const [selectionRect, setSelectionRect] = useState(null)
   const [mobileFilters, setMobileFilters] = useState(false)
-  const [showCasesPanel, setShowCasesPanel] = useState(true)
   const navigate = useNavigate()
   const [linkedMachines, setLinkedMachines] = useState([])
   const [showMachinePicker, setShowMachinePicker] = useState(false)
@@ -882,7 +865,6 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
       if (e.shiftKey) {
         toggleAnalysisActivity(node.id)
         setSelectedId(node.id)
-        setShowCasesPanel(true)
         onNode.current = false
         return
       }
@@ -914,11 +896,10 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
       const selectedNodes = getNodesInSelection(selectionRect).map((node) => node.id)
       setExplicitActivityIds(new Set(selectedNodes))
       setSelectedId(selectedNodes[0] ?? null)
-      setShowCasesPanel(true)
       setSelectionRect(null)
     } else if (onNode.current) {
       const node = getNodeAt(e.clientX, e.clientY)
-      if (node) { setSelectedId((prev) => (prev === node.id ? null : node.id)); setShowCasesPanel(true) }
+      if (node) { setSelectedId((prev) => (prev === node.id ? null : node.id)) }
     }
     isDragging.current = false; onNode.current = false; setCursorGrab(false)
   }
@@ -985,86 +966,112 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   }
 
   return (
-    <>
+    <div className="flex flex-1 min-h-0 gap-3 p-3 overflow-hidden">
+      {/* Left rail — Figma-style tools: logs + graph density */}
+      {!isMobile && (
+        <aside className="shrink-0 flex flex-col overflow-hidden" style={{ width: 228 }}>
+          <div className="shrink-0 px-1 pt-1 space-y-1.5">
+            <EventLogSelector eventLogs={eventLogs} selectedIds={selectedEventLogIds ?? new Set()} onToggle={toggleEventLog} />
+            <button type="button" onClick={onUploadLog}
+              className="w-full flex items-center justify-center gap-2 py-2 rounded text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-white/[0.04] transition-colors"
+              style={{ fontFamily: "'JetBrains Mono',monospace" }}>
+              <Upload size={12} />Adicionar log
+            </button>
+          </div>
+          <div className="px-1 pt-6 pb-4 space-y-5 flex-1 overflow-y-auto">
+            <p className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground/70"
+              style={{ fontFamily: "'JetBrains Mono',monospace" }}>Densidade do grafo</p>
+            <Slider label="Atividades" value={actSlider} onChange={setActSlider} />
+            <Slider label="Caminhos" value={pathSlider} onChange={setPathSlider} />
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-[11px] text-muted-foreground"><span className="text-foreground font-medium">{visNodes.filter((n) => !n.isStart && !n.isEnd).length}</span> de {activityNodeCount}</span>
+              <span className="text-[11px] text-muted-foreground"><span className="text-foreground font-medium">{visEdges.length}</span> caminhos</span>
+            </div>
+          </div>
+        </aside>
+      )}
+
       <div className="relative flex flex-1 min-w-0 overflow-hidden" style={{ background: '#090d14' }}>
         {loadError || !hasObservedProcess ? (
           <EmptyCanvas message={loadError} eventLog={graph?.eventLog ?? null} onUploadLog={onUploadLog} />
         ) : (
       <div ref={containerRef} className="relative flex-1 min-w-0 overflow-hidden" style={{ background: '#090d14' }}>
 
-
-        <div className="absolute left-5 top-5 z-20 rounded-xl border border-border p-2.5 bg-[#111520] shadow-lg" style={{ minWidth: 170 }}>
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <RadioTower size={14} className="text-emerald-400" />
-              <div>
-                <p className="text-[11px] font-semibold text-foreground">Máquinas</p>
-                <p className="text-[10px] text-muted-foreground">Vinculadas ao processo</p>
-              </div>
-            </div>
-            <button type="button" onClick={(e) => { e.stopPropagation(); setShowMachinePicker((open) => !open) }}
-              className="rounded-full p-1 border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-              title="Vincular máquina">
-              <Plus size={14} />
-            </button>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {linkedMachines.length ? linkedMachines.map((machine) => (
-              <button key={machine.id} type="button" onClick={(e) => { e.stopPropagation(); openMachineInMonitoring(machine) }}
-                className="rounded-full border border-border bg-[#0d1017] px-2.5 py-1 text-[10px] text-foreground flex items-center gap-2 hover:border-emerald-400 hover:bg-[#0f191f] transition-colors"
-                title="Abrir monitoramento desta máquina">
-                <RadioTower size={10} className="text-emerald-400" />
-                <span className="truncate" title={machine.name}>{machine.name}</span>
-              </button>
-            )) : (
-              <p className="text-[10px] text-muted-foreground">Nenhuma máquina vinculada.</p>
-            )}
-          </div>
-          {showMachinePicker && (
-            <div className="mt-3 rounded-xl border border-border bg-[#090d14] p-2">
-              <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-2">Escolher máquina</p>
-              {allMachines.filter((machine) => !linkedMachines.some((item) => item.id === machine.id)).length ? (
-                <div className="space-y-1 max-h-48 overflow-y-auto">
-                  {allMachines.filter((machine) => !linkedMachines.some((item) => item.id === machine.id)).map((machine) => (
-                    <button key={machine.id} type="button" onClick={(e) => { e.stopPropagation(); linkMachine(machine) }}
-                      className="w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-[11px] text-foreground hover:bg-secondary/30 transition-colors">
-                      <span className="min-w-0 truncate">{machine.name}</span>
-                      <Plus size={12} className="text-emerald-400" />
-                    </button>
-                  ))}
+        {/* Floating canvas chrome: machines + zoom / fit */}
+        <div className="absolute left-4 bottom-4 z-20 flex flex-col gap-2" style={{ maxWidth: 260 }}>
+          <div className="rounded-xl border border-border p-2.5 bg-[#111520]/90 backdrop-blur-sm shadow-lg">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <RadioTower size={14} className="text-emerald-400 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold text-foreground">Máquinas</p>
+                  <p className="text-[10px] text-muted-foreground truncate">Vinculadas ao processo</p>
                 </div>
-              ) : (
-                <p className="text-[10px] text-muted-foreground">Sem máquinas disponíveis.</p>
+              </div>
+              <button type="button" onClick={(e) => { e.stopPropagation(); setShowMachinePicker((open) => !open) }}
+                className="rounded-full p-1 border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors shrink-0"
+                title="Vincular máquina">
+                <Plus size={14} />
+              </button>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {linkedMachines.length ? linkedMachines.map((machine) => (
+                <button key={machine.id} type="button" onClick={(e) => { e.stopPropagation(); openMachineInMonitoring(machine) }}
+                  className="rounded-full border border-border bg-[#0d1017] px-2 py-0.5 text-[10px] text-foreground flex items-center gap-1.5 hover:border-emerald-400 hover:bg-[#0f191f] transition-colors"
+                  title="Abrir monitoramento desta máquina">
+                  <RadioTower size={10} className="text-emerald-400" />
+                  <span className="truncate max-w-[120px]" title={machine.name}>{machine.name}</span>
+                </button>
+              )) : (
+                <p className="text-[10px] text-muted-foreground">Nenhuma máquina vinculada.</p>
               )}
             </div>
-          )}
-        </div>
+            {showMachinePicker && (
+              <div className="mt-2 rounded-lg border border-border bg-[#090d14] p-2">
+                <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-2">Escolher máquina</p>
+                {allMachines.filter((machine) => !linkedMachines.some((item) => item.id === machine.id)).length ? (
+                  <div className="space-y-1 max-h-40 overflow-y-auto">
+                    {allMachines.filter((machine) => !linkedMachines.some((item) => item.id === machine.id)).map((machine) => (
+                      <button key={machine.id} type="button" onClick={(e) => { e.stopPropagation(); linkMachine(machine) }}
+                        className="w-full flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-[11px] text-foreground hover:bg-secondary/30 transition-colors">
+                        <span className="min-w-0 truncate">{machine.name}</span>
+                        <Plus size={12} className="text-emerald-400" />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground">Sem máquinas disponíveis.</p>
+                )}
+              </div>
+            )}
+          </div>
 
-        <div className="absolute left-5 top-[145px] z-20 rounded-xl border border-border p-3 bg-[#111520] shadow-lg" style={{ minWidth: 220 }}>
-          <button type="button" onClick={onUploadLog}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-            style={{ fontFamily: "'JetBrains Mono',monospace" }}>
-            <Upload size={12} />Adicionar log de eventos
-          </button>
-          <div className="mt-3">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>Ajustes visuais</p>
-              <span className="text-[10px] text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>{Math.round(zoom * 100)}%</span>
-            </div>
-            <div className="mt-2 flex items-center gap-1">
-              {[
-                { icon: <ZoomOut size={13} />, fn: () => setZoom((z) => Math.max(0.2, z * 0.8)), title: 'Reduzir zoom' },
-                { icon: <Maximize2 size={13} />, fn: fitView, title: 'Ajustar visualização' },
-                { icon: <ZoomIn size={13} />, fn: () => setZoom((z) => Math.min(3, z * 1.2)), title: 'Aumentar zoom' },
-              ].map(({ icon, fn, title }, i) => (
-                <button key={i} onClick={fn} title={title}
-                  className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors border border-border rounded">
-                  {icon}
-                </button>
-              ))}
-            </div>
+          <div className="rounded-xl border border-border p-2 bg-[#111520]/90 backdrop-blur-sm shadow-lg flex items-center gap-1 self-start">
+            <span className="text-[10px] text-muted-foreground px-1.5 tabular-nums" style={{ fontFamily: "'JetBrains Mono',monospace" }}>{Math.round(zoom * 100)}%</span>
+            {[
+              { icon: <ZoomOut size={13} />, fn: () => setZoom((z) => Math.max(0.2, z * 0.8)), title: 'Reduzir zoom' },
+              { icon: <Maximize2 size={13} />, fn: fitView, title: 'Ajustar visualização' },
+              { icon: <ZoomIn size={13} />, fn: () => setZoom((z) => Math.min(3, z * 1.2)), title: 'Aumentar zoom' },
+            ].map(({ icon, fn, title }, i) => (
+              <button key={i} onClick={fn} title={title}
+                className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors border border-border rounded">
+                {icon}
+              </button>
+            ))}
           </div>
         </div>
+
+        {/* Activity detail — floats on canvas when a node is selected */}
+        {!isMobile && selectedNode && (
+          <div className="absolute right-4 top-4 z-20 rounded-xl border border-border overflow-hidden shadow-lg"
+            style={{ width: 260, maxHeight: 'min(420px, 55vh)', background: '#111520' }}>
+            <NodeDetailPanel node={selectedNode}
+              analysisSelected={analysisScope.selectedActivityNodeIds.has(selectedNode.id)}
+              analysisSelectionExplicit={analysisScope.selectionExplicit}
+              onToggleAnalysis={toggleAnalysisActivity}
+              onClose={() => setSelectedId(null)} />
+          </div>
+        )}
 
         <svg ref={svgRef} className="w-full h-full"
           style={{ cursor: cursorGrab ? 'grabbing' : 'grab', touchAction: 'none' }}
@@ -1094,7 +1101,6 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
               const midX = mid.x, midY = mid.y
               const opacity = freqOpacity(edge.frequency)
 
-              // Gradient runs source → target in the transformed canvas space.
               const gSrc = points[0]
               const gTgt = points[points.length - 1]
               const gid = `fg-${edge.id}`, dgid = `dg-${edge.id}`
@@ -1147,10 +1153,6 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
           </g>
         </svg>
 
-
-        {/* Traces window toggle — only meaningful with an activity selected,
-            since the panel lists the variants that pass through it. */}
-
         {isMobile && (
           <div className="absolute top-4 right-4 z-20">
             <button onClick={() => setMobileFilters((v) => !v)}
@@ -1176,64 +1178,26 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
     )}
   </div>
 
+      {/* Right rail — traces filter + analysis flight deck */}
       {!isMobile && (
-        <div className="shrink-0 flex flex-col rounded-xl border border-border overflow-hidden" style={{ width: '284px', background: '#111520' }}>
-          <div className="shrink-0 p-3 border-b border-border">
-            <EventLogSelector eventLogs={eventLogs} selectedIds={selectedEventLogIds ?? new Set()} onToggle={toggleEventLog} />
-          </div>
-
-          <div className="p-4 border-b border-border space-y-5">
-            <p className="text-[10px] font-semibold uppercase text-muted-foreground"
-              style={{ fontFamily: "'JetBrains Mono',monospace" }}>Densidade do grafo</p>
-            <Slider label="Atividades" value={actSlider} onChange={setActSlider} />
-            <Slider label="Caminhos" value={pathSlider} onChange={setPathSlider} />
-            <div className="flex items-center justify-between pt-1">
-              <span className="text-[11px] text-muted-foreground"><span className="text-foreground font-medium">{visNodes.filter((n) => !n.isStart && !n.isEnd).length}</span> de {activityNodeCount}</span>
-              <span className="text-[11px] text-muted-foreground"><span className="text-foreground font-medium">{visEdges.length}</span> caminhos</span>
-            </div>
-          </div>
+        <aside className="shrink-0 flex flex-col rounded-xl border border-border overflow-hidden" style={{ width: 300, background: '#111520' }}>
           <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-            <div className="overflow-auto px-3 py-2">
-              {selectedNode ? (
-                <NodeDetailPanel node={selectedNode}
-                  analysisSelected={analysisScope.selectedActivityNodeIds.has(selectedNode.id)}
-                  analysisSelectionExplicit={analysisScope.selectionExplicit}
-                  onToggleAnalysis={toggleAnalysisActivity}
-                  onClose={() => setSelectedId(null)} />
+            <div className="overflow-auto px-3 py-3 flex-1 min-h-0">
+              {graph?.eventLog ? (
+                <CasesLayersPanel
+                  node={selectedNode}
+                  variants={variants}
+                  hiddenVariants={hiddenVariantIds}
+                  ignoredTraces={ignoredTraceIds}
+                  onToggleVariant={toggleVariant}
+                  onToggleTrace={toggleTrace}
+                  onResetSelection={resetAnalysisSelection}
+                  onClose={() => setSelectedId(null)}
+                />
               ) : (
                 <div className="flex h-full min-h-[180px] flex-col items-center justify-center rounded-xl border border-border bg-[#0d111b] p-6 text-center">
-                  <p className="text-xs font-medium text-muted-foreground">Selecione uma atividade</p>
-                  <p className="text-[11px] text-muted-foreground mt-2 opacity-60">Inspecione frequência e desempenho.</p>
-                </div>
-              )}
-
-              {graph?.eventLog && (
-                <div className="mt-4">
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <div>
-                      <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>Ciclos</p>
-                      <p className="text-[11px] text-foreground">Traces de análise</p>
-                    </div>
-                    <button type="button" onClick={() => setShowCasesPanel((v) => !v)}
-                      className="rounded-full border px-3 py-1 text-[10px] font-medium transition-colors"
-                      style={{ borderColor: showCasesPanel ? 'rgba(56,189,248,0.45)' : 'rgba(255,255,255,0.12)', color: showCasesPanel ? '#7dd3fc' : '#94a3b8', background: showCasesPanel ? 'rgba(56,189,248,0.08)' : 'transparent' }}>
-                      {showCasesPanel ? 'Ocultar' : 'Mostrar'}
-                    </button>
-                  </div>
-                  {showCasesPanel && (
-                    <div className="overflow-hidden">
-                      <CasesLayersPanel
-                        node={selectedNode}
-                        variants={variants}
-                        hiddenVariants={hiddenVariantIds}
-                        ignoredTraces={ignoredTraceIds}
-                        onToggleVariant={toggleVariant}
-                        onToggleTrace={toggleTrace}
-                        onResetSelection={resetAnalysisSelection}
-                        onClose={() => setShowCasesPanel(false)}
-                      />
-                    </div>
-                  )}
+                  <p className="text-xs font-medium text-muted-foreground">Traces de análise</p>
+                  <p className="text-[11px] text-muted-foreground mt-2 opacity-60">Carregue um log para filtrar variantes e traces.</p>
                 </div>
               )}
             </div>
@@ -1260,7 +1224,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
               <Scan size={12} />{analysisRunning ? 'Processando recorte…' : 'Gerar análise de desvios'}
             </button>
           </div>
-        </div>
+        </aside>
       )}
 
       {isMobile && graph?.eventLog && (
@@ -1292,6 +1256,6 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
           </div>
         </>
       )}
-    </>
+    </div>
   )
 }
