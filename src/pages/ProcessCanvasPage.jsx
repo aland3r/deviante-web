@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Upload } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
 import BrandMark from '../components/layout/BrandMark'
+import ThemeToggle from '../components/layout/ThemeToggle'
 import ProcessGraphTab from '../components/process-graph/ProcessGraphTab'
 import EventLogUploadModal from '../components/process-graph/EventLogUploadModal'
 import ProcessAnalysisView from '../components/process-analysis/ProcessAnalysisView'
@@ -115,7 +116,7 @@ export default function ProcessCanvasPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center" style={{ height: '100vh', background: '#0d1017' }}>
+      <div className="flex items-center justify-center" style={{ height: '100vh', background: 'var(--surface-base)' }}>
         <p className="text-sm text-muted-foreground">Carregando processo...</p>
       </div>
     )
@@ -123,8 +124,8 @@ export default function ProcessCanvasPage() {
 
   if (!process) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4" style={{ height: '100vh', background: '#0d1017' }}>
-        <p className="text-sm" style={{ color: '#fca5a5' }}>{loadError || 'Processo não encontrado.'}</p>
+      <div className="flex flex-col items-center justify-center gap-4" style={{ height: '100vh', background: 'var(--surface-base)' }}>
+        <p className="text-sm" style={{ color: 'var(--crit-soft)' }}>{loadError || 'Processo não encontrado.'}</p>
         <Link to="/dashboard" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Voltar ao painel</Link>
       </div>
     )
@@ -153,16 +154,16 @@ export default function ProcessCanvasPage() {
   }
 
   return (
-    <div className="flex flex-col w-full overflow-hidden" style={{ height: '100vh', fontFamily: "'Inter',sans-serif", background: '#0d1017' }}>
+    <div className="flex flex-col w-full overflow-hidden" style={{ height: '100vh', fontFamily: "'Inter',sans-serif", background: 'var(--surface-base)' }}>
 
-      <header className="shrink-0 flex items-center gap-4 px-5 border-b border-border" style={{ height: '52px', background: '#111520' }}>
+      <header className="shrink-0 flex items-center gap-4 px-5 border-b border-border" style={{ height: '52px', background: 'var(--surface-raised)' }}>
 
         <BrandMark />
 
         <button onClick={() => navigate('/dashboard')}
-          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px', borderRadius: 6, border: 'none', background: 'rgba(255,255,255,0.05)', color: '#94a3b8', cursor: 'pointer', fontSize: 11, fontFamily: "'Inter',sans-serif", transition: 'background 0.15s' }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.10)'; e.currentTarget.style.color = 'white' }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#94a3b8' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px', borderRadius: 6, border: 'none', background: 'var(--overlay)', color: 'var(--text)', cursor: 'pointer', fontSize: 11, fontFamily: "'Inter',sans-serif", transition: 'background 0.15s' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--overlay-strong)'; e.currentTarget.style.color = 'white' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--overlay)'; e.currentTarget.style.color = 'var(--text)' }}>
           <ArrowLeft size={11} />
           Projetos
         </button>
@@ -178,7 +179,7 @@ export default function ProcessCanvasPage() {
                 if (e.key === 'Escape') { setTitleDraft(process.name ?? ''); setEditingTitle(false) }
               }}
               className="text-[13px] font-semibold bg-transparent border-0 outline-none text-foreground"
-              style={{ borderBottom: '1px solid #991b1b', paddingBottom: '1px', minWidth: '180px', letterSpacing: '-0.01em' }} />
+              style={{ borderBottom: '1px solid var(--accent-strong)', paddingBottom: '1px', minWidth: '180px', letterSpacing: '-0.01em' }} />
           ) : (
             <button onClick={() => { setTitleError(''); setEditingTitle(true) }} title="Renomear processo"
               className="text-[13px] font-semibold text-left text-foreground hover:text-white hover:bg-white/[0.06] rounded px-1.5 -mx-1.5 py-0.5 transition-colors truncate"
@@ -186,11 +187,13 @@ export default function ProcessCanvasPage() {
               {process.name || 'Processo sem nome'}
             </button>
           )}
-          {titleError && <span className="text-[11px] leading-none mt-0.5 truncate" style={{ color: '#fca5a5' }}>{titleError}</span>}
+          {titleError && <span className="text-[11px] leading-none mt-0.5 truncate" style={{ color: 'var(--crit-soft)' }}>{titleError}</span>}
         </div>
         <ProjectActionsMenu onDelete={deleteCurrentProcess} deleteLabel="Excluir processo" />
 
         <div className="flex-1" />
+
+        <ThemeToggle />
 
         <button type="button" title="Carregar log de eventos (UC4)" onClick={() => setUploadOpen(true)}
           className="lg:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium border border-border text-muted-foreground hover:text-foreground transition-colors shrink-0">

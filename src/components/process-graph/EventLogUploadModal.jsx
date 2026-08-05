@@ -179,23 +179,23 @@ export default function EventLogUploadModal({ processId, onClose, onMappingCompl
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: '100%', maxWidth: 896, background: '#161c28', borderRadius: 6,
-          border: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column',
+          width: '100%', maxWidth: 896, background: 'var(--surface)', borderRadius: 6,
+          border: '1px solid var(--hairline)', display: 'flex', flexDirection: 'column',
           maxHeight: 'calc(100vh - 64px)', boxShadow: '0 24px 80px rgba(0,0,0,0.70)',
         }}
       >
         <header style={{
-          padding: '20px 24px 18px', borderBottom: '1px solid rgba(255,255,255,0.07)',
+          padding: '20px 24px 18px', borderBottom: '1px solid var(--hairline)',
           display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16,
         }}>
           <div>
             <h2
               id="event-log-modal-title"
-              style={{ margin: '0 0 5px', fontFamily: "'JetBrains Mono',monospace", fontWeight: 600, fontSize: 13, color: '#e2e8f0' }}
+              style={{ margin: '0 0 5px', fontFamily: "'JetBrains Mono',monospace", fontWeight: 600, fontSize: 13, color: 'var(--text-strong)' }}
             >
               Carregar log de eventos
             </h2>
-            <p style={{ margin: 0, fontFamily: "'Inter',sans-serif", fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>
+            <p style={{ margin: 0, fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--muted-foreground)', lineHeight: 1.5 }}>
               Envie um arquivo .xes ou .csv. Depois do envio, associe cada evento a uma atividade.
             </p>
           </div>
@@ -205,11 +205,11 @@ export default function EventLogUploadModal({ processId, onClose, onMappingCompl
             aria-label="Fechar"
             style={{
               flexShrink: 0, width: 28, height: 28, borderRadius: 4, border: 'none',
-              background: 'rgba(255,255,255,0.05)', color: '#64748b', display: 'flex',
+              background: 'var(--overlay)', color: 'var(--muted-foreground)', display: 'flex',
               alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.10)'; e.currentTarget.style.color = 'white' }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#64748b' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--overlay-strong)'; e.currentTarget.style.color = 'white' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--overlay)'; e.currentTarget.style.color = 'var(--muted-foreground)' }}
           >
             <X size={14} />
           </button>
@@ -241,15 +241,15 @@ export default function EventLogUploadModal({ processId, onClose, onMappingCompl
 
         {eventLog && (
           <footer style={{
-            padding: '14px 24px', borderTop: '1px solid rgba(255,255,255,0.07)',
+            padding: '14px 24px', borderTop: '1px solid var(--hairline)',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
           }}>
-            <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: allValidated ? '#10b981' : validatedCount > 0 ? '#f59e0b' : '#64748b' }}>
+            <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: allValidated ? 'var(--success)' : validatedCount > 0 ? 'var(--warn)' : 'var(--muted-foreground)' }}>
               {allValidated
                 ? 'Todas as atividades validadas. Concluir atualiza o grafo.'
                 : `${validatedCount} de ${rows.length} atividade${rows.length === 1 ? '' : 's'} validada${rows.length === 1 ? '' : 's'}.`}
               {confirmError && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, color: '#dc2626' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, color: 'var(--danger)' }}>
                   <AlertCircle size={12} /> {confirmError}
                 </span>
               )}
@@ -261,8 +261,8 @@ export default function EventLogUploadModal({ processId, onClose, onMappingCompl
                 onClick={onClose}
                 disabled={confirming}
                 style={{
-                  padding: '8px 16px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.10)',
-                  background: 'transparent', color: '#94a3b8', fontFamily: "'Inter',sans-serif",
+                  padding: '8px 16px', borderRadius: 4, border: '1px solid var(--overlay-strong)',
+                  background: 'transparent', color: 'var(--text)', fontFamily: "'Inter',sans-serif",
                   fontSize: 12, cursor: confirming ? 'not-allowed' : 'pointer', opacity: confirming ? 0.5 : 1,
                 }}
               >
@@ -274,8 +274,8 @@ export default function EventLogUploadModal({ processId, onClose, onMappingCompl
                 disabled={confirming || !allValidated}
                 style={{
                   padding: '8px 18px', borderRadius: 4, border: 'none',
-                  background: allValidated && !confirming ? '#dc2626' : 'rgba(220,38,38,0.20)',
-                  color: allValidated && !confirming ? 'white' : '#64748b',
+                  background: allValidated && !confirming ? 'var(--danger)' : 'rgba(220,38,38,0.20)',
+                  color: allValidated && !confirming ? 'white' : 'var(--muted-foreground)',
                   fontFamily: "'Inter',sans-serif", fontWeight: 500, fontSize: 12,
                   cursor: allValidated && !confirming ? 'pointer' : 'not-allowed',
                   display: 'flex', alignItems: 'center', gap: 7,
@@ -306,13 +306,13 @@ function UploadArea({ inputRef, file, uploading, eventLog, formatError, error, o
           width: 32, height: 32, borderRadius: '50%', background: 'rgba(16,185,129,0.15)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
         }}>
-          <Check size={16} color="#10b981" strokeWidth={2.5} />
+          <Check size={16} color="var(--success)" strokeWidth={2.5} />
         </div>
         <div>
-          <p style={{ margin: '0 0 2px', fontFamily: "'JetBrains Mono',monospace", fontSize: 12, fontWeight: 600, color: '#10b981' }}>
+          <p style={{ margin: '0 0 2px', fontFamily: "'JetBrains Mono',monospace", fontSize: 12, fontWeight: 600, color: 'var(--success)' }}>
             {eventLog.fileName}
           </p>
-          <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: '#64748b' }}>
+          <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: 'var(--muted-foreground)' }}>
             {eventLog.operationCount} evento{eventLog.operationCount === 1 ? '' : 's'} distinto{eventLog.operationCount === 1 ? '' : 's'},{' '}
             {Number(eventLog.traceCount).toLocaleString('pt-BR')} trace{eventLog.traceCount === 1 ? '' : 's'}{' '}
             ({String(eventLog.format || '').toUpperCase()})
@@ -329,25 +329,25 @@ function UploadArea({ inputRef, file, uploading, eventLog, formatError, error, o
         onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
         style={{
-          border: `1.5px dashed ${formatError ? 'rgba(220,38,38,0.50)' : dragging ? 'rgba(40,112,168,0.55)' : 'rgba(255,255,255,0.12)'}`,
+          border: `1.5px dashed ${formatError ? 'rgba(220,38,38,0.50)' : dragging ? 'rgba(40,112,168,0.55)' : 'var(--overlay-strong)'}`,
           borderRadius: 6, padding: '32px 24px', display: 'flex', flexDirection: 'column',
           alignItems: 'center', gap: 14, transition: 'border-color 0.15s',
           background: dragging ? 'rgba(40,112,168,0.06)' : 'transparent',
         }}
       >
         <div style={{
-          width: 40, height: 40, borderRadius: 8, background: 'rgba(255,255,255,0.05)',
+          width: 40, height: 40, borderRadius: 8, background: 'var(--overlay)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <Upload size={18} color="#64748b" />
+          <Upload size={18} color="var(--muted-foreground)" />
         </div>
 
         <div style={{ textAlign: 'center' }}>
-          <p style={{ margin: '0 0 4px', fontFamily: "'Inter',sans-serif", fontSize: 13, fontWeight: 500, color: '#e2e8f0' }}>
+          <p style={{ margin: '0 0 4px', fontFamily: "'Inter',sans-serif", fontSize: 13, fontWeight: 500, color: 'var(--text-strong)' }}>
             {uploading ? 'Analisando log…' : file ? file.name : 'Arraste um arquivo aqui'}
           </p>
           {!file && !uploading && (
-            <p style={{ margin: 0, fontFamily: "'Inter',sans-serif", fontSize: 12, color: '#64748b' }}>
+            <p style={{ margin: 0, fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--muted-foreground)' }}>
               Formatos aceitos: <span style={{ fontFamily: "'JetBrains Mono',monospace" }}>.xes</span> e{' '}
               <span style={{ fontFamily: "'JetBrains Mono',monospace" }}>.csv</span>
             </p>
@@ -355,7 +355,7 @@ function UploadArea({ inputRef, file, uploading, eventLog, formatError, error, o
         </div>
 
         {formatError && (
-          <p style={{ margin: 0, fontFamily: "'Inter',sans-serif", fontSize: 12, color: '#dc2626' }}>
+          <p style={{ margin: 0, fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--danger)' }}>
             Envie um arquivo .xes ou .csv.
           </p>
         )}
@@ -375,8 +375,8 @@ function UploadArea({ inputRef, file, uploading, eventLog, formatError, error, o
             onClick={onBrowse}
             disabled={uploading}
             style={{
-              padding: '7px 14px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.12)',
-              background: 'rgba(255,255,255,0.05)', color: uploading ? '#475569' : '#94a3b8',
+              padding: '7px 14px', borderRadius: 4, border: '1px solid var(--overlay-strong)',
+              background: 'var(--overlay)', color: uploading ? 'var(--text-dim)' : 'var(--text)',
               fontFamily: "'Inter',sans-serif", fontSize: 12,
               cursor: uploading ? 'not-allowed' : 'pointer',
             }}
@@ -390,8 +390,8 @@ function UploadArea({ inputRef, file, uploading, eventLog, formatError, error, o
             disabled={!file || uploading}
             style={{
               padding: '7px 16px', borderRadius: 4, border: 'none',
-              background: file && !uploading ? '#dc2626' : 'rgba(220,38,38,0.25)',
-              color: file && !uploading ? 'white' : '#64748b',
+              background: file && !uploading ? 'var(--danger)' : 'rgba(220,38,38,0.25)',
+              color: file && !uploading ? 'white' : 'var(--muted-foreground)',
               fontFamily: "'Inter',sans-serif", fontWeight: 500, fontSize: 12,
               cursor: file && !uploading ? 'pointer' : 'not-allowed',
               display: 'flex', alignItems: 'center', gap: 6,
@@ -405,7 +405,7 @@ function UploadArea({ inputRef, file, uploading, eventLog, formatError, error, o
       </div>
 
       {error && (
-        <p style={{ margin: '12px 0 0', display: 'flex', alignItems: 'flex-start', gap: 6, fontSize: 12, color: '#dc2626' }}>
+        <p style={{ margin: '12px 0 0', display: 'flex', alignItems: 'flex-start', gap: 6, fontSize: 12, color: 'var(--danger)' }}>
           <AlertCircle size={12} style={{ marginTop: 2, flexShrink: 0 }} /> {error}
         </p>
       )}
@@ -417,10 +417,10 @@ function MappingSection({ rows, activityCatalog, onChange, onEdit, onValidate })
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
-        <h3 style={{ margin: '0 0 4px', fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 13, color: '#e2e8f0' }}>
+        <h3 style={{ margin: '0 0 4px', fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 13, color: 'var(--text-strong)' }}>
           Mapear eventos para atividades
         </h3>
-        <p style={{ margin: 0, fontFamily: "'Inter',sans-serif", fontSize: 12, color: '#64748b' }}>
+        <p style={{ margin: 0, fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--muted-foreground)' }}>
           Associe cada evento encontrado no log a uma atividade do catálogo.
         </p>
       </div>
@@ -442,7 +442,7 @@ function MappingSection({ rows, activityCatalog, onChange, onEdit, onValidate })
             className="grid grid-cols-1 items-center gap-2 border-b border-white/[0.04] py-1.5 sm:grid-cols-[1fr_28px_minmax(0,1.5fr)_64px] sm:gap-x-3"
           >
             <EventCell row={row} />
-            <div className="hidden items-center justify-center text-[#2870a8] sm:flex" aria-hidden="true">
+            <div className="hidden items-center justify-center text-[var(--graph-node-strong)] sm:flex" aria-hidden="true">
               <ArrowRight size={14} />
             </div>
             <ActivityCard
@@ -462,7 +462,7 @@ function MappingSection({ rows, activityCatalog, onChange, onEdit, onValidate })
 
 function MappingColumnLabel({ children }) {
   return (
-    <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+    <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
       {children}
     </span>
   )
@@ -474,13 +474,13 @@ function EventCell({ row }) {
       <p
         title={row.rawLabel}
         style={{
-          margin: '0 0 2px', fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: '#e2e8f0',
+          margin: '0 0 2px', fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: 'var(--text-strong)',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}
       >
         {row.rawLabel}
       </p>
-      <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#475569' }}>
+      <p style={{ margin: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'var(--text-dim)' }}>
         {Number(row.occurrenceCount).toLocaleString('pt-BR')} ocorrência{row.occurrenceCount === 1 ? '' : 's'}
         {row.caseCount > 0 && ` · ${Number(row.caseCount).toLocaleString('pt-BR')} traço${row.caseCount === 1 ? '' : 's'}`}
         {row.meanDurationSeconds > 0 && ` · ${formatDuration(row.meanDurationSeconds)} em média`}
@@ -529,7 +529,7 @@ function ActivityCard({ row, activityCatalog, onChange, onEdit, onValidate }) {
       ? 'rgba(245,158,11,0.55)'
       : isEditing
         ? 'rgba(40,112,168,0.60)'
-        : 'rgba(255,255,255,0.10)'
+        : 'var(--overlay-strong)'
 
   function updateName(value) {
     setQuery(value)
@@ -547,7 +547,7 @@ function ActivityCard({ row, activityCatalog, onChange, onEdit, onValidate }) {
     <div className="flex min-w-0 items-center gap-2">
       <div style={{
         flex: 1, minWidth: 0, position: 'relative', overflow: 'visible',
-        background: '#16202e', border: `1px solid ${borderColor}`, borderRadius: 5,
+        background: 'var(--surface-muted-2)', border: `1px solid ${borderColor}`, borderRadius: 5,
         transition: 'border-color 0.15s',
       }}>
         <div style={{ height: 3, background: isValidated ? 'rgba(16,185,129,0.70)' : 'rgba(153,27,27,0.75)', transition: 'background 0.2s' }} />
@@ -564,13 +564,13 @@ function ActivityCard({ row, activityCatalog, onChange, onEdit, onValidate }) {
                 style={{
                   display: 'block', width: '100%', background: 'transparent', border: 'none', outline: 'none',
                   fontFamily: "'Inter',sans-serif", fontWeight: 500, fontSize: 12,
-                  color: '#e2e8f0', padding: 0, marginBottom: 3, boxSizing: 'border-box',
+                  color: 'var(--text-strong)', padding: 0, marginBottom: 3, boxSizing: 'border-box',
                 }}
               />
               {showDropdown && (filtered.length > 0 || canCreate) && (
                 <div style={{
                   position: 'absolute', top: 'calc(100% + 6px)', left: -10, right: -10, zIndex: 200,
-                  background: '#1a2133', border: '1px solid rgba(255,255,255,0.10)',
+                  background: '#1a2133', border: '1px solid var(--overlay-strong)',
                   borderRadius: 6, boxShadow: '0 8px 24px rgba(0,0,0,0.55)', overflow: 'hidden',
                 }}>
                   {filtered.slice(0, 6).map((activity) => (
@@ -581,17 +581,17 @@ function ActivityCard({ row, activityCatalog, onChange, onEdit, onValidate }) {
                       style={{
                         display: 'flex', width: '100%', padding: '7px 12px', border: 0,
                         alignItems: 'center', justifyContent: 'space-between', gap: 8,
-                        background: 'transparent', color: '#e2e8f0', textAlign: 'left',
+                        background: 'transparent', color: 'var(--text-strong)', textAlign: 'left',
                         fontFamily: "'Inter',sans-serif", fontSize: 12, cursor: 'pointer',
                       }}
-                      onMouseEnter={(event) => { event.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
+                      onMouseEnter={(event) => { event.currentTarget.style.background = 'var(--overlay)' }}
                       onMouseLeave={(event) => { event.currentTarget.style.background = 'transparent' }}
                     >
                       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {activity.name}
                       </span>
                       <span style={{
-                        flexShrink: 0, color: activity.inProcess ? '#4d8fc0' : '#64748b',
+                        flexShrink: 0, color: activity.inProcess ? 'var(--graph-node)' : 'var(--muted-foreground)',
                         fontFamily: "'JetBrains Mono',monospace", fontSize: 8, textTransform: 'uppercase',
                       }}>
                         {activity.inProcess ? 'neste processo' : 'catálogo'}
@@ -605,11 +605,11 @@ function ActivityCard({ row, activityCatalog, onChange, onEdit, onValidate }) {
                       style={{
                         display: 'flex', width: '100%', alignItems: 'center', gap: 6,
                         padding: '7px 12px', border: 0,
-                        borderTop: filtered.length > 0 ? '1px solid rgba(255,255,255,0.07)' : 'none',
-                        background: 'transparent', color: '#4d8fc0', textAlign: 'left',
+                        borderTop: filtered.length > 0 ? '1px solid var(--hairline)' : 'none',
+                        background: 'transparent', color: 'var(--graph-node)', textAlign: 'left',
                         fontFamily: "'Inter',sans-serif", fontSize: 12, cursor: 'pointer',
                       }}
-                      onMouseEnter={(event) => { event.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+                      onMouseEnter={(event) => { event.currentTarget.style.background = 'var(--overlay-soft)' }}
                       onMouseLeave={(event) => { event.currentTarget.style.background = 'transparent' }}
                     >
                       <Plus size={11} />Criar atividade “{query.trim()}”
@@ -621,10 +621,10 @@ function ActivityCard({ row, activityCatalog, onChange, onEdit, onValidate }) {
           ) : (
             <p style={{
               margin: '0 0 3px', fontFamily: "'Inter',sans-serif", fontWeight: 500,
-              fontSize: 12, color: isValidated ? '#10b981' : '#e2e8f0',
+              fontSize: 12, color: isValidated ? 'var(--success)' : 'var(--text-strong)',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>
-              {row.activityName || <span style={{ color: '#64748b' }}>Nome da atividade…</span>}
+              {row.activityName || <span style={{ color: 'var(--muted-foreground)' }}>Nome da atividade…</span>}
             </p>
           )}
           <input
@@ -635,7 +635,7 @@ function ActivityCard({ row, activityCatalog, onChange, onEdit, onValidate }) {
             aria-label={`Descrição da atividade para ${row.rawLabel}`}
             style={{
               display: 'block', width: '100%', background: 'transparent', border: 'none', outline: 'none',
-              fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: '#64748b',
+              fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: 'var(--muted-foreground)',
               padding: 0, boxSizing: 'border-box', cursor: isValidated ? 'default' : 'text',
             }}
           />
@@ -647,7 +647,7 @@ function ActivityCard({ row, activityCatalog, onChange, onEdit, onValidate }) {
           <Pencil size={11} />
         </CircleButton>
         <CircleButton label="Validar atividade" active={isValidated} onClick={() => onValidate(row.operationId)}>
-          <Check size={11} color={isValidated ? '#10b981' : 'currentColor'} />
+          <Check size={11} color={isValidated ? 'var(--success)' : 'currentColor'} />
         </CircleButton>
       </div>
     </div>
@@ -664,9 +664,9 @@ function CircleButton({ label, active, onClick, children }) {
       onClick={onClick}
       style={{
         width: 24, height: 24, borderRadius: '50%', padding: 0, flexShrink: 0,
-        border: `1px solid ${active ? 'rgba(255,255,255,0.20)' : 'rgba(255,255,255,0.09)'}`,
-        background: active ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.04)',
-        color: active ? 'white' : '#64748b', display: 'flex', alignItems: 'center',
+        border: `1px solid ${active ? 'var(--hairline-strong)' : 'var(--hairline-strong)'}`,
+        background: active ? 'var(--overlay-strong)' : 'var(--overlay-soft)',
+        color: active ? 'white' : 'var(--muted-foreground)', display: 'flex', alignItems: 'center',
         justifyContent: 'center', cursor: 'pointer', transition: 'all 0.14s',
       }}
       onMouseEnter={(event) => {
@@ -674,8 +674,8 @@ function CircleButton({ label, active, onClick, children }) {
         event.currentTarget.style.color = 'white'
       }}
       onMouseLeave={(event) => {
-        event.currentTarget.style.borderColor = active ? 'rgba(255,255,255,0.20)' : 'rgba(255,255,255,0.09)'
-        event.currentTarget.style.color = active ? 'white' : '#64748b'
+        event.currentTarget.style.borderColor = active ? 'var(--hairline-strong)' : 'var(--hairline-strong)'
+        event.currentTarget.style.color = active ? 'white' : 'var(--muted-foreground)'
       }}
     >
       {children}
@@ -685,10 +685,10 @@ function CircleButton({ label, active, onClick, children }) {
 
 function MappingStatus({ state }) {
   const config = {
-    validated: { label: 'OK', color: '#10b981', background: 'rgba(6,78,59,0.25)', border: 'rgba(16,185,129,0.25)' },
-    pending: { label: 'Pendente', color: '#f59e0b', background: 'rgba(120,53,15,0.20)', border: 'rgba(245,158,11,0.25)' },
-    editing: { label: 'Editando', color: '#64748b', background: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.07)' },
-    suggested: { label: 'Sugerida', color: '#64748b', background: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.07)' },
+    validated: { label: 'OK', color: 'var(--success)', background: 'rgba(6,78,59,0.25)', border: 'rgba(16,185,129,0.25)' },
+    pending: { label: 'Pendente', color: 'var(--warn)', background: 'rgba(120,53,15,0.20)', border: 'rgba(245,158,11,0.25)' },
+    editing: { label: 'Editando', color: 'var(--muted-foreground)', background: 'var(--overlay-soft)', border: 'var(--hairline)' },
+    suggested: { label: 'Sugerida', color: 'var(--muted-foreground)', background: 'var(--overlay-soft)', border: 'var(--hairline)' },
   }[state]
 
   return (

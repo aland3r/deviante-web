@@ -10,15 +10,15 @@ import MachineIllustration from '../components/monitoring/MachineIllustration'
 import HealthDriftChart from '../components/monitoring/HealthDriftChart'
 
 const STATUS = {
-  healthy: { label: 'Saudável', color: '#10b981', soft: 'rgba(16,185,129,0.14)' },
-  watch: { label: 'Atenção', color: '#f59e0b', soft: 'rgba(245,158,11,0.14)' },
-  critical: { label: 'Crítico', color: '#dc2626', soft: 'rgba(220,38,38,0.14)' },
-  unknown: { label: 'Sem dados', color: '#64748b', soft: 'rgba(100,116,139,0.14)' },
+  healthy: { label: 'Saudável', color: 'var(--success)', soft: 'rgba(16,185,129,0.14)' },
+  watch: { label: 'Atenção', color: 'var(--warn)', soft: 'rgba(245,158,11,0.14)' },
+  critical: { label: 'Crítico', color: 'var(--danger)', soft: 'rgba(220,38,38,0.14)' },
+  unknown: { label: 'Sem dados', color: 'var(--muted-foreground)', soft: 'rgba(100,116,139,0.14)' },
 }
 
 const inputBase = {
   width: '100%', padding: '8px 10px', borderRadius: 8,
-  border: '1px solid rgba(255,255,255,0.09)', background: '#0d1017', color: '#e2e8f0',
+  border: '1px solid var(--hairline-strong)', background: 'var(--surface-base)', color: 'var(--text-strong)',
   fontFamily: "'Inter',sans-serif", fontSize: 13, outline: 'none', boxSizing: 'border-box',
 }
 
@@ -42,7 +42,7 @@ const fmtDuration = (seconds) => {
   return `${m} min`
 }
 
-function Sparkline({ series, color = '#4a90c2' }) {
+function Sparkline({ series, color = 'var(--graph-node-edge)' }) {
   if (!series?.length) return null
   const values = series.map((point) => point.v)
   const min = Math.min(...values)
@@ -90,7 +90,7 @@ function AddParameterModal({ onClose, onCreate }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(3,6,12,0.78)' }}
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <form onSubmit={submit} className="w-full border border-border" role="dialog" aria-modal="true"
-        style={{ maxWidth: 460, borderRadius: 8, background: '#111520', boxShadow: '0 24px 70px rgba(0,0,0,0.55)' }}>
+        style={{ maxWidth: 460, borderRadius: 8, background: 'var(--surface-raised)', boxShadow: '0 24px 70px rgba(0,0,0,0.55)' }}>
         <div className="flex items-start justify-between gap-4 px-4 py-3.5 border-b border-border">
           <div>
             <h2 className="text-sm font-semibold text-foreground">Adicionar parâmetro</h2>
@@ -116,8 +116,8 @@ function AddParameterModal({ onClose, onCreate }) {
           <label className="flex flex-col gap-1.5 text-xs text-muted-foreground">
             Comportamento esperado
             <select value={vals.profile} onChange={(e) => set('profile', e.target.value)} style={{ ...inputBase, cursor: 'pointer' }}>
-              <option value="degrading" style={{ background: '#0d1017' }}>Degrada com o tempo</option>
-              <option value="stable" style={{ background: '#0d1017' }}>Estável (controle)</option>
+              <option value="degrading" style={{ background: 'var(--surface-base)' }}>Degrada com o tempo</option>
+              <option value="stable" style={{ background: 'var(--surface-base)' }}>Estável (controle)</option>
             </select>
             <span className="text-[10px] text-muted-foreground">{PROFILE_HINT[vals.profile]}</span>
           </label>
@@ -138,9 +138,9 @@ function AddParameterModal({ onClose, onCreate }) {
           <p className="text-[10px] text-muted-foreground">Uma série histórica simulada é gerada para o parâmetro, pronta para detecção de deriva.</p>
         </div>
         <div className="flex justify-end gap-2 px-4 py-3 border-t border-border">
-          <button type="button" onClick={onClose} className="px-3.5 py-1.5 rounded-lg text-xs font-medium" style={{ border: '1px solid rgba(255,255,255,0.12)', color: '#94a3b8', background: 'transparent' }}>Cancelar</button>
+          <button type="button" onClick={onClose} className="px-3.5 py-1.5 rounded-lg text-xs font-medium" style={{ border: '1px solid var(--overlay-strong)', color: 'var(--text)', background: 'transparent' }}>Cancelar</button>
           <button type="submit" disabled={busy || !vals.name.trim()} className="px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5"
-            style={{ background: '#059669', color: 'white', opacity: busy || !vals.name.trim() ? 0.5 : 1 }}>
+            style={{ background: 'var(--ok-strong)', color: 'white', opacity: busy || !vals.name.trim() ? 0.5 : 1 }}>
             <Plus size={12} />{busy ? 'Adicionando…' : 'Adicionar parâmetro'}
           </button>
         </div>
@@ -154,7 +154,7 @@ function LinkProcessModal({ processes, onClose, onPick }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(3,6,12,0.78)' }}
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div className="w-full border border-border" role="dialog" aria-modal="true"
-        style={{ maxWidth: 440, maxHeight: 'min(560px, 82vh)', borderRadius: 8, background: '#111520', boxShadow: '0 24px 70px rgba(0,0,0,0.55)' }}>
+        style={{ maxWidth: 440, maxHeight: 'min(560px, 82vh)', borderRadius: 8, background: 'var(--surface-raised)', boxShadow: '0 24px 70px rgba(0,0,0,0.55)' }}>
         <div className="flex items-start justify-between gap-4 px-4 py-3.5 border-b border-border">
           <div>
             <h2 className="text-sm font-semibold text-foreground">Vincular processo</h2>
@@ -166,7 +166,7 @@ function LinkProcessModal({ processes, onClose, onPick }) {
           {processes.length ? processes.map((process) => (
             <button key={process.id} type="button" onClick={() => onPick(process)}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded hover:bg-secondary/60 text-left" style={{ border: 0, background: 'transparent', cursor: 'pointer' }}>
-              <span className="w-8 h-8 rounded flex items-center justify-center shrink-0" style={{ background: 'rgba(40,112,168,0.12)', color: '#4d8fc0' }}><Cpu size={13} /></span>
+              <span className="w-8 h-8 rounded flex items-center justify-center shrink-0" style={{ background: 'rgba(40,112,168,0.12)', color: 'var(--graph-node)' }}><Cpu size={13} /></span>
               <span className="min-w-0 flex-1">
                 <span className="block text-xs font-medium text-foreground truncate">{process.name}</span>
                 <span className="block text-[10px] text-muted-foreground truncate mt-0.5">{process.sector || 'Processo produtivo'}</span>
@@ -187,7 +187,7 @@ function ParameterRow({ parameter, selected, onSelect, onDelete }) {
   return (
     <button type="button" onClick={() => onSelect(parameter.id)}
       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors group"
-      style={{ background: selected ? 'rgba(5,150,105,0.10)' : '#0d1017', border: `1px solid ${selected ? 'rgba(16,185,129,0.35)' : 'rgba(255,255,255,0.07)'}` }}>
+      style={{ background: selected ? 'rgba(5,150,105,0.10)' : 'var(--surface-base)', border: `1px solid ${selected ? 'rgba(16,185,129,0.35)' : 'var(--hairline)'}` }}>
       <i className="rounded-full shrink-0" style={{ width: 8, height: 8, background: meta.color }} />
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
@@ -303,32 +303,32 @@ function AnalysisPanel({ machineId, parameter, savedAnalysis, onSaved }) {
   }, [drift, processedValues, points])
 
   return (
-    <div className="rounded-xl border border-border overflow-hidden" style={{ background: '#111520' }}>
+    <div className="rounded-xl border border-border overflow-hidden" style={{ background: 'var(--surface-raised)' }}>
       <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-border">
-        <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground"><Scan size={13} color="#059669" />Análise preditiva · IPDD + ADWIN</span>
+        <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground"><Scan size={13} color="var(--ok-strong)" />Análise preditiva · IPDD + ADWIN</span>
         <span className="text-[10px] text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>{parameter.name}{parameter.unit ? ` (${parameter.unit})` : ''}</span>
         <div className="flex-1" />
         <div className="flex rounded border border-border overflow-hidden">
           {TREATMENTS.map((option) => (
             <button key={option.id} type="button" onClick={() => setParams((p) => ({ ...p, treatment: option.id }))} className="px-2.5 py-1 text-[10px]"
-              style={{ background: params.treatment === option.id ? 'rgba(5,150,105,0.18)' : '#0d1017', color: params.treatment === option.id ? '#e2e8f0' : '#64748b', border: 0 }}>
+              style={{ background: params.treatment === option.id ? 'rgba(5,150,105,0.18)' : 'var(--surface-base)', color: params.treatment === option.id ? 'var(--text-strong)' : 'var(--muted-foreground)', border: 0 }}>
               {option.label}
             </button>
           ))}
         </div>
         <label className="flex items-center gap-1.5 text-[10px] text-muted-foreground">δ
           <input type="number" step="0.0001" min="0.0001" max="0.9999" value={params.delta} onChange={(e) => setParams((p) => ({ ...p, delta: e.target.value }))}
-            className="px-2 py-1 rounded text-[10px] text-foreground border border-border" style={{ background: '#0d1017', width: 84, fontFamily: "'JetBrains Mono',monospace" }} />
+            className="px-2 py-1 rounded text-[10px] text-foreground border border-border" style={{ background: 'var(--surface-base)', width: 84, fontFamily: "'JetBrains Mono',monospace" }} />
         </label>
-        <button type="button" onClick={run} disabled={running} className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-medium text-white disabled:opacity-60" style={{ background: '#059669' }}>
+        <button type="button" onClick={run} disabled={running} className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-medium text-white disabled:opacity-60" style={{ background: 'var(--ok-strong)' }}>
           {running ? <><RefreshCw size={11} className="animate-spin" />Detectando…</> : <><Play size={11} />Detectar deriva</>}
         </button>
       </div>
 
       {error && (
         <div className="px-4 py-3 border-b border-border flex items-start gap-2" style={{ background: 'rgba(220,38,38,0.06)' }}>
-          <AlertTriangle size={13} color="#f59e0b" className="mt-0.5 shrink-0" />
-          <p className="text-[11px]" style={{ color: '#fca5a5' }}>{error}</p>
+          <AlertTriangle size={13} color="var(--warn)" className="mt-0.5 shrink-0" />
+          <p className="text-[11px]" style={{ color: 'var(--crit-soft)' }}>{error}</p>
         </div>
       )}
 
@@ -337,11 +337,11 @@ function AnalysisPanel({ machineId, parameter, savedAnalysis, onSaved }) {
           {result && (
             <div className="grid grid-cols-3 gap-2 mb-3">
               {[
-                [points.length, 'leituras', Activity, '#10b981'],
-                [drifts.length, 'derivas detectadas', Scan, '#dc2626'],
-                [`${result.method} · δ ${result.delta}`, result.treatment === 'raw' ? 'série crua' : 'série tratada', Gauge, '#64748b'],
+                [points.length, 'leituras', Activity, 'var(--success)'],
+                [drifts.length, 'derivas detectadas', Scan, 'var(--danger)'],
+                [`${result.method} · δ ${result.delta}`, result.treatment === 'raw' ? 'série crua' : 'série tratada', Gauge, 'var(--muted-foreground)'],
               ].map(([value, label, Icon, color]) => (
-                <div key={label} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border" style={{ background: '#0d1017' }}>
+                <div key={label} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border" style={{ background: 'var(--surface-base)' }}>
                   <Icon size={13} color={color} />
                   <div className="min-w-0"><p className="text-xs font-semibold text-foreground truncate">{value}</p><p className="text-[9px] text-muted-foreground truncate">{label}</p></div>
                 </div>
@@ -364,7 +364,7 @@ function AnalysisPanel({ machineId, parameter, savedAnalysis, onSaved }) {
               <>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-xs font-semibold text-foreground">Drift #{drifts.indexOf(drift) + 1}</p>
-                  <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ color: '#fca5a5', background: 'rgba(153,27,27,0.18)' }}>detectado</span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ color: 'var(--crit-soft)', background: 'rgba(153,27,27,0.18)' }}>detectado</span>
                 </div>
                 {[
                   ['Detectado em', fmtDateTime(driftDetail.detectedAt)],
@@ -382,7 +382,7 @@ function AnalysisPanel({ machineId, parameter, savedAnalysis, onSaved }) {
               </>
             ) : (
               <div className="text-center py-6">
-                <Scan size={16} className="mx-auto mb-2" color="#475569" />
+                <Scan size={16} className="mx-auto mb-2" color="var(--text-dim)" />
                 <p className="text-[11px] text-muted-foreground">{drifts.length ? 'Selecione uma deriva no gráfico.' : 'Nenhuma mudança de regime detectada.'}</p>
               </div>
             )}
@@ -479,19 +479,19 @@ export default function MachineDetailPage() {
   const analyses = machine?.analyses ?? []
 
   if (loading) {
-    return <div style={{ background: '#0d1017', minHeight: 'calc(100vh - 52px)', padding: 32 }}><p className="text-sm text-muted-foreground">Carregando…</p></div>
+    return <div style={{ background: 'var(--surface-base)', minHeight: 'calc(100vh - 52px)', padding: 32 }}><p className="text-sm text-muted-foreground">Carregando…</p></div>
   }
   if (error) {
     return (
-      <div style={{ background: '#0d1017', minHeight: 'calc(100vh - 52px)', padding: 32 }}>
+      <div style={{ background: 'var(--surface-base)', minHeight: 'calc(100vh - 52px)', padding: 32 }}>
         <Link to="/dashboard" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 mb-4" style={{ textDecoration: 'none' }}><ArrowLeft size={12} />Projetos</Link>
-        <p className="text-sm" style={{ color: '#fca5a5' }}>{error}</p>
+        <p className="text-sm" style={{ color: 'var(--crit-soft)' }}>{error}</p>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col" style={{ background: '#0d1017', margin: '-2rem calc(-50vw + 50%)', padding: '0 calc(50vw - 50%)', minHeight: 'calc(100vh - 52px)' }}>
+    <div className="flex flex-col" style={{ background: 'var(--surface-base)', margin: '-2rem calc(-50vw + 50%)', padding: '0 calc(50vw - 50%)', minHeight: 'calc(100vh - 52px)' }}>
       {showAddParam && <AddParameterModal onClose={() => setShowAddParam(false)} onCreate={handleAddParameter} />}
       {showLinkProcess && <LinkProcessModal processes={processes.filter((process) => !(machine.processes ?? []).some((linked) => linked.id === process.id))} onClose={() => setShowLinkProcess(false)} onPick={handleLinkProcess} />}
       <input ref={fileInputRef} type="file" accept=".csv,.xes,.log,.txt" onChange={handleUploadLog} style={{ display: 'none' }} />
@@ -500,8 +500,8 @@ export default function MachineDetailPage() {
 
         <div className="flex items-center gap-1 text-xs text-muted-foreground mb-5 flex-wrap">
           <button type="button" onClick={() => navigate('/equipment')} className="hover:text-foreground flex items-center gap-1" style={{ background: 'transparent', border: 0, cursor: 'pointer' }}><ArrowLeft size={12} />Equipamentos</button>
-          <ChevronRight size={12} color="#334155" />
-          {(machine.monitoringId || monitoringId) && <><button type="button" onClick={() => navigate(`/monitoring/${machine.monitoringId || monitoringId}`)} className="hover:text-foreground truncate" style={{ background: 'transparent', border: 0, cursor: 'pointer', maxWidth: 200 }}>{machine.monitoringName || 'Monitoramento'}</button><ChevronRight size={12} color="#334155" /></>}
+          <ChevronRight size={12} color="var(--text-slate)" />
+          {(machine.monitoringId || monitoringId) && <><button type="button" onClick={() => navigate(`/monitoring/${machine.monitoringId || monitoringId}`)} className="hover:text-foreground truncate" style={{ background: 'transparent', border: 0, cursor: 'pointer', maxWidth: 200 }}>{machine.monitoringName || 'Monitoramento'}</button><ChevronRight size={12} color="var(--text-slate)" /></>}
           <span className="text-foreground truncate" style={{ maxWidth: 220 }}>{machine.name}</span>
         </div>
 
@@ -510,16 +510,16 @@ export default function MachineDetailPage() {
         <EquipmentSchedules machine={machine} onOpenAll={() => navigate(`/schedules?equipmentId=${machine.id}`)} />
 
         {/* Hero: comprida/retangular — illustration left, identity + parameters right. */}
-        <div className="rounded-xl border border-border overflow-hidden mb-5" style={{ background: '#111520' }}>
+        <div className="rounded-xl border border-border overflow-hidden mb-5" style={{ background: 'var(--surface-raised)' }}>
           <div className="grid" style={{ gridTemplateColumns: 'minmax(0, 340px) minmax(0, 1fr)' }}>
-            <div className="relative border-r border-border" style={{ background: '#080c14', minHeight: 300 }}>
+            <div className="relative border-r border-border" style={{ background: 'var(--surface-deep)', minHeight: 300 }}>
               <div className="absolute inset-0 p-4 flex flex-col">
                 <div className="flex items-center justify-between">
                   <StatusPill status={status} size="lg" />
-                  {machine.tag && <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8', fontFamily: "'JetBrains Mono',monospace" }}>{machine.tag}</span>}
+                  {machine.tag && <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: 'var(--overlay)', color: 'var(--text)', fontFamily: "'JetBrains Mono',monospace" }}>{machine.tag}</span>}
                 </div>
                 <div className="flex-1 flex items-center justify-center py-4"><div style={{ width: '100%', maxWidth: 300 }}><MachineIllustration kind={machine.kind} /></div></div>
-                <div className="grid grid-cols-2 gap-2 text-[10px]" style={{ color: '#64748b', fontFamily: "'JetBrains Mono',monospace" }}>
+                <div className="grid grid-cols-2 gap-2 text-[10px]" style={{ color: 'var(--muted-foreground)', fontFamily: "'JetBrains Mono',monospace" }}>
                   {machine.manufacturer && <span>Fab. {machine.manufacturer}</span>}
                   {machine.model && <span>Mod. {machine.model}</span>}
                   {machine.location && <span className="col-span-2 truncate">{machine.location}</span>}
@@ -530,11 +530,11 @@ export default function MachineDetailPage() {
             <div className="p-4 sm:p-5 flex flex-col min-w-0">
               <div className="flex items-start justify-between gap-3 mb-1">
                 <div className="min-w-0">
-                  <h1 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: 19, color: 'white', letterSpacing: '-0.01em' }} className="truncate">{machine.name}</h1>
+                  <h1 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: 19, color: 'var(--text-strong)', letterSpacing: '-0.01em' }} className="truncate">{machine.name}</h1>
                   <p className="text-[11px] text-muted-foreground mt-0.5">Saúde do equipamento · {machine.parameters?.length ?? 0} parâmetro{(machine.parameters?.length ?? 0) !== 1 ? 's' : ''} monitorado{(machine.parameters?.length ?? 0) !== 1 ? 's' : ''}</p>
                 </div>
                 <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || !(machine.parameters?.length)} title="Enviar log de leituras"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium shrink-0" style={{ border: '1px solid rgba(255,255,255,0.12)', color: '#e2e8f0', background: 'rgba(255,255,255,0.04)', opacity: uploading || !(machine.parameters?.length) ? 0.5 : 1 }}>
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium shrink-0" style={{ border: '1px solid var(--overlay-strong)', color: 'var(--text-strong)', background: 'var(--overlay-soft)', opacity: uploading || !(machine.parameters?.length) ? 0.5 : 1 }}>
                   {uploading ? <RefreshCw size={12} className="animate-spin" /> : <Upload size={12} />}<span className="hidden sm:inline">Enviar log</span>
                 </button>
               </div>
@@ -542,10 +542,10 @@ export default function MachineDetailPage() {
               {/* Related process — bidirectional navigation. */}
               <div className="flex items-center gap-2 mb-3 flex-wrap">
                 {(machine.processes ?? []).map((process) => <span key={process.id} className="inline-flex items-center gap-1">
-                  <button type="button" onClick={() => navigate(`/processes/${process.id}`)} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px]" style={{ background: 'rgba(40,112,168,0.14)', color: '#4d8fc0', border: '1px solid rgba(40,112,168,0.28)' }}><Cpu size={11} />{process.name}<ChevronRight size={11} /></button>
+                  <button type="button" onClick={() => navigate(`/processes/${process.id}`)} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px]" style={{ background: 'rgba(40,112,168,0.14)', color: 'var(--graph-node)', border: '1px solid rgba(40,112,168,0.28)' }}><Cpu size={11} />{process.name}<ChevronRight size={11} /></button>
                   <button type="button" onClick={() => handleUnlinkProcess(process.id)} className="text-muted-foreground hover:text-foreground" title="Desvincular processo" style={{ background: 'transparent', border: 0, cursor: 'pointer' }}><Unlink size={12} /></button>
                 </span>)}
-                <button type="button" onClick={() => setShowLinkProcess(true)} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] text-muted-foreground hover:text-foreground" style={{ border: '1px dashed rgba(255,255,255,0.15)', background: 'transparent' }}><Link2 size={11} />Vincular processo</button>
+                <button type="button" onClick={() => setShowLinkProcess(true)} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] text-muted-foreground hover:text-foreground" style={{ border: '1px dashed var(--hairline-strong)', background: 'transparent' }}><Link2 size={11} />Vincular processo</button>
               </div>
 
               <div className="flex items-center justify-between mb-2">
@@ -562,8 +562,8 @@ export default function MachineDetailPage() {
                     onSelect={(id) => { setSelectedParam(id); setOpenAnalysis(null); setSearchParams({}) }}
                     onDelete={handleDeleteParameter} />
                 )) : (
-                  <div className="rounded-lg border border-dashed border-border p-5 text-center" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
-                    <Gauge size={18} className="mx-auto mb-2" color="#475569" />
+                  <div className="rounded-lg border border-dashed border-border p-5 text-center" style={{ borderColor: 'var(--overlay-strong)' }}>
+                    <Gauge size={18} className="mx-auto mb-2" color="var(--text-dim)" />
                     <p className="text-[11px] text-muted-foreground">Nenhum parâmetro ainda. Adicione um sinal de saúde para começar a monitorar.</p>
                   </div>
                 )}
@@ -582,9 +582,9 @@ export default function MachineDetailPage() {
 
         {/* Linked analyses — each ADWIN run is a separate artifact tied to the machine. */}
         {analyses.length > 0 && (
-          <div className="rounded-xl border border-border overflow-hidden" style={{ background: '#111520' }}>
+          <div className="rounded-xl border border-border overflow-hidden" style={{ background: 'var(--surface-raised)' }}>
             <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-              <BarChart3 size={13} color="#6366f1" /><p className="text-xs font-semibold text-foreground">Análises da máquina</p>
+              <BarChart3 size={13} color="var(--indigo)" /><p className="text-xs font-semibold text-foreground">Análises da máquina</p>
               <span className="text-[10px] text-muted-foreground">{analyses.length}</span>
             </div>
             <div>
@@ -625,12 +625,12 @@ function PredictionSummary({ machine }) {
 }
 
 function Metric({ title, value, hint }) {
-  return <div className="rounded-xl border border-border p-4" style={{ background: '#111520' }}><p className="text-[10px] uppercase text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>{title}</p><p className="text-base font-bold text-foreground mt-2">{value}</p><p className="text-[10px] text-muted-foreground mt-1">{hint}</p></div>
+  return <div className="rounded-xl border border-border p-4" style={{ background: 'var(--surface-raised)' }}><p className="text-[10px] uppercase text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>{title}</p><p className="text-base font-bold text-foreground mt-2">{value}</p><p className="text-[10px] text-muted-foreground mt-1">{hint}</p></div>
 }
 
 function EquipmentSchedules({ machine, onOpenAll }) {
   const rows = machine.schedules ?? []
-  return <section className="rounded-xl border border-border overflow-hidden mb-5" style={{ background: '#111520' }}><div className="flex items-center justify-between px-4 py-3 border-b border-border"><div><p className="text-xs font-semibold text-foreground">Agendamentos do equipamento</p><p className="text-[10px] text-muted-foreground mt-0.5">Manutenções planejadas e ocorrências</p></div><button onClick={onOpenAll} className="text-[11px] text-emerald-400">Ver agenda</button></div>{rows.length ? rows.slice(0, 3).map((row) => <div key={row.id} className="flex items-center gap-3 px-4 py-2.5 border-b border-border last:border-0"><span className="w-2 h-2 rounded-full" style={{ background: row.status === 'completed' ? '#10b981' : row.status === 'in_progress' ? '#f59e0b' : '#4d8fc0' }} /><span className="min-w-0 flex-1 text-xs text-foreground truncate">{row.title || row.recommendation || 'Manutenção preventiva'}</span><span className="text-[10px] text-muted-foreground">{row.scheduledStart ? new Date(row.scheduledStart).toLocaleDateString('pt-BR') : '—'}</span></div>) : <p className="px-4 py-5 text-center text-[11px] text-muted-foreground">Nenhuma manutenção agendada.</p>}</section>
+  return <section className="rounded-xl border border-border overflow-hidden mb-5" style={{ background: 'var(--surface-raised)' }}><div className="flex items-center justify-between px-4 py-3 border-b border-border"><div><p className="text-xs font-semibold text-foreground">Agendamentos do equipamento</p><p className="text-[10px] text-muted-foreground mt-0.5">Manutenções planejadas e ocorrências</p></div><button onClick={onOpenAll} className="text-[11px] text-emerald-400">Ver agenda</button></div>{rows.length ? rows.slice(0, 3).map((row) => <div key={row.id} className="flex items-center gap-3 px-4 py-2.5 border-b border-border last:border-0"><span className="w-2 h-2 rounded-full" style={{ background: row.status === 'completed' ? 'var(--success)' : row.status === 'in_progress' ? 'var(--warn)' : 'var(--graph-node)' }} /><span className="min-w-0 flex-1 text-xs text-foreground truncate">{row.title || row.recommendation || 'Manutenção preventiva'}</span><span className="text-[10px] text-muted-foreground">{row.scheduledStart ? new Date(row.scheduledStart).toLocaleDateString('pt-BR') : '—'}</span></div>) : <p className="px-4 py-5 text-center text-[11px] text-muted-foreground">Nenhuma manutenção agendada.</p>}</section>
 }
 
 function worstStatus(parameters) {

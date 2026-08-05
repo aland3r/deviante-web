@@ -40,22 +40,22 @@ function ProcessThumbnail() {
   return (
     <svg width="100%" height="100%" viewBox="0 0 220 130" fill="none" preserveAspectRatio="xMidYMid meet">
       {[20, 60, 100, 140, 180].map((x) => [30, 70, 110].map((y) => (
-        <circle key={`${x}-${y}`} cx={x} cy={y} r={1} fill="rgba(255,255,255,0.06)" />
+        <circle key={`${x}-${y}`} cx={x} cy={y} r={1} fill="var(--overlay)" />
       )))}
-      <path d="M 55 30 C 90 30 90 65 110 65" stroke="#2870a8" strokeWidth="2.5" fill="none" opacity="0.9" />
-      <path d="M 110 65 C 130 65 130 30 165 30" stroke="#4d8fc0" strokeWidth="1.8" fill="none" opacity="0.7" />
-      <path d="M 110 65 C 130 65 130 100 165 100" stroke="#2870a8" strokeWidth="3.2" fill="none" opacity="0.9" />
-      <path d="M 165 100 C 185 100 200 65 200 65" stroke="#4d8fc0" strokeWidth="1.4" fill="none" strokeDasharray="4 3" opacity="0.5" />
-      <polygon points="108,61 116,65 108,69" fill="#2870a8" opacity="0.8" />
-      <polygon points="162,27 170,30 162,33" fill="#4d8fc0" opacity="0.7" />
-      <polygon points="162,97 170,100 162,103" fill="#2870a8" opacity="0.9" />
-      <circle cx="40" cy="30" r="12" fill="#0d1017" stroke="#2870a8" strokeWidth="1.5" />
-      <circle cx="40" cy="30" r="5" fill="#2870a8" />
-      <rect x="100" y="55" width="20" height="20" rx="5" fill="#111520" stroke="#4d8fc0" strokeWidth="1.2" />
-      <rect x="155" y="20" width="24" height="20" rx="5" fill="#111520" stroke="#3a7db8" strokeWidth="1.2" />
-      <rect x="155" y="90" width="24" height="20" rx="5" fill="#111520" stroke="#2870a8" strokeWidth="1.5" />
-      <circle cx="205" cy="65" r="10" fill="#0d1017" stroke="#4d8fc0" strokeWidth="1.2" />
-      <rect x="200" y="60" width="10" height="10" rx="2" fill="#4d8fc0" opacity="0.6" />
+      <path d="M 55 30 C 90 30 90 65 110 65" stroke="var(--graph-node-strong)" strokeWidth="2.5" fill="none" opacity="0.9" />
+      <path d="M 110 65 C 130 65 130 30 165 30" stroke="var(--graph-node)" strokeWidth="1.8" fill="none" opacity="0.7" />
+      <path d="M 110 65 C 130 65 130 100 165 100" stroke="var(--graph-node-strong)" strokeWidth="3.2" fill="none" opacity="0.9" />
+      <path d="M 165 100 C 185 100 200 65 200 65" stroke="var(--graph-node)" strokeWidth="1.4" fill="none" strokeDasharray="4 3" opacity="0.5" />
+      <polygon points="108,61 116,65 108,69" fill="var(--graph-node-strong)" opacity="0.8" />
+      <polygon points="162,27 170,30 162,33" fill="var(--graph-node)" opacity="0.7" />
+      <polygon points="162,97 170,100 162,103" fill="var(--graph-node-strong)" opacity="0.9" />
+      <circle cx="40" cy="30" r="12" fill="var(--surface-base)" stroke="var(--graph-node-strong)" strokeWidth="1.5" />
+      <circle cx="40" cy="30" r="5" fill="var(--graph-node-strong)" />
+      <rect x="100" y="55" width="20" height="20" rx="5" fill="var(--surface-raised)" stroke="var(--graph-node)" strokeWidth="1.2" />
+      <rect x="155" y="20" width="24" height="20" rx="5" fill="var(--surface-raised)" stroke="#3a7db8" strokeWidth="1.2" />
+      <rect x="155" y="90" width="24" height="20" rx="5" fill="var(--surface-raised)" stroke="var(--graph-node-strong)" strokeWidth="1.5" />
+      <circle cx="205" cy="65" r="10" fill="var(--surface-base)" stroke="var(--graph-node)" strokeWidth="1.2" />
+      <rect x="200" y="60" width="10" height="10" rx="2" fill="var(--graph-node)" opacity="0.6" />
     </svg>
   )
 }
@@ -65,19 +65,19 @@ function MonitoramentoThumbnail() {
   return (
     <svg width="100%" height="100%" viewBox="0 0 220 130" fill="none" preserveAspectRatio="xMidYMid meet">
       {[35, 65, 95].map((y) => (
-        <line key={y} x1="20" y1={y} x2="200" y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+        <line key={y} x1="20" y1={y} x2="200" y2={y} stroke="var(--overlay)" strokeWidth="1" />
       ))}
-      <line x1="20" y1="50" x2="200" y2="50" stroke="#f59e0b" strokeWidth="1" strokeDasharray="4 3" opacity="0.5" />
+      <line x1="20" y1="50" x2="200" y2="50" stroke="var(--warn)" strokeWidth="1" strokeDasharray="4 3" opacity="0.5" />
       <path d="M 20 92 L 45 90 L 70 91 L 95 88 L 120 86 L 135 70 L 150 52 L 170 44 L 200 40"
-        stroke="#10b981" strokeWidth="2" fill="none" opacity="0.9" />
+        stroke="var(--success)" strokeWidth="2" fill="none" opacity="0.9" />
       {[[45, 90], [95, 88], [135, 70], [170, 44]].map(([cx, cy], i) => (
-        <circle key={i} cx={cx} cy={cy} r="2.6" fill="#10b981" opacity="0.85" />
+        <circle key={i} cx={cx} cy={cy} r="2.6" fill="var(--success)" opacity="0.85" />
       ))}
-      <circle cx="185" cy="42" r="4" fill="#dc2626" />
-      <circle cx="185" cy="42" r="8" fill="none" stroke="#dc2626" strokeWidth="1" opacity="0.4" />
-      <rect x="28" y="104" width="14" height="12" rx="2" fill="#111520" stroke="#4d8fc0" strokeWidth="1.2" />
-      <rect x="52" y="104" width="14" height="12" rx="2" fill="#111520" stroke="#2870a8" strokeWidth="1.2" />
-      <circle cx="80" cy="110" r="6" fill="#0d1017" stroke="#4d8fc0" strokeWidth="1.2" />
+      <circle cx="185" cy="42" r="4" fill="var(--danger)" />
+      <circle cx="185" cy="42" r="8" fill="none" stroke="var(--danger)" strokeWidth="1" opacity="0.4" />
+      <rect x="28" y="104" width="14" height="12" rx="2" fill="var(--surface-raised)" stroke="var(--graph-node)" strokeWidth="1.2" />
+      <rect x="52" y="104" width="14" height="12" rx="2" fill="var(--surface-raised)" stroke="var(--graph-node-strong)" strokeWidth="1.2" />
+      <circle cx="80" cy="110" r="6" fill="var(--surface-base)" stroke="var(--graph-node)" strokeWidth="1.2" />
     </svg>
   )
 }
@@ -87,22 +87,22 @@ function AnaliseThumbnail() {
   return (
     <svg width="100%" height="100%" viewBox="0 0 220 130" fill="none" preserveAspectRatio="xMidYMid meet">
       {[40, 70, 100].map((y) => (
-        <line key={y} x1="30" y1={y} x2="200" y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+        <line key={y} x1="30" y1={y} x2="200" y2={y} stroke="var(--overlay)" strokeWidth="1" />
       ))}
-      <rect x="42" y="72" width="22" height="38" rx="3" fill="#2870a8" opacity="0.75" />
-      <rect x="76" y="52" width="22" height="58" rx="3" fill="#4d8fc0" opacity="0.85" />
-      <rect x="110" y="60" width="22" height="50" rx="3" fill="#2870a8" opacity="0.75" />
-      <rect x="144" y="38" width="22" height="72" rx="3" fill="#4d8fc0" opacity="0.90" />
-      <rect x="178" y="55" width="22" height="55" rx="3" fill="#2870a8" opacity="0.70" />
+      <rect x="42" y="72" width="22" height="38" rx="3" fill="var(--graph-node-strong)" opacity="0.75" />
+      <rect x="76" y="52" width="22" height="58" rx="3" fill="var(--graph-node)" opacity="0.85" />
+      <rect x="110" y="60" width="22" height="50" rx="3" fill="var(--graph-node-strong)" opacity="0.75" />
+      <rect x="144" y="38" width="22" height="72" rx="3" fill="var(--graph-node)" opacity="0.90" />
+      <rect x="178" y="55" width="22" height="55" rx="3" fill="var(--graph-node-strong)" opacity="0.70" />
       <path d="M 30 85 L 53 80 L 87 68 L 121 72 L 155 52 L 189 65 L 200 60"
-        stroke="#c8e2f5" strokeWidth="2" fill="none" opacity="0.9" />
+        stroke="var(--graph-node-soft)" strokeWidth="2" fill="none" opacity="0.9" />
       {[[53, 80], [87, 68], [121, 72], [155, 52], [189, 65]].map(([cx, cy], i) => (
-        <circle key={i} cx={cx} cy={cy} r="3.5" fill="#c8e2f5" opacity="0.85" />
+        <circle key={i} cx={cx} cy={cy} r="3.5" fill="var(--graph-node-soft)" opacity="0.85" />
       ))}
-      <line x1="30" y1="110" x2="200" y2="110" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+      <line x1="30" y1="110" x2="200" y2="110" stroke="var(--overlay-strong)" strokeWidth="1" />
       {['Jan', 'Mar', 'Mai', 'Jul', 'Set'].map((label, i) => (
         <text key={label} x={42 + i * 34 + 11} y="122" textAnchor="middle"
-          fontSize="8" fill="rgba(255,255,255,0.25)" fontFamily="'JetBrains Mono',monospace">{label}</text>
+          fontSize="8" fill="var(--hairline-strong)" fontFamily="'JetBrains Mono',monospace">{label}</text>
       ))}
     </svg>
   )
@@ -121,19 +121,19 @@ function AnalysisBarsIcon({ size = 8, fill = 'white' }) {
 const ACTION_APPEARANCE = {
   processo: {
     icon: Activity,
-    accent: '#2870a8',
+    accent: 'var(--graph-node-strong)',
     surface: 'rgba(40,112,168,0.12)',
     border: 'rgba(77,143,192,0.30)',
   },
   analise: {
     icon: BarChart3,
-    accent: '#b45309',
+    accent: 'var(--warn-strong)',
     surface: 'rgba(180,83,9,0.11)',
     border: 'rgba(245,158,11,0.27)',
   },
   monitoramento: {
     icon: RadioTower,
-    accent: '#059669',
+    accent: 'var(--ok-strong)',
     surface: 'rgba(5,150,105,0.10)',
     border: 'rgba(16,185,129,0.24)',
   },
@@ -159,8 +159,8 @@ function NewProjectButton({ type, label, disabled, busy, onClick }) {
         padding: '0 14px',
         borderRadius: 8,
         border: `1px solid ${appearance.border}`,
-        background: '#111520',
-        color: '#e2e8f0',
+        background: 'var(--surface-raised)',
+        color: 'var(--text-strong)',
         cursor: disabled || busy ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.48 : 1,
         fontFamily: "'Inter',sans-serif",
@@ -177,7 +177,7 @@ function NewProjectButton({ type, label, disabled, busy, onClick }) {
       onMouseLeave={(event) => {
         if (disabled || busy) return
         event.currentTarget.style.borderColor = appearance.border
-        event.currentTarget.style.background = '#111520'
+        event.currentTarget.style.background = 'var(--surface-raised)'
       }}
     >
       <Icon size={15} color={appearance.accent} style={{ flexShrink: 0 }} />
@@ -195,7 +195,7 @@ function AnalysisProcessPicker({ processes, onClose, onPick }) {
       onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
       <div className="w-full overflow-hidden border border-border"
         role="dialog" aria-modal="true" aria-labelledby="analysis-picker-title"
-        style={{ maxWidth: 460, maxHeight: 'min(620px, 84vh)', borderRadius: 8, background: '#111520', boxShadow: '0 24px 70px rgba(0,0,0,0.55)' }}>
+        style={{ maxWidth: 460, maxHeight: 'min(620px, 84vh)', borderRadius: 8, background: 'var(--surface-raised)', boxShadow: '0 24px 70px rgba(0,0,0,0.55)' }}>
         <div className="flex items-start justify-between gap-4 px-4 py-3.5 border-b border-border">
           <div>
             <h2 id="analysis-picker-title" className="text-sm font-semibold text-foreground">Nova análise</h2>
@@ -216,7 +216,7 @@ function AnalysisProcessPicker({ processes, onClose, onPick }) {
               style={{ border: 0, background: 'transparent', cursor: 'pointer' }}
             >
               <span className="w-8 h-8 rounded flex items-center justify-center shrink-0"
-                style={{ background: 'rgba(180,83,9,0.12)', color: '#f59e0b' }}>
+                style={{ background: 'rgba(180,83,9,0.12)', color: 'var(--warn)' }}>
                 <BarChart3 size={13} />
               </span>
               <span className="min-w-0 flex-1">
@@ -246,7 +246,7 @@ function ProjectCard({ item }) {
     : isAnalysis
       ? `/processes/${item.processId}?view=analysis&analysisId=${item.id}`
       : `/processes/${item.id}`
-  const accent = isMonitoring ? '#059669' : isAnalysis ? '#6366f1' : '#2870a8'
+  const accent = isMonitoring ? 'var(--ok-strong)' : isAnalysis ? 'var(--indigo)' : 'var(--graph-node-strong)'
   const hoverBorder = isMonitoring ? 'rgba(16,185,129,0.35)' : 'rgba(255,255,255,0.16)'
   const subtitle = isMonitoring
     ? `${item.machineCount ?? 0} máquina${(item.machineCount ?? 0) !== 1 ? 's' : ''}`
@@ -259,25 +259,25 @@ function ProjectCard({ item }) {
   return (
     <Link
       to={to}
-      style={{ display: 'block', background: '#0f141e', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8, overflow: 'hidden', textDecoration: 'none', transition: 'border-color 0.15s' }}
+      style={{ display: 'block', background: 'var(--surface-panel)', border: '1px solid var(--hairline)', borderRadius: 8, overflow: 'hidden', textDecoration: 'none', transition: 'border-color 0.15s' }}
       onMouseEnter={(e) => { e.currentTarget.style.borderColor = hoverBorder }}
-      onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)' }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--hairline)' }}
     >
-      <div style={{ height: 108, background: '#080c14', overflow: 'hidden', position: 'relative' }}>
+      <div style={{ height: 108, background: 'var(--surface-deep)', overflow: 'hidden', position: 'relative' }}>
         {isMonitoring ? <MonitoramentoThumbnail /> : isAnalysis ? <AnaliseThumbnail /> : <ProcessThumbnail />}
       </div>
-      <div style={{ padding: '10px 14px 12px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      <div style={{ padding: '10px 14px 12px', borderTop: '1px solid var(--overlay)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
           <div style={{ width: 14, height: 14, borderRadius: 3, background: accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             {isMonitoring ? <RadioTower size={8} color="white" /> : isAnalysis ? <AnalysisBarsIcon size={8} /> : <Activity size={8} color="white" />}
           </div>
-          <span style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 13, color: 'white', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
+          <span style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 13, color: 'var(--text-strong)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
         </div>
-        <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#475569', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'var(--text-dim)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {subtitle}
         </span>
         {isAnalysis ? (
-          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#334155', display: 'block', marginTop: 2 }}>
+          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'var(--text-slate)', display: 'block', marginTop: 2 }}>
             Editado {timeAgo(item.updatedAt)}
             {item.driftCount != null ? ` · ${item.driftCount} drift${item.driftCount !== 1 ? 's' : ''}` : ''}
           </span>
@@ -295,7 +295,7 @@ function ProjectListItem({ item }) {
     : isAnalysis
       ? `/processes/${item.processId}?view=analysis&analysisId=${item.id}`
       : `/processes/${item.id}`
-  const accent = isMonitoring ? '#10b981' : isAnalysis ? '#6366f1' : '#4d8fc0'
+  const accent = isMonitoring ? 'var(--success)' : isAnalysis ? 'var(--indigo)' : 'var(--graph-node)'
   const meta = isMonitoring
     ? `${item.machineCount ?? 0} máquina${(item.machineCount ?? 0) !== 1 ? 's' : ''} · editado ${timeAgo(item.updatedAt)}`
     : isAnalysis
@@ -306,11 +306,11 @@ function ProjectListItem({ item }) {
     <Link to={to}
       className="flex items-center gap-3 px-3 py-3 border-b border-border last:border-0 hover:bg-secondary/40"
       style={{ textDecoration: 'none' }}>
-      <div className="w-8 h-8 rounded flex items-center justify-center shrink-0" style={{ background: '#16202e' }}>
+      <div className="w-8 h-8 rounded flex items-center justify-center shrink-0" style={{ background: 'var(--surface-muted-2)' }}>
         {isMonitoring
           ? <RadioTower size={13} color={accent} />
           : isAnalysis
-            ? <AnalysisBarsIcon size={12} fill="#6366f1" />
+            ? <AnalysisBarsIcon size={12} fill="var(--indigo)" />
             : <Activity size={13} color={accent} />}
       </div>
       <div className="min-w-0 flex-1">
@@ -447,7 +447,7 @@ export default function DashboardPage() {
   })()
 
   return (
-    <div className="flex flex-col" style={{ background: '#0d1017', margin: '-2rem calc(-50vw + 50%)', padding: '0 calc(50vw - 50%)', minHeight: 'calc(100vh - 52px)' }}>
+    <div className="flex flex-col" style={{ background: 'var(--surface-base)', margin: '-2rem calc(-50vw + 50%)', padding: '0 calc(50vw - 50%)', minHeight: 'calc(100vh - 52px)' }}>
       {analysisPickerOpen && (
         <AnalysisProcessPicker
           processes={processes}
@@ -460,13 +460,13 @@ export default function DashboardPage() {
 
         <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
           <div className="w-full sm:max-w-[360px]" style={{ position: 'relative' }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--hairline-strong)" strokeWidth="2" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }}>
               <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
             <input
               value={search} onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar processos e análises…"
-              style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 8, height: 34, padding: '4px 12px 4px 32px', color: 'white', fontFamily: "'Inter',sans-serif", fontSize: 12, outline: 'none', boxSizing: 'border-box' }}
+              style={{ width: '100%', background: 'var(--overlay)', border: '1px solid var(--hairline-strong)', borderRadius: 8, height: 34, padding: '4px 12px 4px 32px', color: 'var(--text-strong)', fontFamily: "'Inter',sans-serif", fontSize: 12, outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
 
@@ -502,13 +502,13 @@ export default function DashboardPage() {
         </div>
 
         {error ? (
-          <div className="rounded border border-border bg-[#111520] p-4 text-sm text-red-300 mb-4">
+          <div className="rounded border border-border bg-[var(--surface-raised)] p-4 text-sm text-red-300 mb-4">
             {error}
           </div>
         ) : null}
 
         {loading ? (
-          <div className="rounded border border-border bg-[#111520] p-8 text-sm text-muted-foreground text-center">
+          <div className="rounded border border-border bg-[var(--surface-raised)] p-8 text-sm text-muted-foreground text-center">
             Carregando painéis…
           </div>
         ) : visible.length ? (
@@ -518,7 +518,7 @@ export default function DashboardPage() {
             ))}
           </div>
         ) : (
-          <div className="rounded border border-border bg-[#111520] p-8 text-sm text-muted-foreground text-center">
+          <div className="rounded border border-border bg-[var(--surface-raised)] p-8 text-sm text-muted-foreground text-center">
             Nenhum resultado encontrado.
           </div>
         )}

@@ -95,17 +95,17 @@ function TraceList({ points, driftIndexes, outliers, excluded, selectedTrace, on
             className="group w-full flex items-center gap-2 px-3 py-1.5 text-left cursor-pointer transition-colors hover:bg-white/[0.03]"
             style={{
               background: isSelected ? 'rgba(40,112,168,0.18)' : undefined,
-              color: isSelected ? '#e2e8f0' : '#64748b',
+              color: isSelected ? 'var(--text-strong)' : 'var(--muted-foreground)',
               opacity: isDismissed ? 0.4 : 1,
             }}>
             <span className="w-1.5 h-1.5 rounded-full shrink-0"
-              style={{ background: isDismissed ? '#475569' : isDrift ? '#dc2626' : isOutlier ? '#f59e0b' : '#10b981' }} />
+              style={{ background: isDismissed ? 'var(--text-dim)' : isDrift ? 'var(--danger)' : isOutlier ? 'var(--warn)' : 'var(--success)' }} />
             <span className="flex-1 min-w-0">
               <span className={`block ${T.caption} truncate`}
                 style={{ fontFamily: MONO, textDecoration: isDismissed ? 'line-through' : 'none' }}>
                 {point.caseId}
               </span>
-              <span className={`block ${T.caption} truncate`} style={{ color: '#475569', fontFamily: MONO }}>
+              <span className={`block ${T.caption} truncate`} style={{ color: 'var(--text-dim)', fontFamily: MONO }}>
                 {formatDate(point.startedAt)}
               </span>
             </span>
@@ -116,7 +116,7 @@ function TraceList({ points, driftIndexes, outliers, excluded, selectedTrace, on
               title={isDismissed ? 'Reincluir trace na próxima análise' : 'Desconsiderar trace na próxima análise'}
               onClick={(event) => { event.stopPropagation(); onToggleExclude(point.traceId) }}
               className={`shrink-0 w-4 h-4 flex items-center justify-center transition-opacity ${isDismissed ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
-              style={{ color: isDismissed ? '#334155' : '#4d8fc0' }}>
+              style={{ color: isDismissed ? 'var(--text-slate)' : 'var(--graph-node)' }}>
               <CircleDot size={12} strokeWidth={isDismissed ? 1.5 : 2} />
             </button>
           </div>
@@ -145,7 +145,7 @@ function DriftDetailPopover({ drift, number, leftPct }) {
       }}>
       <div className="flex items-center justify-between mb-2">
         <p className={`${T.body} font-semibold text-foreground`}>Desvio {number}</p>
-        <span className={T.caption} style={{ color: '#fca5a5', background: 'rgba(153,27,27,0.18)', padding: '1px 6px', borderRadius: 4 }}>detectado</span>
+        <span className={T.caption} style={{ color: 'var(--crit-soft)', background: 'rgba(153,27,27,0.18)', padding: '1px 6px', borderRadius: 4 }}>detectado</span>
       </div>
       {rows.map(([label, value]) => (
         <div key={label} className="flex justify-between gap-3 py-1">
@@ -220,11 +220,11 @@ function DriftChart({ title, points, processedValues, drifts, outliers, excluded
         <svg viewBox={`0 0 ${width} ${height}`} className="w-full"
           style={{ height: '100%', minHeight: 280, cursor: 'crosshair' }}
           onClick={selectFromPointer} role="img" aria-label="Gráfico temporal de detecção de desvios">
-          <rect width={width} height={height} fill="#0d1119" rx="4" />
+          <rect width={width} height={height} fill="var(--surface-base)" rx="4" />
           {yTicks.map((tick) => (
             <g key={tick}>
-              <line x1={pad.left} x2={width - pad.right} y1={y(tick)} y2={y(tick)} stroke="rgba(255,255,255,0.06)" />
-              <text x={pad.left - 10} y={y(tick) + 3} textAnchor="end" fill="#475569" fontSize="10">{formatSeconds(tick)}</text>
+              <line x1={pad.left} x2={width - pad.right} y1={y(tick)} y2={y(tick)} stroke="var(--overlay)" />
+              <text x={pad.left - 10} y={y(tick) + 3} textAnchor="end" fill="var(--text-dim)" fontSize="10">{formatSeconds(tick)}</text>
             </g>
           ))}
           {/* Faint interval band for the emphasized drift only. */}
@@ -251,25 +251,25 @@ function DriftChart({ title, points, processedValues, drifts, outliers, excluded
                 style={{ cursor: 'pointer' }}>
                 <rect x={dx - 6} y={pad.top - 12} width={12} height={innerH + 12} fill="transparent" />
                 {!isEmphasized && (
-                  <line x1={dx} x2={dx} y1={pad.top} y2={height - pad.bottom} stroke="#dc2626" strokeWidth={1} opacity={0.2} />
+                  <line x1={dx} x2={dx} y1={pad.top} y2={height - pad.bottom} stroke="var(--danger)" strokeWidth={1} opacity={0.2} />
                 )}
                 <path d={`M ${dx - 4} ${pad.top - 9} L ${dx + 4} ${pad.top - 9} L ${dx} ${pad.top - 1} Z`}
-                  fill={isEmphasized ? '#ef4444' : 'rgba(220,38,38,0.5)'} />
+                  fill={isEmphasized ? 'var(--crit-2)' : 'rgba(220,38,38,0.5)'} />
               </g>
             )
           })}
-          <polyline points={linePoints} fill="none" stroke="#64748b" strokeWidth="1" opacity="0.42" />
-          <polyline points={processedLinePoints} fill="none" stroke="#4a90c2" strokeWidth="1.8" opacity="0.95" />
+          <polyline points={linePoints} fill="none" stroke="var(--muted-foreground)" strokeWidth="1" opacity="0.42" />
+          <polyline points={processedLinePoints} fill="none" stroke="var(--graph-node-edge)" strokeWidth="1.8" opacity="0.95" />
           {points.map((point, index) => outliers.has(point.index) && !excluded.has(point.traceId) ? (
-            <circle key={point.traceId} cx={x(index)} cy={y(point.durationSeconds)} r="2.4" fill="#f59e0b" opacity="0.72" />
+            <circle key={point.traceId} cx={x(index)} cy={y(point.durationSeconds)} r="2.4" fill="var(--warn)" opacity="0.72" />
           ) : null)}
           {selectedTrace != null && (() => {
             const index = points.findIndex((point) => point.index === selectedTrace)
             const point = points[index]
             return point ? (
               <g>
-                <line x1={x(index)} x2={x(index)} y1={pad.top} y2={height - pad.bottom} stroke="#e2e8f0" opacity="0.45" />
-                <circle cx={x(index)} cy={y(point.durationSeconds)} r="5" fill="#e2e8f0" stroke="#2870a8" strokeWidth="2" />
+                <line x1={x(index)} x2={x(index)} y1={pad.top} y2={height - pad.bottom} stroke="var(--text-strong)" opacity="0.45" />
+                <circle cx={x(index)} cy={y(point.durationSeconds)} r="5" fill="var(--text-strong)" stroke="var(--graph-node-strong)" strokeWidth="2" />
               </g>
             ) : null
           })()}
@@ -290,17 +290,17 @@ function DriftChart({ title, points, processedValues, drifts, outliers, excluded
                 {startX != null && (
                   <>
                     <line x1={startX} x2={startX} y1={pad.top} y2={height - pad.bottom}
-                      stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="3 4" />
+                      stroke="var(--warn)" strokeWidth={1.5} strokeDasharray="3 4" />
                     <g transform={`translate(${startLabelX},${pad.top + 20})`}>
-                      <rect x={-58} y={0} width={116} height={15} rx={3} fill="#f59e0b" />
+                      <rect x={-58} y={0} width={116} height={15} rx={3} fill="var(--warn)" />
                       <text x={0} y={11} textAnchor="middle" fill="#3b2708" fontSize="9.5" fontWeight="600"
                         fontFamily="'JetBrains Mono',monospace">Início da anomalia</text>
                     </g>
                   </>
                 )}
-                <line x1={dx} x2={dx} y1={pad.top} y2={height - pad.bottom} stroke="#ef4444" strokeWidth={2} />
+                <line x1={dx} x2={dx} y1={pad.top} y2={height - pad.bottom} stroke="var(--crit-2)" strokeWidth={2} />
                 <g transform={`translate(${driftLabelX},${pad.top + 3})`}>
-                  <rect x={-33} y={0} width={66} height={15} rx={3} fill="#dc2626" />
+                  <rect x={-33} y={0} width={66} height={15} rx={3} fill="var(--danger)" />
                   <text x={0} y={11} textAnchor="middle" fill="#fff" fontSize="9.5" fontWeight="600"
                     fontFamily="'JetBrains Mono',monospace">Desvio {number}</text>
                 </g>
@@ -308,14 +308,106 @@ function DriftChart({ title, points, processedValues, drifts, outliers, excluded
             )
           })()}
           {xTicks.map((tick) => (
-            <text key={tick} x={x(tick)} y={height - 20} textAnchor="middle" fill="#475569" fontSize="10">
+            <text key={tick} x={x(tick)} y={height - 20} textAnchor="middle" fill="var(--text-dim)" fontSize="10">
               {points[tick]?.startedAt ? formatDate(points[tick].startedAt) : points[tick]?.index}
             </text>
           ))}
-          <text x={width / 2} y={height - 4} textAnchor="middle" fill="#64748b" fontSize="10">
+          <text x={width / 2} y={height - 4} textAnchor="middle" fill="var(--muted-foreground)" fontSize="10">
             {points.some((point) => point.startedAt) ? 'Início da execução' : 'Traces do log'}
           </text>
         </svg>
+      </div>
+    </div>
+  )
+}
+
+// ─── δ knob — ADWIN's sensitivity ────────────────────────────────────────────
+// δ is a confidence level, not a linear dial: the useful values span orders of
+// magnitude around the 0.002 default, so the knob maps its travel to δ on a LOG
+// scale. Turning it up raises δ, letting ADWIN split on weaker evidence — higher
+// sensitivity, more and earlier detections. The glyph sits in the centre; the
+// arc and the reading under it are the legend.
+const DELTA_MIN = 0.0001
+const DELTA_MAX = 0.5
+const clamp01 = (fraction) => Math.min(1, Math.max(0, fraction))
+const deltaToFraction = (delta) => {
+  const value = Math.min(DELTA_MAX, Math.max(DELTA_MIN, Number(delta) || DELTA_MIN))
+  return clamp01(Math.log(value / DELTA_MIN) / Math.log(DELTA_MAX / DELTA_MIN))
+}
+const fractionToDelta = (fraction) => DELTA_MIN * (DELTA_MAX / DELTA_MIN) ** clamp01(fraction)
+// A short, stable reading: two significant figures, no floating-point noise.
+const formatDelta = (delta) => {
+  const value = Number(delta)
+  return Number.isFinite(value) ? String(Number(value.toPrecision(2))) : '—'
+}
+
+// Gauge geometry — a 270° arc with the gap at the bottom, drawn as a polyline so
+// there is no SVG large-arc/sweep-flag maths to get wrong.
+const KNOB = { cx: 46, cy: 46, r: 34 }
+const knobPoint = (fraction) => {
+  const rad = ((135 + clamp01(fraction) * 270) * Math.PI) / 180
+  return [KNOB.cx + KNOB.r * Math.cos(rad), KNOB.cy + KNOB.r * Math.sin(rad)]
+}
+const knobArc = (from, to, steps = 48) =>
+  Array.from({ length: steps + 1 }, (_, i) => {
+    const [x, y] = knobPoint(from + (to - from) * (i / steps))
+    return `${x.toFixed(2)},${y.toFixed(2)}`
+  }).join(' ')
+
+function DeltaKnob({ value, onChange }) {
+  const fraction = deltaToFraction(value)
+  const drag = useRef(null)
+  const setFromFraction = useCallback(
+    (next) => onChange(formatDelta(fractionToDelta(clamp01(next)))),
+    [onChange],
+  )
+
+  const onPointerDown = (event) => {
+    event.currentTarget.setPointerCapture(event.pointerId)
+    drag.current = { startY: event.clientY, startFraction: fraction }
+  }
+  const onPointerMove = (event) => {
+    if (!drag.current) return
+    // Vertical drag, up to increase. 200px spans the whole range — the pro-audio
+    // convention, and free of the angle jumps a rotary hit-test would suffer.
+    setFromFraction(drag.current.startFraction + (drag.current.startY - event.clientY) / 200)
+  }
+  const endDrag = (event) => {
+    drag.current = null
+    try { event.currentTarget.releasePointerCapture(event.pointerId) } catch { /* already released */ }
+  }
+  const onWheel = (event) => setFromFraction(fraction + (event.deltaY < 0 ? 0.02 : -0.02))
+  const onKeyDown = (event) => {
+    const step = event.shiftKey ? 0.1 : 0.02
+    if (event.key === 'ArrowUp' || event.key === 'ArrowRight') { event.preventDefault(); setFromFraction(fraction + step) }
+    else if (event.key === 'ArrowDown' || event.key === 'ArrowLeft') { event.preventDefault(); setFromFraction(fraction - step) }
+  }
+
+  const [indicatorX, indicatorY] = knobPoint(fraction)
+  const reading = formatDelta(fractionToDelta(fraction))
+
+  return (
+    <div className="flex flex-col items-center gap-1.5 select-none">
+      <div role="slider" tabIndex={0}
+        aria-label="Sensibilidade δ do ADWIN"
+        aria-valuemin={DELTA_MIN} aria-valuemax={DELTA_MAX} aria-valuenow={Number(reading)} aria-valuetext={`δ ${reading}`}
+        onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerCancel={endDrag}
+        onWheel={onWheel} onKeyDown={onKeyDown}
+        className="relative outline-none cursor-ns-resize rounded-full focus-visible:ring-2 focus-visible:ring-[var(--graph-node-edge)]/60"
+        style={{ width: 92, height: 92, touchAction: 'none' }}>
+        <svg viewBox="0 0 92 92" width="92" height="92">
+          <polyline points={knobArc(0, 1)} fill="none" stroke="rgba(148,163,184,0.18)" strokeWidth="5" strokeLinecap="round" />
+          <polyline points={knobArc(0, fraction)} fill="none" stroke="var(--graph-node-edge)" strokeWidth="5" strokeLinecap="round" />
+          <circle cx={indicatorX} cy={indicatorY} r="4.5" fill="var(--surface-base)" stroke="#8ec3e8" strokeWidth="2" />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <span style={{ fontFamily: MONO, fontSize: 22, fontStyle: 'italic', color: 'var(--text-strong)', lineHeight: 1 }}>δ</span>
+          <span className="mt-0.5" style={{ fontFamily: MONO, fontSize: 10, color: 'var(--graph-node-edge)' }}>{reading}</span>
+        </div>
+      </div>
+      <div className="flex items-center justify-between w-full" style={{ maxWidth: 118 }}>
+        <span className="text-[9px]" style={{ color: 'var(--text-dim)' }}>conservador</span>
+        <span className="text-[9px]" style={{ color: 'var(--text-dim)' }}>sensível</span>
       </div>
     </div>
   )
@@ -491,6 +583,12 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
   const filterDirty = analysis != null
     && (!sameMembers(excludedActivities, appliedActivityIds) || !sameMembers(excludedTraces, appliedTraceIds))
 
+  // Any parameter (δ or treatment) edited away from what the shown result used
+  // also arms the main CTA — the run on screen no longer reflects the panel.
+  const paramsDirty = analysis != null
+    && (Number(params.delta) !== analysis.delta || params.treatment !== analysis.treatment)
+  const pendingChanges = filterDirty || paramsDirty
+
   const treatmentLabel = analysis?.treatment === 'raw' ? 'crua' : 'tratada'
   const seriesLabel = activityFilterActive ? `${activeActivityCount}/${activities.length} atividades` : 'trace total'
 
@@ -508,20 +606,20 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
   const chartTitle = processName || 'Análise de desvios'
 
   return (
-    <div className="flex flex-col w-full overflow-hidden" style={{ height: '100vh', background: '#0d1017', fontFamily: "'Inter',sans-serif" }}>
+    <div className="flex flex-col w-full overflow-hidden" style={{ height: '100vh', background: 'var(--surface-base)', fontFamily: "'Inter',sans-serif" }}>
       {/* Header — one logo (→ dashboard), a home glyph, then a lean breadcrumb.
           The old "Projetos" text link is gone; the mark already goes home. */}
-      <header className="shrink-0 flex items-center gap-2 px-3 sm:px-5 border-b border-border" style={{ height: 52, background: '#111520' }}>
+      <header className="shrink-0 flex items-center gap-2 px-3 sm:px-5 border-b border-border" style={{ height: 52, background: 'var(--surface-raised)' }}>
         <BrandMark />
         <button type="button" onClick={onGoHome} title="Projetos"
           className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/[0.05] transition-colors">
           <Home size={13} />
         </button>
-        <ChevronRight className="hidden md:block" size={13} color="#334155" />
+        <ChevronRight className="hidden md:block" size={13} color="var(--text-slate)" />
         <button type="button" onClick={onBack}
           className={`hidden md:block px-1 py-1 rounded ${T.body} text-muted-foreground hover:text-foreground truncate`}
           style={{ maxWidth: 220 }}>{processName}</button>
-        <ChevronRight className="hidden md:block" size={13} color="#334155" />
+        <ChevronRight className="hidden md:block" size={13} color="var(--text-slate)" />
         <span className={`flex items-center gap-1.5 ${T.body} font-semibold text-foreground`} style={{ fontFamily: MONO }}>
           <Scan size={13} /><span className="hidden sm:inline">Análise de desvios</span>
         </span>
@@ -531,7 +629,7 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
 
       <div className="flex flex-1 min-h-0">
         {/* LEFT rail — parameters, always visible (never a hidden dropdown). */}
-        <aside className="hidden lg:flex flex-col shrink-0 min-h-0 border-r border-border overflow-y-auto" style={{ width: 260, background: '#111520' }}>
+        <aside className="hidden lg:flex flex-col shrink-0 min-h-0 border-r border-border overflow-y-auto" style={{ width: 260, background: 'var(--surface-raised)' }}>
           <div className="shrink-0 px-4 py-3 border-b border-border flex items-center gap-2">
             <SlidersHorizontal size={12} className="text-muted-foreground" />
             <p className={`${T.caption} uppercase text-muted-foreground`} style={{ fontFamily: MONO }}>Parâmetros</p>
@@ -541,7 +639,7 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
               <span className={`${T.caption} uppercase text-muted-foreground`} style={{ fontFamily: MONO }}>
                 Atividades na análise
                 {activities.length > 0 && (
-                  <span className="ml-2 normal-case" style={{ color: '#4a90c2' }}>{activeActivityCount}/{activities.length} ativas</span>
+                  <span className="ml-2 normal-case" style={{ color: 'var(--graph-node-edge)' }}>{activeActivityCount}/{activities.length} ativas</span>
                 )}
               </span>
               {activities.length === 0 ? (
@@ -563,7 +661,7 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
                         style={{
                           borderColor: active ? 'rgba(40,112,168,0.4)' : 'rgba(100,116,139,0.3)',
                           background: active ? 'rgba(40,112,168,0.18)' : 'transparent',
-                          color: active ? '#e2e8f0' : '#64748b',
+                          color: active ? 'var(--text-strong)' : 'var(--muted-foreground)',
                           textDecoration: active ? 'none' : 'line-through',
                         }}>
                         {activity.name}
@@ -582,8 +680,8 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
                     onClick={() => setParams((current) => ({ ...current, treatment: option.id }))}
                     className={`flex-1 px-3 py-1.5 ${T.body}`}
                     style={{
-                      background: params.treatment === option.id ? 'rgba(40,112,168,0.22)' : '#0d1017',
-                      color: params.treatment === option.id ? '#e2e8f0' : '#64748b',
+                      background: params.treatment === option.id ? 'rgba(40,112,168,0.22)' : 'var(--surface-base)',
+                      color: params.treatment === option.id ? 'var(--text-strong)' : 'var(--muted-foreground)',
                       border: 0,
                     }}>
                     {option.label}
@@ -592,17 +690,16 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
               </div>
             </div>
 
-            <label className="flex flex-col gap-2">
-              <span className={`${T.caption} uppercase text-muted-foreground`} style={{ fontFamily: MONO }}>δ (sensibilidade)</span>
-              <input type="number" step="0.0001" min="0.0001" max="0.9999" value={params.delta}
-                onChange={(event) => setParams((current) => ({ ...current, delta: event.target.value }))}
-                className={`px-2 py-1.5 rounded ${T.body} text-foreground border border-border`}
-                style={{ background: '#0d1017', fontFamily: MONO }} />
-            </label>
+            <div className="flex flex-col gap-2">
+              <span className={`${T.caption} uppercase text-muted-foreground`} style={{ fontFamily: MONO }}>δ · sensibilidade</span>
+              <div className="flex justify-center pt-1">
+                <DeltaKnob value={params.delta} onChange={(delta) => setParams((current) => ({ ...current, delta }))} />
+              </div>
+            </div>
 
             <p className={`${T.caption} text-muted-foreground leading-relaxed`}>
-              {filterDirty
-                ? 'O filtro mudou desde a última execução — reexecute no topo para aplicá-lo à série.'
+              {pendingChanges
+                ? 'Parâmetros alterados desde a última execução — reexecute para aplicá-los à série.'
                 : TREATMENTS.find((option) => option.id === params.treatment)?.hint}
             </p>
           </div>
@@ -611,19 +708,19 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
         {/* CENTER — result summary + drift chart. */}
         <main className="flex flex-1 min-w-0 flex-col">
           {analysis && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 border-b border-border" style={{ background: '#111520' }}>
+            <div className="grid grid-cols-2 sm:grid-cols-4 border-b border-border" style={{ background: 'var(--surface-raised)' }}>
               {[
                 [
                   activityFilterActive ? `${activeActivityCount}/${activities.length}` : activities.length,
                   activityFilterActive ? 'atividades ativas' : 'atividades diferentes',
-                  Layers, '#4a90c2',
+                  Layers, 'var(--graph-node-edge)',
                 ],
-                [drifts.length, 'desvios detectados', Scan, '#dc2626'],
-                [outliersRemaining, 'outliers estatísticos', AlertTriangle, '#f59e0b'],
+                [drifts.length, 'desvios detectados', Scan, 'var(--danger)'],
+                [outliersRemaining, 'outliers estatísticos', AlertTriangle, 'var(--warn)'],
                 [
                   `${elapsed.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} s`,
                   `${analysis.method} · δ ${analysis.delta} · ${treatmentLabel} · ${seriesLabel}`,
-                  Clock3, '#64748b',
+                  Clock3, 'var(--muted-foreground)',
                 ],
               ].map(([value, label, Icon, color]) => (
                 <div key={label} className="flex items-center gap-3 px-4 py-3 border-r border-border last:border-r-0">
@@ -638,12 +735,12 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
           )}
           {runState === 'running' ? (
             <div className="flex flex-1 items-center justify-center">
-              <div className="text-center"><RefreshCw size={22} className="animate-spin mx-auto mb-3" color="#991b1b" /><p className={`${T.body} text-muted-foreground`}>Analisando as durações dos traces...</p></div>
+              <div className="text-center"><RefreshCw size={22} className="animate-spin mx-auto mb-3" color="var(--accent-strong)" /><p className={`${T.body} text-muted-foreground`}>Analisando as durações dos traces...</p></div>
             </div>
           ) : error ? (
             <div className="flex flex-1 items-center justify-center p-6">
               <div className="max-w-md text-center">
-                <AlertTriangle size={22} className="mx-auto mb-3" color="#f59e0b" />
+                <AlertTriangle size={22} className="mx-auto mb-3" color="var(--warn)" />
                 <p className={`${T.title} text-foreground`}>A análise ainda não pode ser executada</p>
                 <p className={`${T.body} text-muted-foreground mt-2`}>{error}</p>
               </div>
@@ -658,7 +755,7 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
         {/* RIGHT rail — the Trace object: same column, shape and position as the
             Process screen, with the re-run CTA docked at the rail's bottom in the
             exact style of the process "Gerar análise de desvios" button. */}
-        <aside className="hidden lg:flex flex-col shrink-0 min-h-0 border-l border-border overflow-hidden" style={{ width: 264, background: '#111520' }}>
+        <aside className="hidden lg:flex flex-col shrink-0 min-h-0 border-l border-border overflow-hidden" style={{ width: 264, background: 'var(--surface-raised)' }}>
           <div className="shrink-0 px-4 py-3 border-b border-border">
             <p className={`${T.caption} uppercase text-muted-foreground`} style={{ fontFamily: MONO }}>Traces</p>
             <p className={`${T.caption} text-muted-foreground mt-1`}>
@@ -678,12 +775,17 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
             </div>
           )}
           <div className="shrink-0 p-3 border-t border-border mt-auto sticky bottom-0 z-20"
-            style={{ background: '#111520', boxShadow: '0 -10px 24px rgba(0,0,0,.28)' }}>
+            style={{ background: 'var(--surface-raised)', boxShadow: '0 -10px 24px rgba(0,0,0,.28)' }}>
             <button type="button" onClick={() => runAnalysis()} disabled={runState === 'running'}
-              title={filterDirty ? 'Filtro alterado — reexecute para aplicá-lo' : 'Reexecutar a análise'}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded text-xs font-medium disabled:opacity-35 disabled:cursor-not-allowed"
-              style={{ background: 'rgba(180,83,9,0.16)', color: '#fbbf24', border: '1px solid rgba(180,83,9,0.42)' }}>
-              <Scan size={12} />{runState === 'running' ? 'Processando…' : filterDirty ? 'Aplicar filtro' : 'Reexecutar análise'}
+              title={pendingChanges ? 'Parâmetros alterados — reexecute para aplicá-los' : 'Reexecutar a análise'}
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded text-xs font-medium transition-shadow disabled:opacity-35 disabled:cursor-not-allowed"
+              style={{
+                background: pendingChanges ? 'rgba(180,83,9,0.26)' : 'rgba(180,83,9,0.16)',
+                color: 'var(--warn)',
+                border: `1px solid ${pendingChanges ? 'rgba(251,191,36,0.7)' : 'rgba(180,83,9,0.42)'}`,
+                boxShadow: pendingChanges ? '0 0 0 3px rgba(180,83,9,0.14)' : 'none',
+              }}>
+              <Scan size={12} />{runState === 'running' ? 'Processando…' : pendingChanges ? 'Aplicar alterações' : 'Reexecutar análise'}
             </button>
           </div>
         </aside>

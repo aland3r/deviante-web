@@ -36,8 +36,8 @@ const NEXT_STEPS = [
 
 const pInputBase = {
   width: '100%', padding: '8px 10px', borderRadius: 8,
-  border: '1px solid rgba(255,255,255,0.09)',
-  background: '#0d1017', color: '#e2e8f0',
+  border: '1px solid var(--hairline-strong)',
+  background: 'var(--surface-base)', color: 'var(--text-strong)',
   fontFamily: "'Inter',sans-serif", fontSize: 13,
   outline: 'none', boxSizing: 'border-box',
   transition: 'border-color 0.15s',
@@ -67,7 +67,7 @@ function ProcessDeleteDialog({ name, onConfirm, onCancel }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
       <div className="absolute inset-0" style={{ background: 'rgba(3,5,9,0.82)' }} onClick={onCancel} />
       <div className="relative rounded-2xl border border-border p-7 max-w-sm w-full flex flex-col gap-5"
-        style={{ background: '#161c28', boxShadow: '0 32px 80px rgba(0,0,0,0.7)' }}>
+        style={{ background: 'var(--surface)', boxShadow: '0 32px 80px rgba(0,0,0,0.7)' }}>
         <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(153,27,27,0.15)', border: '1px solid rgba(153,27,27,0.30)' }}>
           <Trash2 size={18} color="#f87171" />
         </div>
@@ -101,8 +101,8 @@ function ProcessDeleteDialog({ name, onConfirm, onCancel }) {
         <div className="flex gap-2.5 justify-end">
           <button onClick={onCancel}
             className="px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors"
-            style={{ border: '1px solid rgba(255,255,255,0.12)', color: '#94a3b8', background: 'transparent' }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
+            style={{ border: '1px solid var(--overlay-strong)', color: 'var(--text)', background: 'transparent' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--overlay)' }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}>
             Cancelar
           </button>
@@ -110,7 +110,7 @@ function ProcessDeleteDialog({ name, onConfirm, onCancel }) {
             onClick={() => onConfirm({ processName, confirmationPhrase })}
             disabled={!canDelete}
             className="px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5"
-            style={{ background: 'rgba(153,27,27,0.20)', color: '#fca5a5', border: '1px solid rgba(153,27,27,0.40)', opacity: canDelete ? 1 : 0.45, cursor: canDelete ? 'pointer' : 'not-allowed' }}
+            style={{ background: 'rgba(153,27,27,0.20)', color: 'var(--crit-soft)', border: '1px solid rgba(153,27,27,0.40)', opacity: canDelete ? 1 : 0.45, cursor: canDelete ? 'pointer' : 'not-allowed' }}
             onMouseEnter={(e) => { if (canDelete) e.currentTarget.style.background = 'rgba(153,27,27,0.35)' }}
             onMouseLeave={(e) => { if (canDelete) e.currentTarget.style.background = 'rgba(153,27,27,0.20)' }}>
             <Trash2 size={11} />Excluir processo
@@ -124,7 +124,7 @@ function ProcessDeleteDialog({ name, onConfirm, onCancel }) {
   )
 }
 
-const MACHINE_STATUS_COLOR = { healthy: '#10b981', watch: '#f59e0b', critical: '#dc2626', unknown: '#64748b' }
+const MACHINE_STATUS_COLOR = { healthy: 'var(--success)', watch: 'var(--warn)', critical: 'var(--danger)', unknown: 'var(--muted-foreground)' }
 
 /**
  * Machines linked to this process — the process side of the bidirectional
@@ -158,16 +158,16 @@ function MachinesPanel({ processId }) {
   const available = all.filter((machine) => !linked.some((item) => item.id === machine.id))
 
   return (
-    <div className="rounded-xl border border-border p-4 flex flex-col gap-3" style={{ background: '#111520' }}>
+    <div className="rounded-xl border border-border p-4 flex flex-col gap-3" style={{ background: 'var(--surface-raised)' }}>
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-foreground flex items-center gap-1.5"><RadioTower size={12} color="#059669" />Máquinas</p>
+        <p className="text-xs font-semibold text-foreground flex items-center gap-1.5"><RadioTower size={12} color="var(--ok-strong)" />Máquinas</p>
         <button type="button" onClick={() => setPicking((open) => !open)} className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1" style={{ background: 'transparent', border: 0, cursor: 'pointer' }}>
           <Link2 size={11} />Vincular
         </button>
       </div>
 
       {picking && (
-        <div className="rounded-lg border border-border overflow-hidden" style={{ background: '#0d1017' }}>
+        <div className="rounded-lg border border-border overflow-hidden" style={{ background: 'var(--surface-base)' }}>
           {available.length ? available.map((machine) => (
             <button key={machine.id} type="button" onClick={() => link(machine)} className="w-full flex items-center gap-2 px-2.5 py-2 hover:bg-secondary/40 text-left" style={{ background: 'transparent', border: 0, cursor: 'pointer' }}>
               <span className="min-w-0 flex-1">
@@ -184,9 +184,9 @@ function MachinesPanel({ processId }) {
         <div className="flex flex-col gap-1.5">
           {linked.map((machine) => (
             <button key={machine.id} type="button" onClick={() => navigate(`/equipment/${machine.id}`)}
-              className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-colors" style={{ background: '#0d1017', border: '1px solid rgba(255,255,255,0.07)', cursor: 'pointer' }}
+              className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-colors" style={{ background: 'var(--surface-base)', border: '1px solid var(--hairline)', cursor: 'pointer' }}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(16,185,129,0.3)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)' }}>
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--hairline)' }}>
               <i className="rounded-full shrink-0" style={{ width: 7, height: 7, background: MACHINE_STATUS_COLOR[deriveMachineStatus(machine)] }} />
               <span className="min-w-0 flex-1">
                 <span className="block text-[11px] text-foreground truncate">{machine.name}</span>
@@ -268,33 +268,33 @@ export default function ProcessDetailsTab({ process, onSaved, onDeleted }) {
   }
 
   return (
-    <div className="flex-1 min-w-0 overflow-y-auto" style={{ background: '#0d1017' }}>
+    <div className="flex-1 min-w-0 overflow-y-auto" style={{ background: 'var(--surface-base)' }}>
       <div className="p-6">
         <div className="max-w-3xl mx-auto" style={{ display: 'grid', gridTemplateColumns: '1fr 256px', gap: 20, alignItems: 'start' }}>
           <form onSubmit={submit}>
-            <div className="rounded-xl border border-border p-5 flex flex-col gap-5" style={{ background: '#111520' }}>
+            <div className="rounded-xl border border-border p-5 flex flex-col gap-5" style={{ background: 'var(--surface-raised)' }}>
               <div>
                 <p className="text-xs font-semibold text-foreground mb-0.5">Informações do processo</p>
                 <p className="text-[11px] text-muted-foreground">Defina o nome e os metadados básicos.</p>
               </div>
               <div className="h-px bg-border" />
 
-              {error ? <p className="text-[11px]" style={{ color: '#fca5a5' }}>{error}</p> : null}
+              {error ? <p className="text-[11px]" style={{ color: 'var(--crit-soft)' }}>{error}</p> : null}
 
               <ProcessFormField label="Nome do processo" required error={errs.name}>
                 <input type="text" value={vals.name} onChange={(e) => sf('name', e.target.value)}
                   placeholder="Ex.: Aprovação de compras" maxLength={100}
                   style={errs.name ? pInputErr : pInputBase}
-                  onFocus={(e) => { e.target.style.borderColor = errs.name ? 'rgba(220,38,38,0.60)' : 'rgba(255,255,255,0.20)' }}
-                  onBlur={(e) => { e.target.style.borderColor = errs.name ? 'rgba(220,38,38,0.60)' : 'rgba(255,255,255,0.09)' }} />
+                  onFocus={(e) => { e.target.style.borderColor = errs.name ? 'rgba(220,38,38,0.60)' : 'var(--hairline-strong)' }}
+                  onBlur={(e) => { e.target.style.borderColor = errs.name ? 'rgba(220,38,38,0.60)' : 'var(--hairline-strong)' }} />
               </ProcessFormField>
 
               <ProcessFormField label="Descrição">
                 <textarea value={vals.description} onChange={(e) => sf('description', e.target.value)}
                   placeholder="Descreva o objetivo e o escopo deste processo…" rows={4}
                   style={{ ...pInputBase, resize: 'vertical', minHeight: 88, lineHeight: 1.6 }}
-                  onFocus={(e) => { e.target.style.borderColor = 'rgba(255,255,255,0.20)' }}
-                  onBlur={(e) => { e.target.style.borderColor = 'rgba(255,255,255,0.09)' }} />
+                  onFocus={(e) => { e.target.style.borderColor = 'var(--hairline-strong)' }}
+                  onBlur={(e) => { e.target.style.borderColor = 'var(--hairline-strong)' }} />
               </ProcessFormField>
 
               <ProcessFormField label="Setor">
@@ -305,16 +305,16 @@ export default function ProcessDetailsTab({ process, onSaved, onDeleted }) {
                     backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center', paddingRight: 32,
                   }}>
                   <option value="">Selecionar setor…</option>
-                  {sectorOptions.map((s) => <option key={s} value={s} style={{ background: '#0d1017' }}>{s}</option>)}
+                  {sectorOptions.map((s) => <option key={s} value={s} style={{ background: 'var(--surface-base)' }}>{s}</option>)}
                 </select>
               </ProcessFormField>
 
               <div className="flex items-center gap-3 pt-1">
                 <button type="submit" disabled={saving}
                   className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors"
-                  style={{ background: 'rgba(255,255,255,0.09)', color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.14)', opacity: saving ? 0.6 : 1 }}
-                  onMouseEnter={(e) => { if (!saving) e.currentTarget.style.background = 'rgba(255,255,255,0.14)' }}
-                  onMouseLeave={(e) => { if (!saving) e.currentTarget.style.background = 'rgba(255,255,255,0.09)' }}>
+                  style={{ background: 'var(--hairline-strong)', color: 'var(--text-strong)', border: '1px solid var(--hairline-strong)', opacity: saving ? 0.6 : 1 }}
+                  onMouseEnter={(e) => { if (!saving) e.currentTarget.style.background = 'var(--hairline-strong)' }}
+                  onMouseLeave={(e) => { if (!saving) e.currentTarget.style.background = 'var(--hairline-strong)' }}>
                   {saving ? 'Salvando…' : saved ? '✓  Salvo' : 'Salvar'}
                 </button>
                 {saved && <span className="text-[11px] text-emerald-400">Alterações salvas com sucesso.</span>}
@@ -323,13 +323,13 @@ export default function ProcessDetailsTab({ process, onSaved, onDeleted }) {
           </form>
 
           <div className="flex flex-col gap-3">
-            <div className="rounded-xl border border-border p-4 flex flex-col gap-3" style={{ background: '#111520' }}>
+            <div className="rounded-xl border border-border p-4 flex flex-col gap-3" style={{ background: 'var(--surface-raised)' }}>
               <p className="text-xs font-semibold text-foreground">Próximos passos</p>
               <div className="flex flex-col gap-2">
                 {NEXT_STEPS.map((s) => (
                   <div key={s} className="flex items-center gap-2" style={{ opacity: 0.4 }}>
-                    <div className="w-5 h-5 rounded flex items-center justify-center shrink-0" style={{ border: '1px dashed rgba(255,255,255,0.15)' }}>
-                      <Lock size={8} color="#64748b" />
+                    <div className="w-5 h-5 rounded flex items-center justify-center shrink-0" style={{ border: '1px dashed var(--hairline-strong)' }}>
+                      <Lock size={8} color="var(--muted-foreground)" />
                     </div>
                     <span className="text-[11px] text-muted-foreground leading-tight">{s}</span>
                   </div>
@@ -340,7 +340,7 @@ export default function ProcessDetailsTab({ process, onSaved, onDeleted }) {
 
             <MachinesPanel processId={process.id} />
 
-            <div className="rounded-xl border border-border p-4 flex flex-col" style={{ background: '#111520' }}>
+            <div className="rounded-xl border border-border p-4 flex flex-col" style={{ background: 'var(--surface-raised)' }}>
               <p className="text-xs font-semibold text-foreground mb-3">Métricas</p>
               {[
                 { label: 'Atividades', value: '0' },
@@ -352,20 +352,20 @@ export default function ProcessDetailsTab({ process, onSaved, onDeleted }) {
                   <span className="text-[11px] text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>{m.value}</span>
                 </div>
               ))}
-              <p className="text-[10px] mt-3" style={{ color: '#f59e0b', fontFamily: "'JetBrains Mono',monospace" }}>
+              <p className="text-[10px] mt-3" style={{ color: 'var(--warn)', fontFamily: "'JetBrains Mono',monospace" }}>
                 Ainda sem origem real — a API não expõe esses contadores.
               </p>
             </div>
 
             {isOwner && (
-              <div className="rounded-xl p-4 flex flex-col gap-3" style={{ background: '#111520', border: '1px solid rgba(153,27,27,0.20)' }}>
+              <div className="rounded-xl p-4 flex flex-col gap-3" style={{ background: 'var(--surface-raised)', border: '1px solid rgba(153,27,27,0.20)' }}>
                 <div>
-                  <p className="text-xs font-semibold" style={{ color: '#fca5a5' }}>Zona de perigo</p>
+                  <p className="text-xs font-semibold" style={{ color: 'var(--crit-soft)' }}>Zona de perigo</p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">Ações irreversíveis.</p>
                 </div>
                 <button onClick={() => setShowDel(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors self-start"
-                  style={{ background: 'rgba(153,27,27,0.15)', color: '#fca5a5', border: '1px solid rgba(153,27,27,0.35)' }}
+                  style={{ background: 'rgba(153,27,27,0.15)', color: 'var(--crit-soft)', border: '1px solid rgba(153,27,27,0.35)' }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(153,27,27,0.30)' }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(153,27,27,0.15)' }}>
                   <Trash2 size={11} />Excluir processo

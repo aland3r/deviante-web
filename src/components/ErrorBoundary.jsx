@@ -32,14 +32,14 @@ export default class ErrorBoundary extends Component {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#0d1017',
-          color: '#e2e8f0',
+          background: 'var(--surface-base)',
+          color: 'var(--text-strong)',
           fontFamily: "'Inter',sans-serif",
           padding: 24,
         }}>
           <div style={{ maxWidth: 420, textAlign: 'center' }}>
             <h1 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 8px' }}>Algo quebrou nesta tela</h1>
-            <p style={{ fontSize: 13, color: '#94a3b8', margin: '0 0 16px', lineHeight: 1.5 }}>
+            <p style={{ fontSize: 13, color: 'var(--text)', margin: '0 0 16px', lineHeight: 1.5 }}>
               Recarregue para tentar de novo. Se o erro persistir, avise o suporte.
             </p>
             <button
@@ -48,9 +48,9 @@ export default class ErrorBoundary extends Component {
               style={{
                 padding: '8px 16px',
                 borderRadius: 8,
-                border: '1px solid rgba(255,255,255,0.14)',
-                background: '#1e2738',
-                color: '#e2e8f0',
+                border: '1px solid var(--hairline-strong)',
+                background: 'var(--surface-inset)',
+                color: 'var(--text-strong)',
                 fontSize: 13,
                 cursor: 'pointer',
               }}

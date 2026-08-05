@@ -9,7 +9,7 @@ import { Link } from 'react-router-dom'
 export default function BrandMark({ to = '/dashboard' }) {
   const content = (
     <>
-      <div className="w-7 h-7 rounded flex items-center justify-center shrink-0" style={{ background: '#991b1b' }}>
+      <div className="w-7 h-7 rounded flex items-center justify-center shrink-0" style={{ background: 'var(--accent-strong)' }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <circle cx="3" cy="7" r="2" fill="white" />
           <circle cx="11" cy="3" r="2" fill="white" opacity="0.7" />

@@ -52,7 +52,7 @@ export default function OperationsPage() {
       </div>
       {loading ? <State>Carregando…</State> : error ? <State error>{error}</State> : (
         <div className="overflow-x-auto border border-border rounded-lg">
-          <table className="w-full text-left" style={{ minWidth: 880, background: '#111520' }}>
+          <table className="w-full text-left" style={{ minWidth: 880, background: 'var(--surface-raised)' }}>
             <thead><tr className="border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
               <Header>Operação</Header><Header>Processo</Header><Header>Máquina</Header><Header>Log de origem</Header><Header right>Ocorrências</Header><Header>Status</Header>
             </tr></thead>
@@ -81,18 +81,18 @@ function uniqueOptions(rows, valueKey, labelKey) {
 const sortLabel = (a, b) => a.label.localeCompare(b.label, 'pt-BR')
 const Header = ({ children, right = false }) => <th className={`px-4 py-2.5 font-semibold ${right ? 'text-right' : ''}`}>{children}</th>
 const Cell = ({ children, right = false }) => <td className={`px-4 py-3 text-[11px] text-muted-foreground align-middle ${right ? 'text-right' : ''}`}>{children}</td>
-const Status = ({ value }) => <span className="inline-flex px-2 py-0.5 rounded-full text-[10px]" style={{ color: value === 'unmapped' ? '#f59e0b' : '#10b981', background: value === 'unmapped' ? 'rgba(245,158,11,.12)' : 'rgba(16,185,129,.12)' }}>{value === 'unmapped' ? 'Pendente' : 'Mapeada'}</span>
+const Status = ({ value }) => <span className="inline-flex px-2 py-0.5 rounded-full text-[10px]" style={{ color: value === 'unmapped' ? 'var(--warn)' : 'var(--success)', background: value === 'unmapped' ? 'rgba(245,158,11,.12)' : 'rgba(16,185,129,.12)' }}>{value === 'unmapped' ? 'Pendente' : 'Mapeada'}</span>
 
 export function Surface({ title, subtitle, icon: Icon, actions, children }) {
-  return <div style={{ minHeight: 'calc(100vh - 52px)', background: '#0d1017', margin: '-2rem calc(-50vw + 50%)', padding: '28px calc(50vw - 50%)' }}><div className="px-4 sm:px-6" style={{ maxWidth: 1180, margin: '0 auto' }}><div className="flex items-start justify-between gap-4 mb-6"><div className="flex items-center gap-3"><span className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(40,112,168,.13)', color: '#4d8fc0' }}><Icon size={17} /></span><div><h1 className="text-xl font-bold text-foreground">{title}</h1><p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p></div></div>{actions}</div>{children}</div></div>
+  return <div style={{ minHeight: 'calc(100vh - 52px)', background: 'var(--surface-base)', margin: '-2rem calc(-50vw + 50%)', padding: '28px calc(50vw - 50%)' }}><div className="px-4 sm:px-6" style={{ maxWidth: 1180, margin: '0 auto' }}><div className="flex items-start justify-between gap-4 mb-6"><div className="flex items-center gap-3"><span className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(40,112,168,.13)', color: 'var(--graph-node)' }}><Icon size={17} /></span><div><h1 className="text-xl font-bold text-foreground">{title}</h1><p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p></div></div>{actions}</div>{children}</div></div>
 }
 
 export function SearchBox({ value, onChange, placeholder, compact = false }) {
-  return <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border ${compact ? '' : 'mb-4'}`} style={{ background: '#111520' }}><Search size={13} className="text-muted-foreground" /><input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="flex-1 min-w-0 bg-transparent border-0 outline-none text-xs text-foreground" /></label>
+  return <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border ${compact ? '' : 'mb-4'}`} style={{ background: 'var(--surface-raised)' }}><Search size={13} className="text-muted-foreground" /><input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="flex-1 min-w-0 bg-transparent border-0 outline-none text-xs text-foreground" /></label>
 }
 
 export function FilterSelect({ value, onChange, label, options }) {
-  return <select value={value} onChange={(event) => onChange(event.target.value)} aria-label={label} className="px-3 py-2 rounded-lg border border-border text-xs text-foreground" style={{ background: '#111520' }}><option value="">{label}</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
+  return <select value={value} onChange={(event) => onChange(event.target.value)} aria-label={label} className="px-3 py-2 rounded-lg border border-border text-xs text-foreground" style={{ background: 'var(--surface-raised)' }}><option value="">{label}</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
 }
 
-export function State({ children, error = false }) { return <p className="px-4 py-10 text-center text-xs" style={{ color: error ? '#fca5a5' : '#64748b' }}>{children}</p> }
+export function State({ children, error = false }) { return <p className="px-4 py-10 text-center text-xs" style={{ color: error ? 'var(--crit-soft)' : 'var(--muted-foreground)' }}>{children}</p> }

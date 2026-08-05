@@ -30,12 +30,12 @@ function Slider({ label, value, onChange }) {
       </div>
       <div className="relative h-5 flex items-center">
         <div className="w-full h-[3px] rounded-full bg-secondary relative overflow-hidden">
-          <div className="h-full rounded-full" style={{ width: `${value}%`, background: 'linear-gradient(90deg,#475569,#991b1b)' }} />
+          <div className="h-full rounded-full" style={{ width: `${value}%`, background: 'linear-gradient(90deg,var(--text-dim),var(--accent-strong))' }} />
         </div>
         <input type="range" min={0} max={100} value={value} onChange={(e) => onChange(Number(e.target.value))}
           className="absolute inset-0 w-full opacity-0 cursor-pointer" />
         <div className="absolute w-3.5 h-3.5 rounded-full border-2 border-white shadow-md pointer-events-none"
-          style={{ left: `calc(${value}% - 7px)`, background: value > 60 ? '#991b1b' : value > 30 ? '#c2410c' : '#475569' }} />
+          style={{ left: `calc(${value}% - 7px)`, background: value > 60 ? 'var(--accent-strong)' : value > 30 ? '#c2410c' : 'var(--text-dim)' }} />
       </div>
     </div>
   )
@@ -107,33 +107,33 @@ function CasesLayersPanel({
       display: 'flex', flexDirection: 'column', fontFamily: "'Inter',sans-serif",
       userSelect: 'none',
     }}>
-      <div style={{ padding: '10px 12px 8px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
+      <div style={{ padding: '10px 12px 8px', borderBottom: '1px solid var(--hairline)', display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
           <button onClick={onClose}
-            style={{ width: 18, height: 18, borderRadius: 3, border: 'none', background: 'transparent', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'white' }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#475569' }}>
+            style={{ width: 18, height: 18, borderRadius: 3, border: 'none', background: 'transparent', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--overlay-strong)'; e.currentTarget.style.color = 'white' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-dim)' }}>
             <X size={11} />
           </button>
         </div>
-        {node?.label && <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: 'white', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.label}</p>}
+        {node?.label && <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: 'var(--text-strong)', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.label}</p>}
       </div>
 
-      <div style={{ padding: '7px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 5, padding: '4px 8px' }}>
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2.5">
+      <div style={{ padding: '7px 10px', borderBottom: '1px solid var(--overlay)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--overlay-soft)', border: '1px solid var(--hairline)', borderRadius: 5, padding: '4px 8px' }}>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--hairline-strong)" strokeWidth="2.5">
             <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filtrar traces…"
-            style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'white', fontFamily: "'Inter',sans-serif", fontSize: 11, padding: 0 }} />
+            style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-strong)', fontFamily: "'Inter',sans-serif", fontSize: 11, padding: 0 }} />
         </div>
         {excludedTraceCount > 0 && (
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
-            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: '#475569' }}>
+            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'var(--text-dim)' }}>
               {excludedTraceCount} fora da próxima análise
             </span>
             <button type="button" onClick={onResetSelection}
-              style={{ border: 0, padding: 0, background: 'transparent', color: '#2870a8', fontSize: 9, cursor: 'pointer' }}>
+              style={{ border: 0, padding: 0, background: 'transparent', color: 'var(--graph-node-strong)', fontSize: 9, cursor: 'pointer' }}>
               resetar
             </button>
           </div>
@@ -142,7 +142,7 @@ function CasesLayersPanel({
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
         {visibleVariants.length === 0 && (
-          <p style={{ padding: '16px 12px', margin: 0, fontSize: 11, color: '#475569', fontFamily: "'Inter',sans-serif" }}>
+          <p style={{ padding: '16px 12px', margin: 0, fontSize: 11, color: 'var(--text-dim)', fontFamily: "'Inter',sans-serif" }}>
             Nenhum trace encontrado para “{filter}”.
           </p>
         )}
@@ -155,18 +155,18 @@ function CasesLayersPanel({
             <div key={variant.id}>
               <div onClick={() => toggleExpand(variant.id)}
                 style={{ height: ROW_H, display: 'flex', alignItems: 'center', padding: '0 8px 0 6px', gap: 5, cursor: 'pointer', opacity: isHidden ? 0.35 : 1, background: 'transparent', transition: 'background 0.1s' }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--overlay-soft)' }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}>
 
                 <button onClick={(e) => toggleHide(variant.id, e)}
                   title={isHidden ? 'Reincluir variante na próxima análise' : 'Excluir variante da próxima análise'}
-                  style={{ width: 16, height: 16, border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', color: isHidden ? '#334155' : '#4d8fc0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                  style={{ width: 16, height: 16, border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', color: isHidden ? 'var(--text-slate)' : 'var(--graph-node)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
                   onMouseEnter={(e) => { e.currentTarget.style.color = 'white' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = isHidden ? '#334155' : '#4d8fc0' }}>
+                  onMouseLeave={(e) => { e.currentTarget.style.color = isHidden ? 'var(--text-slate)' : 'var(--graph-node)' }}>
                   <CircleDot size={12} strokeWidth={isHidden ? 1.5 : 2} />
                 </button>
 
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2.5" style={{ flexShrink: 0, transform: isOpen ? 'rotate(90deg)' : 'rotate(0)', transition: 'transform 0.15s' }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" strokeWidth="2.5" style={{ flexShrink: 0, transform: isOpen ? 'rotate(90deg)' : 'rotate(0)', transition: 'transform 0.15s' }}>
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
 
@@ -177,7 +177,7 @@ function CasesLayersPanel({
                 <span style={{ flex: 1, fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.80)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {variant.label}
                 </span>
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: '#475569', flexShrink: 0 }}>
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'var(--text-dim)', flexShrink: 0 }}>
                   {variant.caseCount}
                 </span>
               </div>
@@ -192,21 +192,21 @@ function CasesLayersPanel({
                       height: ROW_H, display: 'flex', alignItems: 'center',
                       padding: `0 8px 0 ${INDENT}px`, gap: 5, cursor: 'pointer',
                       background: isSelCase ? 'rgba(40,112,168,0.20)' : 'transparent',
-                      borderLeft: isSelCase ? '2px solid #2870a8' : '2px solid transparent',
+                      borderLeft: isSelCase ? '2px solid var(--graph-node-strong)' : '2px solid transparent',
                       transition: 'background 0.1s', opacity: isHidden ? 0.2 : isIgnored ? 0.25 : 1,
                     }}
-                    onMouseEnter={(e) => { setHoveredCase(c.id); if (!isSelCase) e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
+                    onMouseEnter={(e) => { setHoveredCase(c.id); if (!isSelCase) e.currentTarget.style.background = 'var(--overlay-soft)' }}
                     onMouseLeave={(e) => { setHoveredCase(null); if (!isSelCase) e.currentTarget.style.background = 'transparent' }}>
 
                     <div style={{ width: 16, flexShrink: 0 }} />
                     <div style={{ width: 5, height: 5, borderRadius: '50%', background: STATUS_DOT[c.status], flexShrink: 0 }} />
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2" style={{ flexShrink: 0 }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" strokeWidth="2" style={{ flexShrink: 0 }}>
                       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
                     </svg>
                     <span style={{ flex: 1, fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: isSelCase ? 'white' : 'rgba(255,255,255,0.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: isIgnored ? 'line-through' : 'none' }}>
                       {c.caseId}
                     </span>
-                    <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: '#475569', flexShrink: 0 }}>
+                    <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'var(--text-dim)', flexShrink: 0 }}>
                       {formatDuration(c.durationSeconds)}
                     </span>
                     <button type="button" title={isIgnored ? 'Reincluir trace' : 'Ignorar trace nesta análise'}
@@ -216,7 +216,7 @@ function CasesLayersPanel({
                       }}
                       style={{
                         width: 16, height: 16, border: 0, padding: 0, background: 'transparent',
-                        color: isIgnored ? '#334155' : '#4d8fc0', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: isIgnored ? 'var(--text-slate)' : 'var(--graph-node)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                         visibility: isHovered || isIgnored ? 'visible' : 'hidden', cursor: 'pointer',
                       }}>
                       <CircleDot size={11} strokeWidth={isIgnored ? 1.5 : 2} />
@@ -227,13 +227,13 @@ function CasesLayersPanel({
 
               {isOpen && variant.caseCount > variant.cases.length && (
                 <div style={{ height: 24, display: 'flex', alignItems: 'center', paddingLeft: INDENT + 31, gap: 4 }}>
-                  <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: '#2870a8', cursor: 'pointer' }}>
+                  <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'var(--graph-node-strong)', cursor: 'pointer' }}>
                     + {(variant.caseCount - variant.cases.length).toLocaleString('pt-BR')} traces ocultos…
                   </span>
                 </div>
               )}
 
-              <div style={{ height: 1, background: 'rgba(255,255,255,0.04)', margin: 0 }} />
+              <div style={{ height: 1, background: 'var(--overlay-soft)', margin: 0 }} />
             </div>
           )
         })}
@@ -243,8 +243,8 @@ function CasesLayersPanel({
         const c = relevantVariants.flatMap((v) => v.cases).find((x) => x.id === selectedCase)
         if (!c) return null
         return (
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', padding: '10px 12px', flexShrink: 0 }}>
-            <p style={{ margin: '0 0 6px', fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Trace selecionado</p>
+          <div style={{ borderTop: '1px solid var(--hairline)', padding: '10px 12px', flexShrink: 0 }}>
+            <p style={{ margin: '0 0 6px', fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Trace selecionado</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {[
                 ['ID', c.caseId],
@@ -253,7 +253,7 @@ function CasesLayersPanel({
                 ['Status', STATUS_LABEL[c.status] ?? c.status],
               ].map(([k, v]) => (
                 <div key={k} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#475569' }}>{k}</span>
+                  <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'var(--text-dim)' }}>{k}</span>
                   <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'rgba(255,255,255,0.75)' }}>{v}</span>
                 </div>
               ))}
@@ -282,7 +282,7 @@ function NodeDetailPanel({ node, analysisSelected, analysisSelectionExplicit, on
       <div className="flex border-b border-border">
         {['freq', 'perf'].map((t) => (
           <button key={t} onClick={() => setTab(t)} className="flex-1 py-2.5 text-xs font-medium transition-colors relative"
-            style={{ color: tab === t ? '#e2e8f0' : '#64748b', fontFamily: "'JetBrains Mono',monospace" }}>
+            style={{ color: tab === t ? 'var(--text-strong)' : 'var(--muted-foreground)', fontFamily: "'JetBrains Mono',monospace" }}>
             {t === 'freq' ? 'Frequência' : 'Desempenho'}
             {tab === t && <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-800" />}
           </button>
@@ -292,9 +292,9 @@ function NodeDetailPanel({ node, analysisSelected, analysisSelectionExplicit, on
         <button type="button" onClick={() => onToggleAnalysis(node.id)}
           className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded text-[11px] font-medium"
           style={{
-            background: analysisSelected && analysisSelectionExplicit ? 'rgba(40,112,168,0.22)' : 'rgba(255,255,255,0.04)',
-            color: analysisSelected && analysisSelectionExplicit ? '#c8e2f5' : '#94a3b8',
-            border: `1px solid ${analysisSelected && analysisSelectionExplicit ? 'rgba(40,112,168,0.45)' : 'rgba(255,255,255,0.09)'}`,
+            background: analysisSelected && analysisSelectionExplicit ? 'rgba(40,112,168,0.22)' : 'var(--overlay-soft)',
+            color: analysisSelected && analysisSelectionExplicit ? 'var(--graph-node-soft)' : 'var(--text)',
+            border: `1px solid ${analysisSelected && analysisSelectionExplicit ? 'rgba(40,112,168,0.45)' : 'var(--hairline-strong)'}`,
           }}>
           <CircleDot size={12} />
           {analysisSelected && analysisSelectionExplicit ? 'Incluída na análise' : 'Analisar esta atividade'}
@@ -335,25 +335,25 @@ function AnalysisFlightDeck({ scope, onReset }) {
     || scope.selectedVariantCount !== scope.totalVariantCount
     || scope.selectedPathCount !== scope.totalPathCount
   const metric = (label, selected, total) => (
-    <div className="rounded px-2 py-2" style={{ background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.06)' }}>
+    <div className="rounded px-2 py-2" style={{ background: 'var(--overlay-soft)', border: '1px solid var(--overlay)' }}>
       <p className="text-[9px] uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="text-xs font-semibold text-foreground mt-0.5" style={{ fontFamily: "'JetBrains Mono',monospace" }}>{selected.toLocaleString('pt-BR')} <span className="text-[9px] font-normal text-muted-foreground">/ {total.toLocaleString('pt-BR')}</span></p>
     </div>
   )
   return (
-    <div className="rounded-lg p-3 space-y-3" style={{ background: '#0d1017', border: '1px solid rgba(245,158,11,0.20)' }}>
+    <div className="rounded-lg p-3 space-y-3" style={{ background: 'var(--surface-base)', border: '1px solid rgba(245,158,11,0.20)' }}>
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-[9px] uppercase tracking-[0.12em]" style={{ color: '#fbbf24', fontFamily: "'JetBrains Mono',monospace" }}>Entrada da próxima análise</p>
+          <p className="text-[9px] uppercase tracking-[0.12em]" style={{ color: 'var(--warn)', fontFamily: "'JetBrains Mono',monospace" }}>Entrada da próxima análise</p>
         </div>
-        {filtered && <button type="button" onClick={onReset} className="text-[9px] hover:underline" style={{ color: '#4d8fc0' }}>usar tudo</button>}
+        {filtered && <button type="button" onClick={onReset} className="text-[9px] hover:underline" style={{ color: 'var(--graph-node)' }}>usar tudo</button>}
       </div>
       <div>
         <p className="text-foreground leading-none flex items-baseline gap-1" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
           <span className="text-xl font-semibold">{scope.selectedTraceCount.toLocaleString('pt-BR')}</span>
           <span className="text-[11px] text-muted-foreground">/{scope.totalTraceCount.toLocaleString('pt-BR')}</span>
         </p>
-        <p className="text-[9px] mt-1.5" style={{ color: '#4d8fc0', fontFamily: "'JetBrains Mono',monospace" }}>{scope.selectedLogCount} de {scope.totalLogCount} logs selecionados</p>
+        <p className="text-[9px] mt-1.5" style={{ color: 'var(--graph-node)', fontFamily: "'JetBrains Mono',monospace" }}>{scope.selectedLogCount} de {scope.totalLogCount} logs selecionados</p>
       </div>
       <div className="grid grid-cols-3 gap-1.5">
         {metric('Variantes', scope.selectedVariantCount, scope.totalVariantCount)}
@@ -381,11 +381,11 @@ function EventLogSelector({ eventLogs, selectedIds, onToggle }) {
             onClick={() => onToggle(log.id)}
             className="w-full grid items-center gap-2 rounded px-1.5 py-1.5 text-left disabled:cursor-not-allowed hover:bg-white/[0.04] transition-colors"
             style={{ gridTemplateColumns: '15px 12px minmax(0, 1fr) auto', opacity: parsed ? 1 : 0.48 }}>
-            <span className="w-[15px] h-[15px] rounded-[3px] flex items-center justify-center shrink-0" style={{ background: checked ? '#2870a8' : 'transparent', border: `1px solid ${checked ? '#4d8fc0' : '#3a4657'}` }}>
+            <span className="w-[15px] h-[15px] rounded-[3px] flex items-center justify-center shrink-0" style={{ background: checked ? 'var(--graph-node-strong)' : 'transparent', border: `1px solid ${checked ? 'var(--graph-node)' : '#3a4657'}` }}>
               {checked && <Check size={9} color="white" strokeWidth={3} />}
             </span>
-            <FileText size={12} className="shrink-0" style={{ color: checked ? '#94a3b8' : '#475569' }} />
-            <span className="min-w-0 text-[10px] truncate" style={{ color: checked ? '#e2e8f0' : '#94a3b8', fontFamily: "'JetBrains Mono',monospace" }} title={log.fileName}>{log.fileName}</span>
+            <FileText size={12} className="shrink-0" style={{ color: checked ? 'var(--text)' : 'var(--text-dim)' }} />
+            <span className="min-w-0 text-[10px] truncate" style={{ color: checked ? 'var(--text-strong)' : 'var(--text)', fontFamily: "'JetBrains Mono',monospace" }} title={log.fileName}>{log.fileName}</span>
             <span className="text-[9px] text-muted-foreground whitespace-nowrap" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
               {parsed ? new Date(log.uploadedAt).toLocaleDateString('pt-BR') : log.parseStatus}
             </span>
@@ -403,7 +403,7 @@ function SvgDefs() {
   return (
     <defs>
       <pattern id="dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
-        <circle cx="1" cy="1" r="1" fill="rgba(255,255,255,0.11)" />
+        <circle cx="1" cy="1" r="1" fill="var(--overlay-strong)" />
       </pattern>
       <marker id="arrow-dashed" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto">
         <path d="M 0.5 1.5 L 7.5 4 L 0.5 6.5 Z" fill={DASH_COLOR} />
@@ -415,28 +415,28 @@ function SvgDefs() {
 function StartNode({ isSelected }) {
   const cx = CIRC_R, cy = CIRC_R
   const play = `${cx - 10},${cy - 8} ${cx + 10},${cy - 8} ${cx},${cy + 11}`
-  return (<g style={{ cursor: 'pointer' }}>{isSelected && <circle cx={cx} cy={cy} r={CIRC_R + 6} fill="rgba(16,185,129,0.15)" stroke="#10b981" strokeWidth={1.5} />}<circle cx={cx} cy={cy} r={CIRC_R} fill="#064e3b" stroke="#10b981" strokeWidth={2} /><polygon points={play} fill="#34d399" /></g>)
+  return (<g style={{ cursor: 'pointer' }}>{isSelected && <circle cx={cx} cy={cy} r={CIRC_R + 6} fill="rgba(16,185,129,0.15)" stroke="var(--success)" strokeWidth={1.5} />}<circle cx={cx} cy={cy} r={CIRC_R} fill="#064e3b" stroke="var(--success)" strokeWidth={2} /><polygon points={play} fill="#34d399" /></g>)
 }
 
 function EndNode({ isSelected }) {
   const cx = CIRC_R, cy = CIRC_R
-  return (<g style={{ cursor: 'pointer' }}>{isSelected && <circle cx={cx} cy={cy} r={CIRC_R + 6} fill="rgba(153,27,27,0.15)" stroke="#991b1b" strokeWidth={1.5} />}<circle cx={cx} cy={cy} r={CIRC_R} fill="#3b0a0a" stroke="#991b1b" strokeWidth={2} /><circle cx={cx} cy={cy} r={CIRC_R - 7} fill="#991b1b" /></g>)
+  return (<g style={{ cursor: 'pointer' }}>{isSelected && <circle cx={cx} cy={cy} r={CIRC_R + 6} fill="rgba(153,27,27,0.15)" stroke="var(--accent-strong)" strokeWidth={1.5} />}<circle cx={cx} cy={cy} r={CIRC_R} fill="#3b0a0a" stroke="var(--accent-strong)" strokeWidth={2} /><circle cx={cx} cy={cy} r={CIRC_R - 7} fill="var(--accent-strong)" /></g>)
 }
 
 function ActivityNode({ node, isSelected, analysisSelected }) {
   const a = 0.20 + (node.frequency / 100) * 0.65
   return (<g style={{ cursor: 'pointer' }}>
-    {isSelected && <rect x={-3} y={-3} width={NODE_W + 6} height={NODE_H + 6} rx={7} fill="rgba(153,27,27,0.10)" stroke="#991b1b" strokeWidth={1.5} />}
+    {isSelected && <rect x={-3} y={-3} width={NODE_W + 6} height={NODE_H + 6} rx={7} fill="rgba(153,27,27,0.10)" stroke="var(--accent-strong)" strokeWidth={1.5} />}
     {isSelected && <g transform={`translate(${NODE_W / 2},${NODE_H / 2})`}>
       <circle cx={0} cy={0} r={NODE_W * 0.7} fill="none" stroke="rgba(56,189,248,0.22)" strokeWidth={2} />
       <circle cx={0} cy={0} r={NODE_W * 0.45} fill="none" stroke="rgba(56,189,248,0.35)" strokeWidth={1.2} />
     </g>}
-    <rect x={0} y={0} width={NODE_W} height={NODE_H} rx={5} fill={isSelected ? '#1e2840' : '#16202e'} stroke={isSelected ? '#991b1b' : 'rgba(255,255,255,0.10)'} strokeWidth={isSelected ? 1.5 : 1} />
+    <rect x={0} y={0} width={NODE_W} height={NODE_H} rx={5} fill={isSelected ? '#1e2840' : 'var(--surface-muted-2)'} stroke={isSelected ? 'var(--accent-strong)' : 'var(--overlay-strong)'} strokeWidth={isSelected ? 1.5 : 1} />
     <rect x={0} y={0} width={NODE_W} height={3} rx={3} fill={`rgba(153,27,27,${a})`} />
     <rect x={0} y={1.5} width={NODE_W} height={1.5} fill={`rgba(153,27,27,${a})`} />
-    {analysisSelected && <g transform={`translate(${NODE_W - 19},9)`}><circle cx={6} cy={6} r={6} fill="#2870a8" /><path d="M3 6l2 2 4-4" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></g>}
-    <text x={12} y={24} fontSize={12} fontFamily="'Inter',sans-serif" fontWeight="500" fill="#e2e8f0" letterSpacing="-0.01em">{node.label.length > 22 ? node.label.slice(0, 21) + '…' : node.label}</text>
-    <text x={12} y={43} fontSize={11} fontFamily="'JetBrains Mono',monospace" fill={isSelected ? '#fca5a5' : '#64748b'} letterSpacing="0.01em">{node.displayMetric}</text>
+    {analysisSelected && <g transform={`translate(${NODE_W - 19},9)`}><circle cx={6} cy={6} r={6} fill="var(--graph-node-strong)" /><path d="M3 6l2 2 4-4" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></g>}
+    <text x={12} y={24} fontSize={12} fontFamily="'Inter',sans-serif" fontWeight="500" fill="var(--text-strong)" letterSpacing="-0.01em">{node.label.length > 22 ? node.label.slice(0, 21) + '…' : node.label}</text>
+    <text x={12} y={43} fontSize={11} fontFamily="'JetBrains Mono',monospace" fill={isSelected ? 'var(--crit-soft)' : 'var(--muted-foreground)'} letterSpacing="0.01em">{node.displayMetric}</text>
   </g>)
 }
 
@@ -452,14 +452,14 @@ function EmptyCanvas({ message, eventLog, onUploadLog }) {
   const parsedWithoutGraph = eventLog?.parseStatus === 'parsed'
   return (
     <div className="flex flex-1 items-center justify-center p-8" style={{
-      backgroundColor: '#090d14',
-      backgroundImage: 'radial-gradient(rgba(255,255,255,0.11) 1px, transparent 1px)',
+      backgroundColor: 'var(--surface-deep)',
+      backgroundImage: 'radial-gradient(var(--overlay-strong) 1px, transparent 1px)',
       backgroundSize: '24px 24px',
     }}>
       <div className="flex flex-col items-center gap-4 text-center" style={{ maxWidth: 380 }}>
         <div className="w-12 h-12 rounded-full flex items-center justify-center"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-          <Upload size={18} color="#475569" />
+          style={{ background: 'var(--overlay-soft)', border: '1px solid var(--hairline)' }}>
+          <Upload size={18} color="var(--text-dim)" />
         </div>
         <div>
           <p className="text-sm font-medium text-foreground">
@@ -945,7 +945,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
 
   if (loading) {
     return (
-      <div className="flex flex-1 items-center justify-center" style={{ background: '#090d14' }}>
+      <div className="flex flex-1 items-center justify-center" style={{ background: 'var(--surface-deep)' }}>
         <p className="text-sm text-muted-foreground">Carregando grafo…</p>
       </div>
     )
@@ -955,7 +955,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
     <div className="flex flex-1 min-h-0 gap-3 p-3 overflow-hidden">
       {/* Left rail — Figma-style tools: logs + graph density */}
       {!isMobile && (
-        <aside className="shrink-0 flex flex-col overflow-hidden -my-3 -ml-3" style={{ width: 228, background: '#111520', borderRight: '1px solid rgba(255,255,255,0.06)' }}>
+        <aside className="shrink-0 flex flex-col overflow-hidden -my-3 -ml-3" style={{ width: 228, background: 'var(--surface-raised)', borderRight: '1px solid var(--overlay)' }}>
           <div className="px-3 pt-3 pb-4 space-y-4">
             <p className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground/70"
               style={{ fontFamily: "'JetBrains Mono',monospace" }}>Densidade do grafo</p>
@@ -977,15 +977,15 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
         </aside>
       )}
 
-      <div className="relative flex flex-1 min-w-0 overflow-hidden" style={{ background: '#090d14' }}>
+      <div className="relative flex flex-1 min-w-0 overflow-hidden" style={{ background: 'var(--surface-deep)' }}>
         {loadError || !hasObservedProcess ? (
           <EmptyCanvas message={loadError} eventLog={graph?.eventLog ?? null} onUploadLog={onUploadLog} />
         ) : (
-      <div ref={containerRef} className="relative flex-1 min-w-0 overflow-hidden" style={{ background: '#090d14' }}>
+      <div ref={containerRef} className="relative flex-1 min-w-0 overflow-hidden" style={{ background: 'var(--surface-deep)' }}>
 
         {/* Floating canvas chrome: machines + zoom / fit */}
         <div className="absolute left-4 bottom-4 z-20 flex flex-col gap-2" style={{ maxWidth: 260 }}>
-          <div className="rounded-xl border border-border p-2.5 bg-[#111520]/90 backdrop-blur-sm shadow-lg">
+          <div className="rounded-xl border border-border p-2.5 bg-[var(--surface-raised)]/90 backdrop-blur-sm shadow-lg">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 <RadioTower size={14} className="text-emerald-400 shrink-0" />
@@ -1003,7 +1003,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
             <div className="mt-2 flex flex-wrap gap-1.5">
               {linkedMachines.length ? linkedMachines.map((machine) => (
                 <button key={machine.id} type="button" onClick={(e) => { e.stopPropagation(); openMachineInMonitoring(machine) }}
-                  className="rounded-full border border-border bg-[#0d1017] px-2 py-0.5 text-[10px] text-foreground flex items-center gap-1.5 hover:border-emerald-400 hover:bg-[#0f191f] transition-colors"
+                  className="rounded-full border border-border bg-[var(--surface-base)] px-2 py-0.5 text-[10px] text-foreground flex items-center gap-1.5 hover:border-emerald-400 hover:bg-[#0f191f] transition-colors"
                   title="Abrir monitoramento desta máquina">
                   <RadioTower size={10} className="text-emerald-400" />
                   <span className="truncate max-w-[120px]" title={machine.name}>{machine.name}</span>
@@ -1013,7 +1013,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
               )}
             </div>
             {showMachinePicker && (
-              <div className="mt-2 rounded-lg border border-border bg-[#090d14] p-2">
+              <div className="mt-2 rounded-lg border border-border bg-[var(--surface-deep)] p-2">
                 <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-2">Escolher máquina</p>
                 {allMachines.filter((machine) => !linkedMachines.some((item) => item.id === machine.id)).length ? (
                   <div className="space-y-1 max-h-40 overflow-y-auto">
@@ -1032,7 +1032,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
             )}
           </div>
 
-          <div className="rounded-xl border border-border p-2 bg-[#111520]/90 backdrop-blur-sm shadow-lg flex items-center gap-1 self-start">
+          <div className="rounded-xl border border-border p-2 bg-[var(--surface-raised)]/90 backdrop-blur-sm shadow-lg flex items-center gap-1 self-start">
             <span className="text-[10px] text-muted-foreground px-1.5 tabular-nums" style={{ fontFamily: "'JetBrains Mono',monospace" }}>{Math.round(zoom * 100)}%</span>
             {[
               { icon: <ZoomOut size={13} />, fn: () => setZoom((z) => Math.max(0.2, z * 0.8)), title: 'Reduzir zoom' },
@@ -1050,7 +1050,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
         {/* Activity detail — floats on canvas when a node is selected */}
         {!isMobile && selectedNode && (
           <div className="absolute right-4 top-4 z-20 rounded-xl border border-border overflow-hidden shadow-lg"
-            style={{ width: 260, maxHeight: 'min(420px, 55vh)', background: '#111520' }}>
+            style={{ width: 260, maxHeight: 'min(420px, 55vh)', background: 'var(--surface-raised)' }}>
             <NodeDetailPanel node={selectedNode}
               analysisSelected={analysisScope.selectedActivityNodeIds.has(selectedNode.id)}
               analysisSelectionExplicit={analysisScope.selectionExplicit}
@@ -1103,8 +1103,8 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
                     </defs>
                     <path d={d} fill="none" stroke={`url(#${dgid})`} strokeWidth={1.6} strokeDasharray="6 4" strokeLinecap="round" markerEnd="url(#arrow-dashed)" />
                     <g transform={`translate(${midX},${midY})`}>
-                      <rect x={-28} y={-10} width={56} height={18} rx={3} fill="rgba(8,12,20,0.92)" stroke="rgba(90,143,184,0.15)" strokeWidth={0.8} />
-                      <text x={0} y={0} textAnchor="middle" dominantBaseline="middle" fontSize={9} fontFamily="'JetBrains Mono',monospace" fill="#4a7898" letterSpacing="0.01em">{edge.label.split(' · ')[0]}</text>
+                      <rect x={-28} y={-10} width={56} height={18} rx={3} fill="var(--graph-chip)" stroke="rgba(90,143,184,0.15)" strokeWidth={0.8} />
+                      <text x={0} y={0} textAnchor="middle" dominantBaseline="middle" fontSize={9} fontFamily="'JetBrains Mono',monospace" fill="var(--graph-chip-ink)" letterSpacing="0.01em">{edge.label.split(' · ')[0]}</text>
                     </g>
                   </g>
                 )
@@ -1123,8 +1123,8 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
                   </defs>
                   <path d={arrowD} fill={`url(#${gid})`} />
                   <g transform={`translate(${midX},${midY})`}>
-                    <rect x={-30} y={-11} width={60} height={20} rx={4} fill="rgba(8,12,20,0.88)" stroke="rgba(77,143,192,0.16)" strokeWidth={0.8} />
-                    <text x={0} y={0} textAnchor="middle" dominantBaseline="middle" fontSize={9.5} fontFamily="'JetBrains Mono',monospace" fill={`rgba(140,195,230,${labelAlpha})`} letterSpacing="0.01em">{edge.label.split(' · ')[0]}</text>
+                    <rect x={-30} y={-11} width={60} height={20} rx={4} fill="var(--graph-chip)" stroke="rgba(77,143,192,0.16)" strokeWidth={0.8} />
+                    <text x={0} y={0} textAnchor="middle" dominantBaseline="middle" fontSize={9.5} fontFamily="'JetBrains Mono',monospace" fill="var(--graph-chip-ink)" fillOpacity={labelAlpha} letterSpacing="0.01em">{edge.label.split(' · ')[0]}</text>
                   </g>
                 </g>
               )
@@ -1143,12 +1143,12 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
           <div className="absolute top-4 right-4 z-20">
             <button onClick={() => setMobileFilters((v) => !v)}
               className="w-9 h-9 rounded-lg flex items-center justify-center border border-border transition-colors"
-              style={{ background: mobileFilters ? '#1e2738' : '#161c28', color: mobileFilters ? '#e2e8f0' : '#64748b' }}>
+              style={{ background: mobileFilters ? 'var(--surface-inset)' : 'var(--surface)', color: mobileFilters ? 'var(--text-strong)' : 'var(--muted-foreground)' }}>
               <SlidersHorizontal size={14} />
             </button>
             {mobileFilters && (
               <div className="absolute top-full right-0 mt-2 p-4 rounded-xl border border-border space-y-5"
-                style={{ background: '#161c28', width: '270px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+                style={{ background: 'var(--surface)', width: '270px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
                 <button type="button" onClick={onUploadLog}
                   className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded text-xs font-medium border border-border text-muted-foreground">
                   <Upload size={12} />Adicionar log
@@ -1166,7 +1166,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
 
       {/* Right rail — traces filter + analysis flight deck */}
       {!isMobile && (
-        <aside className="shrink-0 flex flex-col overflow-hidden -my-3 -mr-3" style={{ width: 300, background: '#111520', borderLeft: '1px solid rgba(255,255,255,0.06)' }}>
+        <aside className="shrink-0 flex flex-col overflow-hidden -my-3 -mr-3" style={{ width: 300, background: 'var(--surface-raised)', borderLeft: '1px solid var(--overlay)' }}>
           <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
             <div className="flex-1 min-h-0 flex flex-col">
               {graph?.eventLog ? (
@@ -1190,7 +1190,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
           </div>
 
           <div className="shrink-0 p-3 border-t border-border mt-auto space-y-3 sticky bottom-0 z-20"
-            style={{ background: '#111520', boxShadow: '0 -10px 24px rgba(0,0,0,.28)' }}>
+            style={{ background: 'var(--surface-raised)', boxShadow: '0 -10px 24px rgba(0,0,0,.28)' }}>
             {graph?.eventLog && <AnalysisFlightDeck scope={analysisScope} onReset={useAllAnalysisInput} />}
             <button type="button" onClick={startAnalysis}
               disabled={!analysisEligible || analysisRunning}
@@ -1206,7 +1206,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
                       ? `O recorte precisa de ao menos ${MIN_ANALYSIS_TRACES} traces`
                     : 'Gerar análise de desvios'}
               className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded text-xs font-medium transition-colors disabled:opacity-35 disabled:cursor-not-allowed"
-              style={{ background: 'rgba(180,83,9,0.16)', color: '#fbbf24', border: '1px solid rgba(180,83,9,0.42)' }}
+              style={{ background: 'rgba(180,83,9,0.16)', color: 'var(--warn)', border: '1px solid rgba(180,83,9,0.42)' }}
               onMouseEnter={(e) => { if (!e.currentTarget.disabled) { e.currentTarget.style.background = 'rgba(180,83,9,0.30)'; e.currentTarget.style.borderColor = 'rgba(217,119,6,0.72)' } }}
               onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(180,83,9,0.16)'; e.currentTarget.style.borderColor = 'rgba(180,83,9,0.42)' }}>
               <Scan size={12} />{analysisRunning ? 'Processando recorte…' : 'Gerar análise de desvios'}
@@ -1234,8 +1234,8 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
         <>
           <div onClick={() => setSelectedId(null)}
             style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(0,0,0,0.55)', opacity: selectedNode ? 1 : 0, pointerEvents: selectedNode ? 'auto' : 'none', transition: 'opacity 0.3s ease' }} />
-          <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 50, background: '#161c28', borderTop: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px 20px 0 0', maxHeight: '78vh', display: 'flex', flexDirection: 'column', transform: selectedNode ? 'translateY(0)' : 'translateY(100%)', transition: 'transform 0.38s cubic-bezier(0.32,0.72,0,1)', boxShadow: '0 -8px 40px rgba(0,0,0,0.6)' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}><div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)' }} /></div>
+          <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 50, background: 'var(--surface)', borderTop: '1px solid var(--overlay-strong)', borderRadius: '20px 20px 0 0', maxHeight: '78vh', display: 'flex', flexDirection: 'column', transform: selectedNode ? 'translateY(0)' : 'translateY(100%)', transition: 'transform 0.38s cubic-bezier(0.32,0.72,0,1)', boxShadow: '0 -8px 40px rgba(0,0,0,0.6)' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}><div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--hairline-strong)' }} /></div>
             {selectedNode && <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}><NodeDetailPanel node={selectedNode}
               analysisSelected={analysisScope.selectedActivityNodeIds.has(selectedNode.id)}
               analysisSelectionExplicit={analysisScope.selectionExplicit}

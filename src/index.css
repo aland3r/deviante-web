@@ -65,6 +65,136 @@
   --sidebar-accent-foreground: #e2e8f0;
   --sidebar-border: rgba(255, 255, 255, 0.07);
   --sidebar-ring: #dc2626;
+
+  /*
+   * Semantic tokens for what used to be hardcoded inline hex across the JSX
+   * (app shell, process graph, monitoring charts). Defining them here lets the
+   * same components flip between the default dark theme and the light
+   * "article/print" theme below without touching component code. In dark mode
+   * these resolve to exactly the prior literals, so the conversion is a no-op
+   * visually; `.theme-light` re-points every one of them.
+   */
+  --surface-deep: #090d14;      /* deepest wells (#090d14/#080c14) */
+  --surface-base: #0d1017;      /* page background */
+  --surface-raised: #111520;    /* header + raised panels */
+  --surface-panel: #0f141e;     /* inset panels */
+  --surface-inset: #1e2738;     /* input-ish insets, chips */
+  --surface-muted-2: #16202e;   /* secondary muted fill */
+  --text-dim: #475569;          /* dimmer than --text */
+  --text-slate: #334155;        /* faint labels / dividers-as-text */
+  --hairline: rgba(255, 255, 255, 0.07);
+  --hairline-strong: rgba(255, 255, 255, 0.09);
+  --overlay-soft: rgba(255, 255, 255, 0.04);
+  --overlay: rgba(255, 255, 255, 0.06);
+  --overlay-strong: rgba(255, 255, 255, 0.12);
+  --graph-node: #4d8fc0;
+  --graph-node-strong: #2870a8;
+  --graph-node-edge: #4a90c2;
+  --graph-node-soft: #c8e2f5;
+  --warn: #f59e0b;
+  --warn-strong: #b45309;
+  --ok: #10b981;
+  --ok-strong: #059669;
+  --crit: #dc2626;
+  --crit-strong: #991b1b;
+  --crit-2: #ef4444;
+  --crit-soft: #fca5a5;
+  --indigo: #6366f1;
+  --graph-chip: rgba(8, 12, 20, 0.9);   /* edge-frequency label badge */
+  --graph-chip-ink: #8cc3e6;
+}
+
+/*
+ * ── Light "article / print" theme ────────────────────────────────────────
+ * Opt-in via `.theme-light` on <html> (toggle in the app header, persisted).
+ * Purpose: screenshots that read cleanly on a white Word page — the dark/red
+ * theme prints heavy and its hairline borders and shadows vanish on a good
+ * monitor. Direction (owner, 05/08): deep blue as primary, ice/silver ground,
+ * mint-green as the analytical accent, a breath of lilac for a silvered chrome.
+ * Borders and shadows here are deliberately visible on white.
+ */
+:root.theme-light {
+  color-scheme: light;
+
+  --bg: #eef2f9;
+  --surface: #ffffff;
+  --surface-muted: #e9eef7;
+  --text: #3e4c66;
+  --text-strong: #17233d;
+  --border: rgba(23, 35, 61, 0.14);
+  --accent: #2a4d8f;
+  --accent-strong: #1c3a73;
+  --accent-soft: rgba(42, 77, 143, 0.10);
+  --success: #0e9e8c;
+  --success-soft: rgba(14, 158, 140, 0.14);
+  --danger: #d64545;
+  --danger-soft: rgba(214, 69, 69, 0.12);
+  --shadow: 0 10px 26px rgba(23, 35, 61, 0.10), 0 1px 2px rgba(23, 35, 61, 0.06);
+
+  --background: #f4f7fc;
+  --foreground: #17233d;
+  --card: #ffffff;
+  --card-foreground: #17233d;
+  --popover: #ffffff;
+  --popover-foreground: #17233d;
+  --primary: #2a4d8f;
+  --primary-foreground: #ffffff;
+  --secondary: #ecedf7;         /* silvered lilac */
+  --secondary-foreground: #3e4c66;
+  --muted: #e9eef7;
+  --muted-foreground: #647089;
+  --accent-foreground: #ffffff;
+  --destructive: #d64545;
+  --destructive-foreground: #ffffff;
+  --input: transparent;
+  --input-background: #f1f4fa;
+  --switch-background: #cbd4e4;
+  --ring: #2a4d8f;
+  --chart-1: #2a4d8f;           /* deep blue */
+  --chart-2: #0e9e8c;           /* mint */
+  --chart-3: #7c77c4;           /* lilac */
+  --chart-4: #c77a0c;           /* amber */
+  --chart-5: #647089;           /* slate */
+  --sidebar: #f4f7fc;
+  --sidebar-foreground: #17233d;
+  --sidebar-primary: #2a4d8f;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ecedf7;
+  --sidebar-accent-foreground: #17233d;
+  --sidebar-border: rgba(23, 35, 61, 0.12);
+  --sidebar-ring: #2a4d8f;
+
+  /* Inline-hex replacements re-pointed for light. Surfaces climb from an icy
+     page ground to pure-white cards; text darkens to navy/slate; the white
+     hover overlays become dark so they stay visible on light. */
+  --surface-deep: #e1e8f3;
+  --surface-base: #eef2f9;
+  --surface-raised: #ffffff;
+  --surface-panel: #f4f7fc;
+  --surface-inset: #eef2f9;
+  --surface-muted-2: #e9eef7;
+  --text-dim: #647089;
+  --text-slate: #8a94a8;
+  --hairline: rgba(23, 35, 61, 0.12);
+  --hairline-strong: rgba(23, 35, 61, 0.18);
+  --overlay-soft: rgba(23, 35, 61, 0.03);
+  --overlay: rgba(23, 35, 61, 0.05);
+  --overlay-strong: rgba(23, 35, 61, 0.09);
+  --graph-node: #2f6fb0;        /* readable blue on white */
+  --graph-node-strong: #1e5288;
+  --graph-node-edge: #6f9fca;
+  --graph-node-soft: #dcebf8;
+  --warn: #c77a0c;              /* darker amber, readable on white */
+  --warn-strong: #9a5b00;
+  --ok: #0e9e8c;
+  --ok-strong: #0b7d70;
+  --crit: #d64545;
+  --crit-strong: #b0322f;
+  --crit-2: #d64545;
+  --crit-soft: #c0392b;         /* readable red text on white */
+  --indigo: #6b62c9;
+  --graph-chip: rgba(244, 247, 252, 0.92);  /* light badge on light canvas */
+  --graph-chip-ink: #1e5288;
 }
 
 @theme inline {
@@ -935,4 +1065,54 @@ h3 {
   .auth-split__form {
     padding: 2rem 1.5rem 3rem;
   }
+}
+
+/*
+ * ── Light theme: overrides for surfaces the token swap can't reach ─────────
+ * A handful of rules hardcode dark gradients/alphas directly (body ground, the
+ * auth hero, the modal scrim, the scrollbar thumb). Re-point them so the light
+ * theme is coherent edge to edge — an icy ground with a whisper of lilac, a
+ * light scrim, and a slate scrollbar that stays visible on white.
+ */
+:root.theme-light body {
+  color: var(--text);
+  background:
+    radial-gradient(circle at top right, rgba(124, 119, 196, 0.10), transparent 34%),
+    radial-gradient(circle at top left, rgba(42, 77, 143, 0.06), transparent 30%),
+    linear-gradient(180deg, #f7f9fd 0%, var(--bg) 100%);
+}
+
+:root.theme-light {
+  scrollbar-color: rgba(23, 35, 61, 0.28) transparent;
+}
+
+:root.theme-light *::-webkit-scrollbar-thumb {
+  background: rgba(23, 35, 61, 0.24);
+  background-clip: content-box;
+}
+
+:root.theme-light *::-webkit-scrollbar-thumb:hover {
+  background: rgba(23, 35, 61, 0.42);
+  background-clip: content-box;
+}
+
+:root.theme-light .modal-backdrop {
+  background: rgba(23, 35, 61, 0.28);
+}
+
+:root.theme-light .auth-split {
+  background: var(--bg);
+}
+
+:root.theme-light .auth-split__hero {
+  background:
+    radial-gradient(circle at top right, rgba(124, 119, 196, 0.16), transparent 36%),
+    radial-gradient(circle at top left, rgba(42, 77, 143, 0.10), transparent 34%),
+    linear-gradient(180deg, #f7f9fd 0%, var(--surface-muted) 100%);
+}
+
+/* App header sits on rgba(255,255,255,.88) — already near-white; in light mode
+   make it a clean frosted white over the icy ground. */
+:root.theme-light .app-header {
+  background: rgba(255, 255, 255, 0.9);
 }

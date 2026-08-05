@@ -21,10 +21,10 @@ export default function ProjectActionsMenu({ onDelete, deleteLabel = 'Excluir pr
       </button>
       {open && (
         <div className="absolute z-50 top-full right-0 mt-1 min-w-44 rounded-md border border-border p-1"
-          style={{ background: '#161c28', boxShadow: '0 12px 30px rgba(0,0,0,.45)' }}>
+          style={{ background: 'var(--surface)', boxShadow: '0 12px 30px rgba(0,0,0,.45)' }}>
           <button type="button" onClick={() => { setOpen(false); onDelete?.() }}
             className="w-full flex items-center gap-2 px-2.5 py-2 rounded text-left text-xs hover:bg-red-950/40"
-            style={{ color: '#fca5a5' }}>
+            style={{ color: 'var(--crit-soft)' }}>
             <Trash2 size={13} />{deleteLabel}
           </button>
         </div>
