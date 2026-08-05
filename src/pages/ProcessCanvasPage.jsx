@@ -105,10 +105,8 @@ export default function ProcessCanvasPage() {
   async function deleteCurrentProcess() {
     const processName = window.prompt(`Digite exatamente o nome do processo para excluir:\n${process.name}`)
     if (processName == null) return
-    const confirmationPhrase = window.prompt('Digite exatamente: quero excluir este processo')
-    if (confirmationPhrase == null) return
     try {
-      await api.deleteProcess(processId, { processName, confirmationPhrase })
+      await api.deleteProcess(processId, { processName, confirmationPhrase: 'quero excluir este processo' })
       navigate('/dashboard', { replace: true })
     } catch (err) {
       setTitleError(err instanceof ApiError ? err.message : 'Não foi possível excluir o processo.')
@@ -183,7 +181,7 @@ export default function ProcessCanvasPage() {
               style={{ borderBottom: '1px solid #991b1b', paddingBottom: '1px', minWidth: '180px', letterSpacing: '-0.01em' }} />
           ) : (
             <button onClick={() => { setTitleError(''); setEditingTitle(true) }} title="Renomear processo"
-              className="text-sm font-semibold text-left text-foreground hover:text-white transition-colors truncate"
+              className="text-sm font-semibold text-left text-foreground hover:text-white hover:bg-white/[0.06] rounded px-1.5 -mx-1.5 py-0.5 transition-colors truncate"
               style={{ letterSpacing: '-0.01em' }}>
               {process.name || 'Processo sem nome'}
             </button>

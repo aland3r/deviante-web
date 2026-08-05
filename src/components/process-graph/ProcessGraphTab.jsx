@@ -70,7 +70,6 @@ function CasesLayersPanel({
     () => node ? variants.filter((v) => v.nodeIds.includes(node.id)) : variants,
     [variants, node],
   )
-  const totalCases = relevantVariants.reduce((s, v) => s + v.caseCount, 0)
   const excludedTraceCount = useMemo(() => {
     const ids = new Set(ignoredTraces)
     relevantVariants.filter((variant) => hiddenVariants.has(variant.id)).forEach((variant) => variant.cases.forEach((trace) => ids.add(trace.id)))
@@ -99,14 +98,14 @@ function CasesLayersPanel({
     onToggleVariant(id)
   }
 
-  const ROW_H = 28
+  const ROW_H = 26
   const INDENT = 20
 
   return (
     <div style={{
-      width: '100%', height: '100%', minHeight: 240, background: '#090c13', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16,
+      width: '100%', height: '100%', background: 'transparent',
       display: 'flex', flexDirection: 'column', fontFamily: "'Inter',sans-serif",
-      boxShadow: '0 0 24px rgba(0,0,0,0.18)', userSelect: 'none',
+      userSelect: 'none',
     }}>
       <div style={{ padding: '10px 12px 8px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -120,16 +119,7 @@ function CasesLayersPanel({
             <X size={11} />
           </button>
         </div>
-        <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: 'white', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node?.label || 'Todos os ciclos'}</p>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#64748b' }}>
-            {relevantVariants.length} ciclo{relevantVariants.length !== 1 ? 's' : ''}
-          </span>
-          <span style={{ color: 'rgba(255,255,255,0.12)' }}>·</span>
-          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#64748b' }}>
-            {totalCases.toLocaleString('pt-BR')} traces
-          </span>
-        </div>
+        {node?.label && <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: 'white', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.label}</p>}
       </div>
 
       <div style={{ padding: '7px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
@@ -246,7 +236,7 @@ function CasesLayersPanel({
                 </div>
               )}
 
-              <div style={{ height: 1, background: 'rgba(255,255,255,0.04)', margin: '2px 0' }} />
+              <div style={{ height: 1, background: 'rgba(255,255,255,0.04)', margin: 0 }} />
             </div>
           )
         })}
@@ -358,14 +348,15 @@ function AnalysisFlightDeck({ scope, onReset }) {
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-[9px] uppercase tracking-[0.12em]" style={{ color: '#fbbf24', fontFamily: "'JetBrains Mono',monospace" }}>Entrada da próxima análise</p>
-          <p className="text-[10px] text-muted-foreground mt-1">Recorte efetivo enviado ao IPDD/ADWIN</p>
         </div>
         {filtered && <button type="button" onClick={onReset} className="text-[9px] hover:underline" style={{ color: '#4d8fc0' }}>usar tudo</button>}
       </div>
       <div>
-        <p className="text-xl font-semibold text-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>{scope.selectedTraceCount.toLocaleString('pt-BR')}</p>
-        <p className="text-[10px] text-muted-foreground">de {scope.totalTraceCount.toLocaleString('pt-BR')} traces serão processados{scope.totalTraceCount > scope.selectedTraceCount ? ` · ${scope.totalTraceCount - scope.selectedTraceCount} fora` : ''}</p>
-        <p className="text-[9px] mt-1" style={{ color: '#4d8fc0', fontFamily: "'JetBrains Mono',monospace" }}>{scope.selectedLogCount} de {scope.totalLogCount} logs selecionados</p>
+        <p className="text-foreground leading-none flex items-baseline gap-1" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
+          <span className="text-xl font-semibold">{scope.selectedTraceCount.toLocaleString('pt-BR')}</span>
+          <span className="text-[11px] text-muted-foreground">/{scope.totalTraceCount.toLocaleString('pt-BR')}</span>
+        </p>
+        <p className="text-[9px] mt-1.5" style={{ color: '#4d8fc0', fontFamily: "'JetBrains Mono',monospace" }}>{scope.selectedLogCount} de {scope.totalLogCount} logs selecionados</p>
       </div>
       <div className="grid grid-cols-3 gap-1.5">
         {metric('Variantes', scope.selectedVariantCount, scope.totalVariantCount)}
@@ -399,9 +390,7 @@ function EventLogSelector({ eventLogs, selectedIds, onToggle }) {
             <FileText size={12} className="shrink-0" style={{ color: checked ? '#94a3b8' : '#475569' }} />
             <span className="min-w-0 text-[11px] truncate" style={{ color: checked ? '#e2e8f0' : '#94a3b8' }}>{log.fileName}</span>
             <span className="text-[9px] text-muted-foreground whitespace-nowrap" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
-              {parsed
-                ? `${Number(log.traceCount ?? 0).toLocaleString('pt-BR')} traces · ${new Date(log.uploadedAt).toLocaleDateString('pt-BR')}`
-                : log.parseStatus}
+              {parsed ? new Date(log.uploadedAt).toLocaleDateString('pt-BR') : log.parseStatus}
             </span>
           </button>
         )
@@ -970,15 +959,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
       {/* Left rail — Figma-style tools: logs + graph density */}
       {!isMobile && (
         <aside className="shrink-0 flex flex-col overflow-hidden" style={{ width: 228 }}>
-          <div className="shrink-0 px-1 pt-1 space-y-1.5">
-            <EventLogSelector eventLogs={eventLogs} selectedIds={selectedEventLogIds ?? new Set()} onToggle={toggleEventLog} />
-            <button type="button" onClick={onUploadLog}
-              className="w-full flex items-center justify-center gap-2 py-2 rounded text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-white/[0.04] transition-colors"
-              style={{ fontFamily: "'JetBrains Mono',monospace" }}>
-              <Upload size={12} />Adicionar log
-            </button>
-          </div>
-          <div className="px-1 pt-6 pb-4 space-y-5 flex-1 overflow-y-auto">
+          <div className="px-1 pt-1 pb-4 space-y-4">
             <p className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground/70"
               style={{ fontFamily: "'JetBrains Mono',monospace" }}>Densidade do grafo</p>
             <Slider label="Atividades" value={actSlider} onChange={setActSlider} />
@@ -987,6 +968,14 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
               <span className="text-[11px] text-muted-foreground"><span className="text-foreground font-medium">{visNodes.filter((n) => !n.isStart && !n.isEnd).length}</span> de {activityNodeCount}</span>
               <span className="text-[11px] text-muted-foreground"><span className="text-foreground font-medium">{visEdges.length}</span> caminhos</span>
             </div>
+          </div>
+          <div className="shrink-0 mt-auto px-1 pb-1 space-y-1.5">
+            <EventLogSelector eventLogs={eventLogs} selectedIds={selectedEventLogIds ?? new Set()} onToggle={toggleEventLog} />
+            <button type="button" onClick={onUploadLog}
+              className="w-full flex items-center justify-center gap-2 py-2 rounded-md text-[11px] font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-white/[0.05] transition-colors"
+              style={{ fontFamily: "'JetBrains Mono',monospace" }}>
+              <Upload size={12} />Adicionar log
+            </button>
           </div>
         </aside>
       )}
@@ -1180,9 +1169,9 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
 
       {/* Right rail — traces filter + analysis flight deck */}
       {!isMobile && (
-        <aside className="shrink-0 flex flex-col rounded-xl border border-border overflow-hidden" style={{ width: 300, background: '#111520' }}>
+        <aside className="shrink-0 flex flex-col overflow-hidden -my-3 -mr-3" style={{ width: 300, background: '#111520', borderLeft: '1px solid rgba(255,255,255,0.06)' }}>
           <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-            <div className="overflow-auto px-3 py-3 flex-1 min-h-0">
+            <div className="flex-1 min-h-0 flex flex-col">
               {graph?.eventLog ? (
                 <CasesLayersPanel
                   node={selectedNode}
@@ -1195,7 +1184,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
                   onClose={() => setSelectedId(null)}
                 />
               ) : (
-                <div className="flex h-full min-h-[180px] flex-col items-center justify-center rounded-xl border border-border bg-[#0d111b] p-6 text-center">
+                <div className="flex h-full min-h-[180px] flex-col items-center justify-center p-6 text-center">
                   <p className="text-xs font-medium text-muted-foreground">Traces de análise</p>
                   <p className="text-[11px] text-muted-foreground mt-2 opacity-60">Carregue um log para filtrar variantes e traces.</p>
                 </div>
@@ -1219,8 +1208,10 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
                     : analysisScope.selectedTraceCount < MIN_ANALYSIS_TRACES
                       ? `O recorte precisa de ao menos ${MIN_ANALYSIS_TRACES} traces`
                     : 'Gerar análise de desvios'}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded text-xs font-medium disabled:opacity-35 disabled:cursor-not-allowed"
-              style={{ background: 'rgba(180,83,9,0.16)', color: '#fbbf24', border: '1px solid rgba(180,83,9,0.42)' }}>
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded text-xs font-medium transition-colors disabled:opacity-35 disabled:cursor-not-allowed"
+              style={{ background: 'rgba(180,83,9,0.16)', color: '#fbbf24', border: '1px solid rgba(180,83,9,0.42)' }}
+              onMouseEnter={(e) => { if (!e.currentTarget.disabled) { e.currentTarget.style.background = 'rgba(180,83,9,0.30)'; e.currentTarget.style.borderColor = 'rgba(217,119,6,0.72)' } }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(180,83,9,0.16)'; e.currentTarget.style.borderColor = 'rgba(180,83,9,0.42)' }}>
               <Scan size={12} />{analysisRunning ? 'Processando recorte…' : 'Gerar análise de desvios'}
             </button>
           </div>
