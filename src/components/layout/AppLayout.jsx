@@ -1,7 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import BrandMark from './BrandMark'
 import ThemeToggle from './ThemeToggle'
-import { useAuth } from '../../context/AuthContext'
+import UserMenu from './UserMenu'
 
 /*
   App shell for /dashboard and /account.
@@ -15,8 +15,6 @@ import { useAuth } from '../../context/AuthContext'
 */
 
 export default function AppLayout() {
-  const { user, logout } = useAuth()
-
   return (
     <div className="app-shell" style={{ background: 'var(--surface-base)', minHeight: '100vh' }}>
       <header className="shrink-0 flex items-center gap-2 sm:gap-4 px-3 sm:px-5 border-b border-border sticky top-0 z-10"
@@ -43,24 +41,7 @@ export default function AppLayout() {
         <ThemeToggle />
 
         <div className="hidden sm:flex items-center gap-2 shrink-0">
-          <NavLink to="/account" end
-            title="Conta"
-            className="px-3 py-1 rounded-full text-xs font-semibold truncate no-underline transition-colors"
-            style={({ isActive }) => ({
-              background: isActive ? 'var(--surface-inset)' : 'var(--surface-inset)',
-              border: isActive ? '1px solid var(--hairline-strong)' : '1px solid var(--hairline-strong)',
-              color: 'var(--text-strong)',
-              maxWidth: 220,
-              textDecoration: 'none',
-              cursor: 'pointer',
-            })}>
-            {user?.fullName || user?.email || 'Gestor'}
-          </NavLink>
-          <button type="button" onClick={() => logout()}
-            className="px-2.5 py-1.5 rounded text-xs font-medium border border-border text-muted-foreground hover:text-foreground transition-colors"
-            style={{ background: 'transparent', cursor: 'pointer', fontFamily: "'JetBrains Mono',monospace" }}>
-            Sair
-          </button>
+          <UserMenu />
         </div>
       </header>
 
