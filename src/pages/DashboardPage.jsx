@@ -150,58 +150,39 @@ function NewProjectButton({ type, label, disabled, busy, onClick }) {
       disabled={disabled || busy}
       className="w-full sm:w-[168px]"
       style={{
-        minHeight: 52,
-        display: 'grid',
-        gridTemplateColumns: '34px minmax(0, 1fr)',
+        height: 44,
+        boxSizing: 'border-box',
+        display: 'flex',
         alignItems: 'center',
+        justifyContent: 'center',
         gap: 8,
-        padding: '8px 9px',
-        borderRadius: 7,
+        padding: '0 14px',
+        borderRadius: 8,
         border: `1px solid ${appearance.border}`,
         background: '#111520',
-        color: 'white',
-        textAlign: 'left',
+        color: '#e2e8f0',
         cursor: disabled || busy ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.48 : 1,
-        transition: 'border-color 0.15s, background 0.15s, transform 0.15s',
+        fontFamily: "'Inter',sans-serif",
+        fontWeight: 600,
+        fontSize: 12,
+        lineHeight: 1,
+        transition: 'border-color 0.15s, background 0.15s',
       }}
       onMouseEnter={(event) => {
         if (disabled || busy) return
         event.currentTarget.style.borderColor = appearance.accent
         event.currentTarget.style.background = '#151b27'
-        event.currentTarget.style.transform = 'translateY(-1px)'
       }}
       onMouseLeave={(event) => {
         if (disabled || busy) return
         event.currentTarget.style.borderColor = appearance.border
         event.currentTarget.style.background = '#111520'
-        event.currentTarget.style.transform = 'translateY(0)'
       }}
     >
-      <span style={{
-        width: 34,
-        height: 34,
-        borderRadius: 6,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: appearance.surface,
-        border: `1px solid ${appearance.border}`,
-        color: appearance.accent,
-      }}>
-        <Icon size={15} />
-      </span>
-      <span style={{ minWidth: 0 }}>
-        <span style={{
-          display: 'block',
-          fontFamily: "'Inter',sans-serif",
-          fontWeight: 600,
-          fontSize: 12,
-          color: '#e2e8f0',
-          lineHeight: 1.25,
-        }}>
-          {busy ? (type === 'monitoramento' ? 'Criando monitoramento...' : 'Criando processo...') : label}
-        </span>
+      <Icon size={15} color={appearance.accent} style={{ flexShrink: 0 }} />
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {busy ? (type === 'monitoramento' ? 'Criando monitoramento...' : 'Criando processo...') : label}
       </span>
     </button>
   )

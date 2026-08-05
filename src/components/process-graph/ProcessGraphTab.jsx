@@ -538,20 +538,6 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   const [linkedMachines, setLinkedMachines] = useState([])
   const [showMachinePicker, setShowMachinePicker] = useState(false)
   const [hiddenVariantIds, setHiddenVariantIds] = useState(() => new Set())
-
-  const machineMonitoringIdById = useMemo(
-    () => new Map(allMachines.map((item) => [item.id, item.monitoringIds?.[0] ?? null])),
-    [allMachines],
-  )
-
-  function openMachineInMonitoring(machine) {
-    const monitoringId = machine.monitoringIds?.[0] || machineMonitoringIdById.get(machine.id)
-    if (monitoringId) {
-      navigate(`/monitoring/${monitoringId}?focusMachine=${machine.id}`)
-    } else {
-      navigate(`/equipment/${machine.id}`)
-    }
-  }
   const [ignoredTraceIds, setIgnoredTraceIds] = useState(() => new Set())
   // null = no explicit choice yet (use every density-visible Activity).
   // An empty Set is intentionally different: the Manager removed the last
@@ -567,6 +553,24 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   const [allMachines, setAllMachines] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+
+  // Declared after allMachines on purpose: reading the state binding above its
+  // useState declaration is a temporal-dead-zone ReferenceError that throws
+  // during render, blanking the whole canvas (and, with no error boundary, the
+  // entire app) the moment any process is opened.
+  const machineMonitoringIdById = useMemo(
+    () => new Map(allMachines.map((item) => [item.id, item.monitoringIds?.[0] ?? null])),
+    [allMachines],
+  )
+
+  function openMachineInMonitoring(machine) {
+    const monitoringId = machine.monitoringIds?.[0] || machineMonitoringIdById.get(machine.id)
+    if (monitoringId) {
+      navigate(`/monitoring/${monitoringId}?focusMachine=${machine.id}`)
+    } else {
+      navigate(`/equipment/${machine.id}`)
+    }
+  }
 
   const isDragging = useRef(false)
   const onNode = useRef(false)

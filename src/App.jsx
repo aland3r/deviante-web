@@ -1,7 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import ErrorBoundary from './components/ErrorBoundary'
 import AppLayout from './components/layout/AppLayout'
 import { AuthProvider } from './context/AuthContext'
-import HomePage from './pages/HomePage'
 import AccountSettingsPage from './pages/AccountSettingsPage'
 import DashboardPage from './pages/DashboardPage'
 import LoginPage from './pages/LoginPage'
@@ -16,8 +16,9 @@ import ProtectedRoute, { NoAccessRedirect } from './routes/ProtectedRoute'
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <ErrorBoundary>
+      <AuthProvider>
+        <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
@@ -42,10 +43,11 @@ export default function App() {
             </Route>
           </Route>
 
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+        </BrowserRouter>
+      </AuthProvider>
+    </ErrorBoundary>
   )
 }

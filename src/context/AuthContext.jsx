@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../lib/api'
 import {
   checkDevianteAccess,
@@ -18,6 +18,17 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [accessReady, setAccessReady] = useState(false)
   const [sessionAuthenticated, setSessionAuthenticated] = useState(false)
+
+  // The identity we last ran the full access sync for, and a live mirror of
+  // accessReady. Supabase re-emits SIGNED_IN / TOKEN_REFRESHED every time the
+  // tab regains focus; without these, each focus re-ran syncAccess, which flips
+  // accessReady to false, unmounts the authenticated tree and refetches every
+  // page — the "switching tabs reloads everything / two windows never hold
+  // data" bug. The subscribe callback is created once, so it reads refs, not
+  // captured state.
+  const syncedUserIdRef = useRef(null)
+  const accessReadyRef = useRef(false)
+  useEffect(() => { accessReadyRef.current = accessReady }, [accessReady])
 
   async function syncAccess(sessionUser, mappedUser) {
     setAccessReady(false)
@@ -73,9 +84,20 @@ export function AuthProvider({ children }) {
         if (!active) return
 
         const activeSession = sessionUser ?? await getAuthSessionUser()
+        const nextUserId = activeSession?.id ?? null
         setSessionAuthenticated(Boolean(activeSession))
         setUser(currentUser)
 
+        // A refire for the same already-synced identity (tab focus, token
+        // refresh) must not resync: that would tear the tree down. Only a real
+        // identity change (first login, logout, account switch) resyncs.
+        const identityChanged = nextUserId !== syncedUserIdRef.current
+        if (!identityChanged && accessReadyRef.current) {
+          if (SESSION_EVENTS.has(event)) setLoading(false)
+          return
+        }
+
+        syncedUserIdRef.current = nextUserId
         try {
           await syncAccess(activeSession, currentUser)
         } catch (err) {
