@@ -263,7 +263,7 @@ function ProjectCard({ item }) {
       onMouseEnter={(e) => { e.currentTarget.style.borderColor = hoverBorder }}
       onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)' }}
     >
-      <div style={{ height: 140, background: '#080c14', overflow: 'hidden', position: 'relative' }}>
+      <div style={{ height: 108, background: '#080c14', overflow: 'hidden', position: 'relative' }}>
         {isMonitoring ? <MonitoramentoThumbnail /> : isAnalysis ? <AnaliseThumbnail /> : <ProcessThumbnail />}
       </div>
       <div style={{ padding: '10px 14px 12px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
@@ -467,7 +467,7 @@ export default function DashboardPage() {
       <div className="flex-1 px-4 py-6 sm:px-6 sm:py-8"
         style={{ maxWidth: 1120, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
 
-        <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
+        <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
           <div className="w-full sm:max-w-[360px]" style={{ position: 'relative' }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }}>
               <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -534,7 +534,7 @@ export default function DashboardPage() {
             Carregando painéis…
           </div>
         ) : visible.length ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {visible.map((item) => (
               <ProjectCard key={item.id} item={item} />
             ))}
