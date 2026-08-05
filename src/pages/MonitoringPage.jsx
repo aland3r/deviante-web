@@ -117,25 +117,30 @@ function MachineCard({ machine, focused }) {
   return (
     <Link to={`/equipment/${machine.id}`}
       data-machine-id={machine.id}
-      style={{ display: 'block', background: focused ? '#13212f' : '#0f141e', border: focused ? '1px solid #10b981' : '1px solid rgba(255,255,255,0.07)', borderRadius: 8, overflow: 'hidden', textDecoration: 'none', transition: 'border-color 0.15s, box-shadow 0.15s', boxShadow: focused ? '0 0 0 1px rgba(16,185,129,0.12), 0 20px 40px rgba(16,185,129,0.12)' : 'none' }}
-      onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(16,185,129,0.35)' }}
-      onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)' }}>
-      <div style={{ height: 132, background: '#080c14', position: 'relative' }}>
-        <MachineIllustration kind={machine.kind} />
-        <div style={{ position: 'absolute', top: 8, right: 8 }}><StatusPill status={status} /></div>
-      </div>
-      <div style={{ padding: '11px 14px 13px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="flex items-center gap-2" style={{ marginBottom: 4 }}>
-          <span style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 13, color: 'white', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{machine.name}</span>
+      style={{ display: 'block', background: focused ? 'linear-gradient(180deg,#072227,#0f2b34)' : 'linear-gradient(180deg,#071017,#0f141e)', border: focused ? '1px solid #10b981' : '1px solid rgba(255,255,255,0.06)', borderRadius: 10, overflow: 'hidden', textDecoration: 'none', transition: 'transform 0.12s, box-shadow 0.12s', boxShadow: focused ? '0 8px 30px rgba(16,185,129,0.08)' : '0 8px 20px rgba(2,6,10,0.4)' }}
+      onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.borderColor = 'rgba(16,185,129,0.35)' }}
+      onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)' }}>
+      <div style={{ height: 140, background: 'linear-gradient(180deg, rgba(2,6,10,0.04), transparent)', position: 'relative' }}>
+        <div style={{ position: 'absolute', left: 12, top: 12, zIndex: 2, width: 44, height: 44, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.12)' }}>
+          <RadioTower size={22} color={focused ? '#10b981' : '#7dd3fc'} />
         </div>
-        <div className="flex items-center gap-3 text-[10px]" style={{ color: '#475569', fontFamily: "'JetBrains Mono',monospace" }}>
-          {machine.tag && <span>{machine.tag}</span>}
-          <span className="flex items-center gap-1"><Gauge size={10} />{machine.parameters?.length ?? 0} parâm.</span>
-          {machine.location && <span className="flex items-center gap-1 truncate"><MapPin size={10} />{machine.location}</span>}
+        <div style={{ position: 'absolute', top: 8, right: 8 }}><StatusPill status={status} /></div>
+        <div style={{ position: 'absolute', right: 12, bottom: 12, zIndex: 1, opacity: 0.06 }}>
+          <MachineIllustration kind={machine.kind} />
+        </div>
+      </div>
+      <div style={{ padding: '12px 14px 14px', borderTop: '1px solid rgba(255,255,255,0.03)' }}>
+        <div className="flex items-center gap-2" style={{ marginBottom: 6 }}>
+          <span style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: 14, color: 'white', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{machine.name}</span>
+          <span style={{ fontSize: 11, color: '#94a3b8', background: 'rgba(7,12,17,0.5)', padding: '4px 8px', borderRadius: 999 }}>{machine.tag || '—'}</span>
+        </div>
+        <div className="flex items-center gap-3 text-[11px]" style={{ color: '#9fb0bd', fontFamily: "'JetBrains Mono',monospace" }}>
+          <span className="flex items-center gap-1"><Gauge size={11} />{machine.parameters?.length ?? 0} parâm.</span>
+          {machine.location && <span className="flex items-center gap-1 truncate"><MapPin size={11} />{machine.location}</span>}
         </div>
         {machine.relatedProcessName && (
-          <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px]" style={{ background: 'rgba(40,112,168,0.14)', color: '#4d8fc0' }}>
-            <Cpu size={10} />{machine.relatedProcessName}
+          <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded text-[11px]" style={{ background: 'rgba(16,185,129,0.08)', color: '#60a5fa' }}>
+            <Cpu size={12} />{machine.relatedProcessName}
           </div>
         )}
       </div>
