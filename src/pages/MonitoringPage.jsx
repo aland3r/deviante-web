@@ -100,7 +100,7 @@ function AddMachineModal({ onClose, onCreate }) {
           <button type="button" onClick={onClose} className="px-3.5 py-1.5 rounded-lg text-xs font-medium" style={{ border: '1px solid rgba(255,255,255,0.12)', color: '#94a3b8', background: 'transparent' }}>Cancelar</button>
           <button type="submit" disabled={busy || !vals.name.trim()} className="px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5"
             style={{ background: '#059669', color: 'white', opacity: busy || !vals.name.trim() ? 0.5 : 1 }}>
-            <Plus size={12} />{busy ? 'Adicionando…' : 'Adicionar máquina'}
+            <Plus size={14} />{busy ? 'Adicionando…' : 'Adicionar máquina'}
           </button>
         </div>
       </form>
@@ -272,7 +272,7 @@ export default function MonitoringPage() {
               {worstCount.watch > 0 && <span style={{ color: '#f59e0b' }}> · {worstCount.watch} em atenção</span>}
             </p>
           </div>
-          <div className="flex gap-2"><button type="button" onClick={openLinkEquipment} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold shrink-0" style={{ background: '#111520', color: '#94a3b8', border: '1px solid rgba(255,255,255,.1)' }}><Cpu size={13} />Associar existente</button><button type="button" onClick={() => setShowAdd(true)} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold shrink-0" style={{ background: '#059669', color: 'white' }}><Plus size={13} />Novo equipamento</button></div>
+          <div className="flex gap-2"><button type="button" onClick={openLinkEquipment} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold shrink-0" style={{ background: '#111520', color: '#94a3b8', border: '1px solid rgba(255,255,255,.1)' }}><Cpu size={16} />Associar existente</button><button type="button" onClick={() => setShowAdd(true)} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold shrink-0" style={{ background: '#059669', color: 'white' }}><Plus size={16} />Novo equipamento</button></div>
         </div>
 
         {machines.length === 0 ? (
@@ -280,7 +280,7 @@ export default function MonitoringPage() {
             <RadioTower size={26} className="mx-auto mb-3" color="#334155" />
             <p className="text-sm text-muted-foreground">Nenhuma máquina neste monitoramento ainda.</p>
             <button type="button" onClick={() => setShowAdd(true)} className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold" style={{ background: '#059669', color: 'white' }}>
-              <Plus size={13} />Adicionar a primeira máquina
+              <Plus size={16} />Adicionar a primeira máquina
             </button>
           </div>
         ) : (

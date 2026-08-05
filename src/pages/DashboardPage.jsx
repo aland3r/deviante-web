@@ -513,88 +513,89 @@ export default function DashboardPage() {
             <input
               value={search} onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar processos e análises…"
-              style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 8, padding: '6px 10px 6px 30px', color: 'white', fontFamily: "'Inter',sans-serif", fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+              style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 8, height: 44, padding: '8px 12px 8px 36px', color: 'white', fontFamily: "'Inter',sans-serif", fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end" style={{ gap: 8 }}>
             <div style={{ display: 'flex', gap: 8 }}>
-              <NewProjectButton
-                type="processo"
-                label="Processo"
-                onClick={handleCreateProcess}
-                busy={creating}
-              />
-              <NewProjectButton
-                type="analise"
-                label="Análise"
-                onClick={() => setAnalysisPickerOpen(true)}
-              />
-              <NewProjectButton
-                type="monitoramento"
-                label="Monitoramento"
-                onClick={handleCreateMonitoring}
-                busy={creatingMonitoring}
-              />
-            </div>
-          </div>
-        </div>
-
-        {error ? (
-          <div className="mb-6 px-4 py-3 rounded-lg text-sm" style={{ background: 'rgba(220,38,38,0.10)', color: '#fca5a5', border: '1px solid rgba(220,38,38,0.25)' }}>
-            {error}
-          </div>
-        ) : null}
-
-        {/* Create actions moved inline with search (see above) */}
-
-        <div>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0"
-            style={{ marginBottom: 18, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-            <div className="flex" style={{ gap: 0 }}>
-              {HOME_TABS.map((t) => (
+              return (
                 <button
-                  key={t.id} onClick={() => setTab(t.id)}
-                  className="flex-1 sm:flex-none"
-                  style={{ padding: '8px 12px', background: 'transparent', border: 'none', borderBottom: tab === t.id ? '2px solid #991b1b' : '2px solid transparent', color: tab === t.id ? 'white' : '#64748b', fontFamily: "'Inter',sans-serif", fontWeight: tab === t.id ? 600 : 500, fontSize: 12, cursor: 'pointer', marginBottom: -1, transition: 'color 0.15s', whiteSpace: 'nowrap' }}
+                  type="button"
+                  onClick={onClick}
+                  disabled={disabled || busy}
+                  className="w-full sm:w-[168px]"
+                  style={{
+                    minHeight: 48,
+                    display: 'grid',
+                    gridTemplateColumns: '40px minmax(0, 1fr) 24px',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '8px 9px',
+                    borderRadius: 7,
+                    border: `1px solid ${appearance.border}`,
+                    background: '#111520',
+                    color: 'white',
+                    textAlign: 'left',
+                    cursor: disabled || busy ? 'not-allowed' : 'pointer',
+                    opacity: disabled ? 0.48 : 1,
+                    transition: 'border-color 0.15s, background 0.15s, transform 0.15s',
+                  }}
+                  onMouseEnter={(event) => {
+                    if (disabled || busy) return
+                    event.currentTarget.style.borderColor = appearance.accent
+                    event.currentTarget.style.background = '#151b27'
+                    event.currentTarget.style.transform = 'translateY(-1px)'
+                  }}
+                  onMouseLeave={(event) => {
+                    if (disabled || busy) return
+                    event.currentTarget.style.borderColor = appearance.border
+                    event.currentTarget.style.background = '#111520'
+                    event.currentTarget.style.transform = 'translateY(0)'
+                  }}
                 >
-                  <span className="sm:hidden">{t.shortLabel || t.label}</span>
-                  <span className="hidden sm:inline">{t.label}</span>
+                  <span style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: appearance.surface,
+                    border: `1px solid ${appearance.border}`,
+                    color: appearance.accent,
+                  }}>
+                    <Icon size={20} />
+                  </span>
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{
+                      display: 'block',
+                      fontFamily: "'Inter',sans-serif",
+                      fontWeight: 600,
+                      fontSize: 12,
+                      color: '#e2e8f0',
+                      lineHeight: 1.25,
+                    }}>
+                      {busy ? (type === 'monitoramento' ? 'Criando monitoramento...' : 'Criando processo...') : label}
+                    </span>
+                  </span>
+                  <span style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: disabled ? '#475569' : appearance.accent,
+                    background: disabled ? 'rgba(255,255,255,0.03)' : appearance.surface,
+                  }}>
+                    {disabled ? (
+                      <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9 }}>--</span>
+                    ) : type === 'processo' ? (
+                      <Plus size={16} />
+                    ) : (
+                      <ChevronRight size={16} />
+                    )}
+                  </span>
                 </button>
-              ))}
-            </div>
-            <div className="flex items-center justify-end" style={{ gap: 8, paddingBottom: 8 }}>
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#475569', letterSpacing: '0.04em' }}>
-                {countLabel}
-              </span>
-            </div>
-          </div>
-
-          {loading ? (
-            <p className="text-sm text-muted-foreground">Carregando…</p>
-          ) : tab !== 'recentes' ? (
-            <div style={{ padding: '60px 0', textAlign: 'center', color: '#475569', fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
-              {tab === 'compartilhados' ? 'Nenhum item compartilhado com você ainda.' : 'Nenhum favorito ainda.'}
-            </div>
-          ) : visible.length === 0 ? (
-            <div style={{ padding: '60px 0', textAlign: 'center', color: '#475569', fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
-              {search
-                ? `Nenhum resultado para “${search}”`
-                : 'Nenhum processo ou análise ainda — crie o primeiro acima.'}
-            </div>
-          ) : displayMode === 'list' ? (
-            <div className="border border-border rounded overflow-hidden" style={{ background: '#0f141e' }}>
-              {visible.map((item) => <ProjectListItem key={`${item.type}-${item.id}`} item={item} />)}
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
-              {visible.map((item) => (
-                <ProjectCard key={`${item.type}-${item.id}`} item={item} />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
+              )
