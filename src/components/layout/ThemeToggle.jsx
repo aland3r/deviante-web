@@ -33,16 +33,20 @@ export default function ThemeToggle() {
       onClick={toggle}
       title={light ? 'Tema escuro' : 'Tema claro (para o artigo)'}
       aria-label={light ? 'Ativar tema escuro' : 'Ativar tema claro'}
-      className="px-2 py-1.5 rounded text-xs transition-colors"
+      className="transition-colors"
       style={{
+        width: 32,
+        height: 32,
+        borderRadius: '50%',
         background: 'transparent',
         border: '1px solid var(--hairline-strong)',
         color: 'var(--text)',
         cursor: 'pointer',
         display: 'inline-flex',
         alignItems: 'center',
-        gap: 6,
-        fontFamily: "'JetBrains Mono',monospace",
+        justifyContent: 'center',
+        flexShrink: 0,
+        padding: 0,
       }}
     >
       {light ? (
@@ -57,7 +61,6 @@ export default function ThemeToggle() {
           <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
         </svg>
       )}
-      <span className="hidden sm:inline">{light ? 'Escuro' : 'Claro'}</span>
     </button>
   )
 }
