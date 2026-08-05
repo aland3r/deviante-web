@@ -110,10 +110,9 @@ function CasesLayersPanel({
 
   return (
     <div style={{
-      position: 'absolute', top: 0, left: 0, bottom: 0, zIndex: 30, width: 252,
-      background: '#090c13', borderRight: '1px solid rgba(255,255,255,0.07)',
+      width: '100%', background: '#090c13', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16,
       display: 'flex', flexDirection: 'column', fontFamily: "'Inter',sans-serif",
-      boxShadow: '4px 0 24px rgba(0,0,0,0.55)', userSelect: 'none',
+      boxShadow: '0 0 24px rgba(0,0,0,0.18)', userSelect: 'none',
     }}>
       <div style={{ padding: '10px 12px 8px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -949,9 +948,8 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
     const minY = Math.min(...bounds.map((item) => item.top))
     const contentWidth = Math.max(1, Math.max(...bounds.map((item) => item.right)) - minX)
     const contentHeight = Math.max(1, Math.max(...bounds.map((item) => item.bottom)) - minY)
-    const panelInset = !isMobile && showCasesPanel ? 252 : 0
     const padding = 56
-    const availableWidth = Math.max(1, rect.width - panelInset - padding * 2)
+    const availableWidth = Math.max(1, rect.width - padding * 2)
     const availableHeight = Math.max(1, rect.height - padding * 2)
     const nextZoom = Math.max(0.2, Math.min(
       availableWidth / contentWidth,
@@ -959,11 +957,11 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
       1.6,
     ))
     setPan({
-      x: panelInset + padding + (availableWidth - contentWidth * nextZoom) / 2 - minX * nextZoom,
+      x: padding + (availableWidth - contentWidth * nextZoom) / 2 - minX * nextZoom,
       y: padding + (availableHeight - contentHeight * nextZoom) / 2 - minY * nextZoom,
     })
     setZoom(nextZoom)
-  }, [visNodes, isMobile, showCasesPanel])
+  }, [visNodes])
 
   // Frame once when the graph first lands (or is replaced after a re-upload).
   const framedGraph = useRef(null)
@@ -990,18 +988,6 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
         ) : (
       <div ref={containerRef} className="relative flex-1 min-w-0 overflow-hidden" style={{ background: '#090d14' }}>
 
-        {!isMobile && showCasesPanel && (
-          <CasesLayersPanel
-            node={selectedNode}
-            variants={variants}
-            hiddenVariants={hiddenVariantIds}
-            ignoredTraces={ignoredTraceIds}
-            onToggleVariant={toggleVariant}
-            onToggleTrace={toggleTrace}
-            onResetSelection={resetAnalysisSelection}
-            onClose={() => setShowCasesPanel(false)}
-          />
-        )}
 
         <div className="absolute left-5 top-5 z-20 rounded-xl border border-border p-2.5 bg-[#111520] shadow-lg" style={{ minWidth: 170 }}>
           <div className="flex items-center justify-between gap-2">
@@ -1049,6 +1035,33 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
             </div>
           )}
         </div>
+
+        <div className="absolute left-5 top-[145px] z-20 rounded-xl border border-border p-3 bg-[#111520] shadow-lg" style={{ minWidth: 220 }}>
+          <button type="button" onClick={onUploadLog}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            style={{ fontFamily: "'JetBrains Mono',monospace" }}>
+            <Upload size={12} />Adicionar log de eventos
+          </button>
+          <div className="mt-3">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>Ajustes visuais</p>
+              <span className="text-[10px] text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>{Math.round(zoom * 100)}%</span>
+            </div>
+            <div className="mt-2 flex items-center gap-1">
+              {[
+                { icon: <ZoomOut size={13} />, fn: () => setZoom((z) => Math.max(0.2, z * 0.8)), title: 'Reduzir zoom' },
+                { icon: <Maximize2 size={13} />, fn: fitView, title: 'Ajustar visualização' },
+                { icon: <ZoomIn size={13} />, fn: () => setZoom((z) => Math.min(3, z * 1.2)), title: 'Aumentar zoom' },
+              ].map(({ icon, fn, title }, i) => (
+                <button key={i} onClick={fn} title={title}
+                  className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors border border-border rounded">
+                  {icon}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <svg ref={svgRef} className="w-full h-full"
           style={{ cursor: cursorGrab ? 'grabbing' : 'grab', touchAction: 'none' }}
           onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp}
@@ -1130,44 +1143,9 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
           </g>
         </svg>
 
-        <div className={`absolute right-5 flex flex-col rounded overflow-hidden border border-border ${isMobile ? 'bottom-24' : 'bottom-5'}`} style={{ background: '#161c28' }}>
-          {[
-            { icon: <ZoomIn size={13} />, fn: () => setZoom((z) => Math.min(3, z * 1.2)), title: 'Aumentar zoom' },
-            { icon: <ZoomOut size={13} />, fn: () => setZoom((z) => Math.max(0.2, z * 0.8)), title: 'Reduzir zoom' },
-            { icon: <Maximize2 size={13} />, fn: fitView, title: 'Ajustar visualização' },
-          ].map(({ icon, fn, title }, i) => (
-            <button key={i} onClick={fn} title={title}
-              className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors border-b border-border last:border-0">
-              {icon}
-            </button>
-          ))}
-        </div>
-        <div className={`absolute right-5 w-8 text-center text-[9px] text-muted-foreground ${isMobile ? 'bottom-[174px]' : 'bottom-[122px]'}`}
-          style={{ fontFamily: "'JetBrains Mono',monospace" }}>
-          {Math.round(zoom * 100)}%
-        </div>
 
         {/* Traces window toggle — only meaningful with an activity selected,
             since the panel lists the variants that pass through it. */}
-        {!isMobile && (
-          <button onClick={() => setShowCasesPanel((v) => !v)}
-            style={{
-              position: 'absolute', bottom: 20, left: 20,
-              display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px 5px 8px', borderRadius: 6,
-              border: `1px solid ${showCasesPanel ? 'rgba(40,112,168,0.50)' : 'rgba(255,255,255,0.09)'}`,
-              background: showCasesPanel ? 'rgba(40,112,168,0.18)' : '#161c28',
-              color: showCasesPanel ? '#c8e2f5' : '#64748b',
-              cursor: 'pointer', fontFamily: "'JetBrains Mono',monospace", fontSize: 10,
-              transition: 'all 0.15s', whiteSpace: 'nowrap',
-            }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="12 2 2 7 12 12 22 7 12 2" />
-              <polyline points="2 17 12 22 22 17" />
-              <polyline points="2 12 12 17 22 12" />
-            </svg>
-            {showCasesPanel ? 'Ocultar ciclos' : `${formatCount(graph?.caseCount ?? 0)} traces`}
-          </button>
-        )}
 
         {isMobile && (
           <div className="absolute top-4 right-4 z-20">
@@ -1191,17 +1169,12 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
           </div>
         )}
       </div>
-        )}
-      </div>
+    )}
+  </div>
 
       {!isMobile && (
-        <div className="shrink-0 flex flex-col border-l border-border" style={{ width: '284px', background: '#111520' }}>
-          <div className="shrink-0 p-3 border-b border-border space-y-3">
-            <button type="button" onClick={onUploadLog}
-              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded text-xs font-medium transition-colors border border-border text-muted-foreground hover:text-foreground"
-              style={{ fontFamily: "'JetBrains Mono',monospace" }}>
-              <Upload size={12} />{eventLogs.length ? 'Adicionar log de eventos' : 'Carregar log de eventos'}
-            </button>
+        <div className="shrink-0 flex flex-col rounded-xl border border-border overflow-hidden" style={{ width: '284px', background: '#111520' }}>
+          <div className="shrink-0 p-3 border-b border-border">
             <EventLogSelector eventLogs={eventLogs} selectedIds={selectedEventLogIds ?? new Set()} onToggle={toggleEventLog} />
           </div>
 
@@ -1215,22 +1188,52 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
               <span className="text-[11px] text-muted-foreground"><span className="text-foreground font-medium">{visEdges.length}</span> caminhos</span>
             </div>
           </div>
-          {selectedNode ? (
-            <div className="flex-1 min-h-0 overflow-hidden">
-            <NodeDetailPanel node={selectedNode}
-              analysisSelected={analysisScope.selectedActivityNodeIds.has(selectedNode.id)}
-              analysisSelectionExplicit={analysisScope.selectionExplicit}
-              onToggleAnalysis={toggleAnalysisActivity}
-              onClose={() => setSelectedId(null)} />
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+            <div className="overflow-auto px-3 py-2">
+              {selectedNode ? (
+                <NodeDetailPanel node={selectedNode}
+                  analysisSelected={analysisScope.selectedActivityNodeIds.has(selectedNode.id)}
+                  analysisSelectionExplicit={analysisScope.selectionExplicit}
+                  onToggleAnalysis={toggleAnalysisActivity}
+                  onClose={() => setSelectedId(null)} />
+              ) : (
+                <div className="flex h-full min-h-[180px] flex-col items-center justify-center rounded-xl border border-border bg-[#0d111b] p-6 text-center">
+                  <p className="text-xs font-medium text-muted-foreground">Selecione uma atividade</p>
+                  <p className="text-[11px] text-muted-foreground mt-2 opacity-60">Inspecione frequência e desempenho.</p>
+                </div>
+              )}
+
+              {graph?.eventLog && (
+                <div className="mt-4">
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>Ciclos</p>
+                      <p className="text-[11px] text-foreground">Traces de análise</p>
+                    </div>
+                    <button type="button" onClick={() => setShowCasesPanel((v) => !v)}
+                      className="rounded-full border px-3 py-1 text-[10px] font-medium transition-colors"
+                      style={{ borderColor: showCasesPanel ? 'rgba(56,189,248,0.45)' : 'rgba(255,255,255,0.12)', color: showCasesPanel ? '#7dd3fc' : '#94a3b8', background: showCasesPanel ? 'rgba(56,189,248,0.08)' : 'transparent' }}>
+                      {showCasesPanel ? 'Ocultar' : 'Mostrar'}
+                    </button>
+                  </div>
+                  {showCasesPanel && (
+                    <div className="overflow-hidden">
+                      <CasesLayersPanel
+                        node={selectedNode}
+                        variants={variants}
+                        hiddenVariants={hiddenVariantIds}
+                        ignoredTraces={ignoredTraceIds}
+                        onToggleVariant={toggleVariant}
+                        onToggleTrace={toggleTrace}
+                        onResetSelection={resetAnalysisSelection}
+                        onClose={() => setShowCasesPanel(false)}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="flex-1 flex items-center justify-center p-6 text-center">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">Selecione uma atividade</p>
-                <p className="text-[11px] text-muted-foreground mt-1 opacity-60">Inspecione frequência e desempenho.</p>
-              </div>
-            </div>
-          )}
+          </div>
 
           <div className="shrink-0 p-3 border-t border-border mt-auto space-y-3 sticky bottom-0 z-20"
             style={{ background: '#111520', boxShadow: '0 -10px 24px rgba(0,0,0,.28)' }}>

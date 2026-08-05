@@ -608,8 +608,8 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
         </main>
 
         {analysis && (
-          <aside className="hidden lg:block shrink-0 border-l border-border overflow-y-auto" style={{ width: 286, background: '#111520' }}>
-            <div className="px-4 py-3 border-b border-border">
+          <aside className="hidden lg:block shrink-0 rounded-xl border border-border overflow-hidden overflow-y-auto" style={{ width: 286, background: '#111520' }}>
+            <div className="px-4 py-3 border-b border-border bg-[#111520]">
               <p className="text-[10px] uppercase text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>Detalhe da detecção</p>
             </div>
             {selectedPoint && (

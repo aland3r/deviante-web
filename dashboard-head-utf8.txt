@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Activity,
   BarChart3,
   ChevronRight,
+  Grid3X3,
   Plus,
   RadioTower,
   X,
@@ -12,7 +13,7 @@ import { api, ApiError } from '../lib/api'
 
 /*
   Ported from the Figma Make export "Process Mining Canvas Design"
-  (ZZKdwxgmeCNJFG64zGbADe), HomeScreen — figma is the style reference.
+  (ZZKdwxgmeCNJFG64zGbADe), HomeScreen ÔÇö figma is the style reference.
 
   Grid mixes Process + Analysis cards (Figma HomeProject type). Analyses are
   persisted by the authenticated API; opening one routes to the process
@@ -25,15 +26,15 @@ function timeAgo(isoDate) {
   const diffMs = Date.now() - then
   const minutes = Math.floor(diffMs / 60000)
   if (minutes < 1) return 'agora mesmo'
-  if (minutes < 60) return `${minutes} minuto${minutes !== 1 ? 's' : ''} atrás`
+  if (minutes < 60) return `${minutes} minuto${minutes !== 1 ? 's' : ''} atr├ís`
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours} hora${hours !== 1 ? 's' : ''} atrás`
+  if (hours < 24) return `${hours} hora${hours !== 1 ? 's' : ''} atr├ís`
   const days = Math.floor(hours / 24)
-  if (days < 7) return `${days} dia${days !== 1 ? 's' : ''} atrás`
+  if (days < 7) return `${days} dia${days !== 1 ? 's' : ''} atr├ís`
   const weeks = Math.floor(days / 7)
-  if (weeks < 5) return `${weeks} semana${weeks !== 1 ? 's' : ''} atrás`
+  if (weeks < 5) return `${weeks} semana${weeks !== 1 ? 's' : ''} atr├ís`
   const months = Math.floor(days / 30)
-  return `${months} ${months !== 1 ? 'meses' : 'mês'} atrás`
+  return `${months} ${months !== 1 ? 'meses' : 'm├¬s'} atr├ís`
 }
 
 function ProcessThumbnail() {
@@ -60,7 +61,7 @@ function ProcessThumbnail() {
   )
 }
 
-/** Monitoring card art — equipment signal traces on a health baseline. */
+/** Monitoring card art ÔÇö equipment signal traces on a health baseline. */
 function MonitoramentoThumbnail() {
   return (
     <svg width="100%" height="100%" viewBox="0 0 220 130" fill="none" preserveAspectRatio="xMidYMid meet">
@@ -82,7 +83,7 @@ function MonitoramentoThumbnail() {
   )
 }
 
-/** Figma Make HomeScreen — analysis card art */
+/** Figma Make HomeScreen ÔÇö analysis card art */
 function AnaliseThumbnail() {
   return (
     <svg width="100%" height="100%" viewBox="0 0 220 130" fill="none" preserveAspectRatio="xMidYMid meet">
@@ -152,7 +153,7 @@ function NewProjectButton({ type, label, disabled, busy, onClick }) {
       style={{
         minHeight: 52,
         display: 'grid',
-        gridTemplateColumns: '34px minmax(0, 1fr)',
+        gridTemplateColumns: '34px minmax(0, 1fr) 20px',
         alignItems: 'center',
         gap: 8,
         padding: '8px 9px',
@@ -203,6 +204,24 @@ function NewProjectButton({ type, label, disabled, busy, onClick }) {
           {busy ? (type === 'monitoramento' ? 'Criando monitoramento...' : 'Criando processo...') : label}
         </span>
       </span>
+      <span style={{
+        width: 20,
+        height: 20,
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: disabled ? '#475569' : appearance.accent,
+        background: disabled ? 'rgba(255,255,255,0.03)' : appearance.surface,
+      }}>
+        {disabled ? (
+          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8 }}>--</span>
+        ) : type === 'processo' ? (
+          <Plus size={12} />
+        ) : (
+          <ChevronRight size={13} />
+        )}
+      </span>
     </button>
   )
 }
@@ -217,8 +236,8 @@ function AnalysisProcessPicker({ processes, onClose, onPick }) {
         style={{ maxWidth: 460, maxHeight: 'min(620px, 84vh)', borderRadius: 8, background: '#111520', boxShadow: '0 24px 70px rgba(0,0,0,0.55)' }}>
         <div className="flex items-start justify-between gap-4 px-4 py-3.5 border-b border-border">
           <div>
-            <h2 id="analysis-picker-title" className="text-sm font-semibold text-foreground">Nova análise</h2>
-            <p className="text-[11px] text-muted-foreground mt-1">Selecione o processo que será analisado.</p>
+            <h2 id="analysis-picker-title" className="text-sm font-semibold text-foreground">Nova an├ílise</h2>
+            <p className="text-[11px] text-muted-foreground mt-1">Selecione o processo que ser├í analisado.</p>
           </div>
           <button type="button" onClick={onClose} title="Fechar"
             className="w-7 h-7 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary">
@@ -248,7 +267,7 @@ function AnalysisProcessPicker({ processes, onClose, onPick }) {
             </button>
           )) : (
             <p className="px-3 py-8 text-center text-xs text-muted-foreground">
-              Crie um processo antes de iniciar uma análise.
+              Crie um processo antes de iniciar uma an├ílise.
             </p>
           )}
         </div>
@@ -268,11 +287,11 @@ function ProjectCard({ item }) {
   const accent = isMonitoring ? '#059669' : isAnalysis ? '#6366f1' : '#2870a8'
   const hoverBorder = isMonitoring ? 'rgba(16,185,129,0.35)' : 'rgba(255,255,255,0.16)'
   const subtitle = isMonitoring
-    ? `${item.machineCount ?? 0} máquina${(item.machineCount ?? 0) !== 1 ? 's' : ''}`
+    ? `${item.machineCount ?? 0} m├íquina${(item.machineCount ?? 0) !== 1 ? 's' : ''}`
     : isAnalysis
       ? (item.processName
-        ? `Processo · ${item.processName}`
-        : 'Análise de desvios')
+        ? `Processo ┬À ${item.processName}`
+        : 'An├ílise de desvios')
       : `Editado ${timeAgo(item.updatedAt)}`
 
   return (
@@ -298,7 +317,7 @@ function ProjectCard({ item }) {
         {isAnalysis ? (
           <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#334155', display: 'block', marginTop: 2 }}>
             Editado {timeAgo(item.updatedAt)}
-            {item.driftCount != null ? ` · ${item.driftCount} drift${item.driftCount !== 1 ? 's' : ''}` : ''}
+            {item.driftCount != null ? ` ┬À ${item.driftCount} drift${item.driftCount !== 1 ? 's' : ''}` : ''}
           </span>
         ) : null}
       </div>
@@ -316,10 +335,10 @@ function ProjectListItem({ item }) {
       : `/processes/${item.id}`
   const accent = isMonitoring ? '#10b981' : isAnalysis ? '#6366f1' : '#4d8fc0'
   const meta = isMonitoring
-    ? `${item.machineCount ?? 0} máquina${(item.machineCount ?? 0) !== 1 ? 's' : ''} · editado ${timeAgo(item.updatedAt)}`
+    ? `${item.machineCount ?? 0} m├íquina${(item.machineCount ?? 0) !== 1 ? 's' : ''} ┬À editado ${timeAgo(item.updatedAt)}`
     : isAnalysis
-      ? `${item.processName ? `Processo · ${item.processName}` : 'Análise'} · editado ${timeAgo(item.updatedAt)}`
-      : `${item.sector || 'Processo produtivo'} · editado ${timeAgo(item.updatedAt)}`
+      ? `${item.processName ? `Processo ┬À ${item.processName}` : 'An├ílise'} ┬À editado ${timeAgo(item.updatedAt)}`
+      : `${item.sector || 'Processo produtivo'} ┬À editado ${timeAgo(item.updatedAt)}`
 
   return (
     <Link to={to}
@@ -377,7 +396,7 @@ export default function DashboardPage() {
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(err instanceof ApiError ? err.message : 'Não foi possível carregar o painel.')
+          setError(err instanceof ApiError ? err.message : 'N├úo foi poss├¡vel carregar o painel.')
         }
       })
       .finally(() => {
@@ -393,7 +412,7 @@ export default function DashboardPage() {
       const process = await api.createProcess()
       navigate(`/processes/${process.id}`)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Não foi possível criar o processo.')
+      setError(err instanceof ApiError ? err.message : 'N├úo foi poss├¡vel criar o processo.')
       setCreating(false)
     }
   }
@@ -405,7 +424,7 @@ export default function DashboardPage() {
       const created = await api.createMonitoring()
       navigate(`/monitoring/${created.id}`)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Não foi possível criar o monitoramento.')
+      setError(err instanceof ApiError ? err.message : 'N├úo foi poss├¡vel criar o monitoramento.')
       setCreatingMonitoring(false)
     }
   }
@@ -421,7 +440,7 @@ export default function DashboardPage() {
       setAnalysisPickerOpen(false)
       navigate(`/processes/${process.id}?view=analysis&analysisId=${analysis.id}`)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Não foi possível criar a análise.')
+      setError(err instanceof ApiError ? err.message : 'N├úo foi poss├¡vel criar a an├ílise.')
       setAnalysisPickerOpen(false)
     }
   }
@@ -468,10 +487,10 @@ export default function DashboardPage() {
   const countLabel = (() => {
     const parts = []
     if (processCount) parts.push(`${processCount} processo${processCount !== 1 ? 's' : ''}`)
-    if (analysisCount) parts.push(`${analysisCount} anális${analysisCount !== 1 ? 'es' : 'e'}`)
+    if (analysisCount) parts.push(`${analysisCount} an├ílis${analysisCount !== 1 ? 'es' : 'e'}`)
     if (monitoringCount) parts.push(`${monitoringCount} monitoramento${monitoringCount !== 1 ? 's' : ''}`)
     if (!parts.length) return '0 itens'
-    return parts.join(' · ')
+    return parts.join(' ┬À ')
   })()
 
   return (
@@ -493,78 +512,90 @@ export default function DashboardPage() {
             </svg>
             <input
               value={search} onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar processos e análises…"
+              placeholder="Buscar processos e an├ílisesÔÇª"
               style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 8, height: 44, padding: '8px 12px 8px 36px', color: 'white', fontFamily: "'Inter',sans-serif", fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end" style={{ gap: 8 }}>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', width: '100%' }}>
-              <NewProjectButton
-                type="processo"
-                label="Novo processo"
-                disabled={creating || creatingMonitoring}
-                busy={creating}
-                onClick={handleCreateProcess}
-              />
-              <NewProjectButton
-                type="analise"
-                label="Nova análise"
-                disabled={creating || creatingMonitoring || processes.length === 0}
-                busy={false}
-                onClick={() => setAnalysisPickerOpen(true)}
-              />
-              <NewProjectButton
-                type="monitoramento"
-                label="Novo monitoramento"
-                disabled={creating || creatingMonitoring}
-                busy={creatingMonitoring}
-                onClick={handleCreateMonitoring}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <div className="flex flex-wrap items-center gap-2">
-            {HOME_TABS.map((homeTab) => (
-              <button
-                key={homeTab.id}
-                type="button"
-                onClick={() => setTab(homeTab.id)}
-                className={`text-xs font-medium rounded px-3 py-2 ${tab === homeTab.id ? 'bg-white/10 text-white' : 'text-muted-foreground hover:bg-white/5'}`}
-                style={{ border: '1px solid rgba(255,255,255,0.08)' }}
-              >
-                {homeTab.shortLabel || homeTab.label}
-              </button>
-            ))}
-          </div>
-          <span className="text-[11px] text-muted-foreground">{countLabel}</span>
-        </div>
-
-        {error ? (
-          <div className="rounded border border-border bg-[#111520] p-4 text-sm text-red-300 mb-4">
-            {error}
-          </div>
-        ) : null}
-
-        {loading ? (
-          <div className="rounded border border-border bg-[#111520] p-8 text-sm text-muted-foreground text-center">
-            Carregando painéis…
-          </div>
-        ) : visible.length ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            {visible.map((item) => (
-              <ProjectCard key={item.id} item={item} />
-            ))}
-          </div>
-        ) : (
-          <div className="rounded border border-border bg-[#111520] p-8 text-sm text-muted-foreground text-center">
-            Nenhum resultado encontrado.
-          </div>
-        )}
-
-      </div>
-    </div>
-  )
-}
+            <div style={{ display: 'flex', gap: 8 }}>
+              return (
+                <button
+                  type="button"
+                  onClick={onClick}
+                  disabled={disabled || busy}
+                  className="w-full sm:w-[168px]"
+                  style={{
+                    minHeight: 48,
+                    display: 'grid',
+                    gridTemplateColumns: '40px minmax(0, 1fr) 24px',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '8px 9px',
+                    borderRadius: 7,
+                    border: `1px solid ${appearance.border}`,
+                    background: '#111520',
+                    color: 'white',
+                    textAlign: 'left',
+                    cursor: disabled || busy ? 'not-allowed' : 'pointer',
+                    opacity: disabled ? 0.48 : 1,
+                    transition: 'border-color 0.15s, background 0.15s, transform 0.15s',
+                  }}
+                  onMouseEnter={(event) => {
+                    if (disabled || busy) return
+                    event.currentTarget.style.borderColor = appearance.accent
+                    event.currentTarget.style.background = '#151b27'
+                    event.currentTarget.style.transform = 'translateY(-1px)'
+                  }}
+                  onMouseLeave={(event) => {
+                    if (disabled || busy) return
+                    event.currentTarget.style.borderColor = appearance.border
+                    event.currentTarget.style.background = '#111520'
+                    event.currentTarget.style.transform = 'translateY(0)'
+                  }}
+                >
+                  <span style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: appearance.surface,
+                    border: `1px solid ${appearance.border}`,
+                    color: appearance.accent,
+                  }}>
+                    <Icon size={20} />
+                  </span>
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{
+                      display: 'block',
+                      fontFamily: "'Inter',sans-serif",
+                      fontWeight: 600,
+                      fontSize: 12,
+                      color: '#e2e8f0',
+                      lineHeight: 1.25,
+                    }}>
+                      {busy ? (type === 'monitoramento' ? 'Criando monitoramento...' : 'Criando processo...') : label}
+                    </span>
+                  </span>
+                  <span style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: disabled ? '#475569' : appearance.accent,
+                    background: disabled ? 'rgba(255,255,255,0.03)' : appearance.surface,
+                  }}>
+                    {disabled ? (
+                      <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9 }}>--</span>
+                    ) : type === 'processo' ? (
+                      <Plus size={16} />
+                    ) : (
+                      <ChevronRight size={16} />
+                    )}
+                  </span>
+                </button>
+              )
