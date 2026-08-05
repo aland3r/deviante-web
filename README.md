@@ -29,6 +29,12 @@ Responsive type tokens share the same property names across breakpoints (mobile 
 
 ## Deploy (Vercel)
 
+> **Continuous deployment — no manual step.** Vercel is connected to the
+> **`aland3r/deviante-web`** GitHub repo: **every push to `main` auto-deploys to
+> production** (`deviante.alander.io`); pushes to other branches get preview
+> deploys. To ship, push to `main` — that's it. The numbered steps below are the
+> **one-time** project setup, not a per-release checklist.
+
 1. [vercel.com/new](https://vercel.com/new) → import **`aland3r/deviante-web`**
 2. Framework preset: **Vite** (build `npm run build`, output `dist`)
 3. Environment variables (Production + Preview):
