@@ -177,11 +177,11 @@ export default function ProcessCanvasPage() {
                 if (e.key === 'Enter') commitTitle()
                 if (e.key === 'Escape') { setTitleDraft(process.name ?? ''); setEditingTitle(false) }
               }}
-              className="text-sm font-semibold bg-transparent border-0 outline-none text-foreground"
+              className="text-[13px] font-semibold bg-transparent border-0 outline-none text-foreground"
               style={{ borderBottom: '1px solid #991b1b', paddingBottom: '1px', minWidth: '180px', letterSpacing: '-0.01em' }} />
           ) : (
             <button onClick={() => { setTitleError(''); setEditingTitle(true) }} title="Renomear processo"
-              className="text-sm font-semibold text-left text-foreground hover:text-white hover:bg-white/[0.06] rounded px-1.5 -mx-1.5 py-0.5 transition-colors truncate"
+              className="text-[13px] font-semibold text-left text-foreground hover:text-white hover:bg-white/[0.06] rounded px-1.5 -mx-1.5 py-0.5 transition-colors truncate"
               style={{ letterSpacing: '-0.01em' }}>
               {process.name || 'Processo sem nome'}
             </button>
@@ -189,22 +189,6 @@ export default function ProcessCanvasPage() {
           {titleError && <span className="text-[11px] leading-none mt-0.5 truncate" style={{ color: '#fca5a5' }}>{titleError}</span>}
         </div>
         <ProjectActionsMenu onDelete={deleteCurrentProcess} deleteLabel="Excluir processo" />
-
-        {!isMobile && graphStats?.caseCount > 0 && (
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded ml-4 shrink-0"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-            title="Recorte atual da próxima análise">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
-            <span className="text-[11px] text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
-              {(graphStats.selectedCaseCount ?? graphStats.caseCount).toLocaleString('pt-BR')}
-              {(graphStats.selectedCaseCount ?? graphStats.caseCount) !== graphStats.caseCount ? ` / ${graphStats.caseCount.toLocaleString('pt-BR')}` : ''} traces
-            </span>
-            {graphStats.hasUnmappedOperations && (
-              <span className="text-[10px] uppercase tracking-wide" title="Operações ainda não mapeadas para atividades (UC5)"
-                style={{ color: '#f59e0b', fontFamily: "'JetBrains Mono',monospace" }}>não mapeado</span>
-            )}
-          </div>
-        )}
 
         <div className="flex-1" />
 

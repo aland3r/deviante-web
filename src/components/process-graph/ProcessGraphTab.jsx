@@ -108,10 +108,7 @@ function CasesLayersPanel({
       userSelect: 'none',
     }}>
       <div style={{ padding: '10px 12px 8px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.10em', color: '#475569', textTransform: 'uppercase' }}>
-            Ciclos · Traces
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
           <button onClick={onClose}
             style={{ width: 18, height: 18, borderRadius: 3, border: 'none', background: 'transparent', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}
             onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'white' }}
@@ -388,7 +385,7 @@ function EventLogSelector({ eventLogs, selectedIds, onToggle }) {
               {checked && <Check size={9} color="white" strokeWidth={3} />}
             </span>
             <FileText size={12} className="shrink-0" style={{ color: checked ? '#94a3b8' : '#475569' }} />
-            <span className="min-w-0 text-[11px] truncate" style={{ color: checked ? '#e2e8f0' : '#94a3b8' }}>{log.fileName}</span>
+            <span className="min-w-0 text-[10px] truncate" style={{ color: checked ? '#e2e8f0' : '#94a3b8', fontFamily: "'JetBrains Mono',monospace" }} title={log.fileName}>{log.fileName}</span>
             <span className="text-[9px] text-muted-foreground whitespace-nowrap" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
               {parsed ? new Date(log.uploadedAt).toLocaleDateString('pt-BR') : log.parseStatus}
             </span>
@@ -958,8 +955,8 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
     <div className="flex flex-1 min-h-0 gap-3 p-3 overflow-hidden">
       {/* Left rail — Figma-style tools: logs + graph density */}
       {!isMobile && (
-        <aside className="shrink-0 flex flex-col overflow-hidden" style={{ width: 228 }}>
-          <div className="px-1 pt-1 pb-4 space-y-4">
+        <aside className="shrink-0 flex flex-col overflow-hidden -my-3 -ml-3" style={{ width: 228, background: '#111520', borderRight: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="px-3 pt-3 pb-4 space-y-4">
             <p className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground/70"
               style={{ fontFamily: "'JetBrains Mono',monospace" }}>Densidade do grafo</p>
             <Slider label="Atividades" value={actSlider} onChange={setActSlider} />
@@ -969,7 +966,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
               <span className="text-[11px] text-muted-foreground"><span className="text-foreground font-medium">{visEdges.length}</span> caminhos</span>
             </div>
           </div>
-          <div className="shrink-0 mt-auto px-1 pb-1 space-y-1.5">
+          <div className="shrink-0 mt-auto px-3 pb-3 space-y-1.5">
             <EventLogSelector eventLogs={eventLogs} selectedIds={selectedEventLogIds ?? new Set()} onToggle={toggleEventLog} />
             <button type="button" onClick={onUploadLog}
               className="w-full flex items-center justify-center gap-2 py-2 rounded-md text-[11px] font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-white/[0.05] transition-colors"
