@@ -5,7 +5,6 @@ import {
   BarChart3,
   ChevronRight,
   Grid3X3,
-  List,
   Plus,
   RadioTower,
   X,
@@ -379,7 +378,7 @@ export default function DashboardPage() {
   const [creatingMonitoring, setCreatingMonitoring] = useState(false)
   const [tab, setTab] = useState('recentes')
   const [search, setSearch] = useState('')
-  const [displayMode, setDisplayMode] = useState('grid')
+  
   const [analysisPickerOpen, setAnalysisPickerOpen] = useState(false)
 
   useEffect(() => {
@@ -506,8 +505,8 @@ export default function DashboardPage() {
       <div className="flex-1 px-4 py-6 sm:px-6 sm:py-8"
         style={{ maxWidth: 1120, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
 
-        <div className="flex items-center justify-end mb-6 gap-3 flex-wrap">
-          <div className="w-full sm:max-w-[280px]" style={{ position: 'relative' }}>
+        <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
+          <div className="w-full sm:max-w-[360px]" style={{ position: 'relative' }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }}>
               <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
@@ -517,6 +516,28 @@ export default function DashboardPage() {
               style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 8, padding: '6px 10px 6px 30px', color: 'white', fontFamily: "'Inter',sans-serif", fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end" style={{ gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <NewProjectButton
+                type="processo"
+                label="Processo"
+                onClick={handleCreateProcess}
+                busy={creating}
+              />
+              <NewProjectButton
+                type="analise"
+                label="Análise"
+                onClick={() => setAnalysisPickerOpen(true)}
+              />
+              <NewProjectButton
+                type="monitoramento"
+                label="Monitoramento"
+                onClick={handleCreateMonitoring}
+                busy={creatingMonitoring}
+              />
+            </div>
+          </div>
         </div>
 
         {error ? (
@@ -525,28 +546,7 @@ export default function DashboardPage() {
           </div>
         ) : null}
 
-        <div className="flex flex-col items-end" style={{ marginBottom: 32 }}>
-          <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 10, fontWeight: 600, color: '#64748b', margin: '0 0 9px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Criar novo</p>
-          <div className="flex w-full flex-col justify-end gap-2 sm:w-auto sm:flex-row">
-            <NewProjectButton
-              type="processo"
-              label="Processo"
-              onClick={handleCreateProcess}
-              busy={creating}
-            />
-            <NewProjectButton
-              type="analise"
-              label="Análise"
-              onClick={() => setAnalysisPickerOpen(true)}
-            />
-            <NewProjectButton
-              type="monitoramento"
-              label="Monitoramento"
-              onClick={handleCreateMonitoring}
-              busy={creatingMonitoring}
-            />
-          </div>
-        </div>
+        {/* Create actions moved inline with search (see above) */}
 
         <div>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0"
@@ -567,16 +567,6 @@ export default function DashboardPage() {
               <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#475569', letterSpacing: '0.04em' }}>
                 {countLabel}
               </span>
-              <div style={{ display: 'flex', gap: 1, padding: 3, borderRadius: 6, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <button type="button" onClick={() => setDisplayMode('grid')} title="Visualização em grade"
-                  style={{ width: 24, height: 24, borderRadius: 4, border: 0, background: displayMode === 'grid' ? 'rgba(255,255,255,0.08)' : 'transparent', color: displayMode === 'grid' ? 'white' : '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Grid3X3 size={12} />
-                </button>
-                <button type="button" onClick={() => setDisplayMode('list')} title="Visualização em lista"
-                  style={{ width: 24, height: 24, borderRadius: 4, border: 0, background: displayMode === 'list' ? 'rgba(255,255,255,0.08)' : 'transparent', color: displayMode === 'list' ? 'white' : '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <List size={12} />
-                </button>
-              </div>
             </div>
           </div>
 
