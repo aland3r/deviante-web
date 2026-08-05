@@ -22,14 +22,16 @@ export default function AppLayout() {
 
         <BrandMark />
 
-        <nav className="hidden md:flex items-center gap-1 ml-2" aria-label="Navegação principal">
+        <div className="flex-1" />
+
+        <nav className="hidden md:flex items-center justify-center gap-2" aria-label="Navegação principal">
           {[
             ['/dashboard', 'Projetos'],
             ['/operations', 'Operações'],
             ['/equipment', 'Equipamentos'],
             ['/schedules', 'Agendamentos'],
           ].map(([to, label]) => (
-            <NavLink key={to} to={to} className="px-2.5 py-1.5 rounded text-[11px] no-underline"
+            <NavLink key={to} to={to} className="px-3 py-1.5 rounded text-[11px] text-center no-underline"
               style={({ isActive }) => ({ color: isActive ? 'var(--text-strong)' : 'var(--muted-foreground)', background: isActive ? 'var(--overlay)' : 'transparent', textDecoration: 'none' })}>
               {label}
             </NavLink>

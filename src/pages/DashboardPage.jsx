@@ -150,12 +150,12 @@ function NewProjectButton({ type, label, disabled, busy, onClick }) {
       disabled={disabled || busy}
       className="w-full sm:w-[168px]"
       style={{
-        height: 44,
+        height: 34,
         boxSizing: 'border-box',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
+        gap: 10,
         padding: '0 14px',
         borderRadius: 8,
         border: `1px solid ${appearance.border}`,
@@ -172,7 +172,7 @@ function NewProjectButton({ type, label, disabled, busy, onClick }) {
       onMouseEnter={(event) => {
         if (disabled || busy) return
         event.currentTarget.style.borderColor = appearance.accent
-        event.currentTarget.style.background = '#151b27'
+        event.currentTarget.style.background = 'var(--surface-muted-2)'
       }}
       onMouseLeave={(event) => {
         if (disabled || busy) return
