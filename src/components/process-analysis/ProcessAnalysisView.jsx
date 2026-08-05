@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertTriangle, ChevronRight, CircleDot, Clock3, Home,
-  Layers, Play, RefreshCw, Scan, SlidersHorizontal,
+  Layers, RefreshCw, Scan, SlidersHorizontal,
 } from 'lucide-react'
 import BrandMark from '../layout/BrandMark'
 import ProjectActionsMenu from '../projects/ProjectActionsMenu'
@@ -273,20 +273,37 @@ function DriftChart({ title, points, processedValues, drifts, outliers, excluded
               </g>
             ) : null
           })()}
-          {/* Emphasized drift guides (no on-chart label — the name lives in the
-              hover card, so the chart stays uncluttered). */}
+          {/* Emphasized drift guides + their labels. The labels stay on the
+              selected/hovered drift (that's the "legenda" that must persist);
+              the hover card is an extra layer on top, opened only on hover. */}
           {drift && (() => {
             const startArrayIndex = points.findIndex((point) => point.index === drift.anomalyStartIndex)
             const arrayIndex = points.findIndex((point) => point.index === drift.index)
             if (arrayIndex < 0) return null
             const dx = x(arrayIndex)
+            const number = drifts.indexOf(drift) + 1
+            const driftLabelX = Math.min(Math.max(dx, pad.left + 34), width - pad.right - 34)
+            const startX = startArrayIndex >= 0 ? x(startArrayIndex) : null
+            const startLabelX = startX != null ? Math.min(Math.max(startX, pad.left + 60), width - pad.right - 60) : null
             return (
               <g pointerEvents="none">
-                {startArrayIndex >= 0 && (
-                  <line x1={x(startArrayIndex)} x2={x(startArrayIndex)} y1={pad.top} y2={height - pad.bottom}
-                    stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="3 4" />
+                {startX != null && (
+                  <>
+                    <line x1={startX} x2={startX} y1={pad.top} y2={height - pad.bottom}
+                      stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="3 4" />
+                    <g transform={`translate(${startLabelX},${pad.top + 20})`}>
+                      <rect x={-58} y={0} width={116} height={15} rx={3} fill="#f59e0b" />
+                      <text x={0} y={11} textAnchor="middle" fill="#3b2708" fontSize="9.5" fontWeight="600"
+                        fontFamily="'JetBrains Mono',monospace">Início da anomalia</text>
+                    </g>
+                  </>
                 )}
                 <line x1={dx} x2={dx} y1={pad.top} y2={height - pad.bottom} stroke="#ef4444" strokeWidth={2} />
+                <g transform={`translate(${driftLabelX},${pad.top + 3})`}>
+                  <rect x={-33} y={0} width={66} height={15} rx={3} fill="#dc2626" />
+                  <text x={0} y={11} textAnchor="middle" fill="#fff" fontSize="9.5" fontWeight="600"
+                    fontFamily="'JetBrains Mono',monospace">Desvio {number}</text>
+                </g>
               </g>
             )
           })()}
@@ -508,16 +525,8 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
         <span className={`flex items-center gap-1.5 ${T.body} font-semibold text-foreground`} style={{ fontFamily: MONO }}>
           <Scan size={13} /><span className="hidden sm:inline">Análise de desvios</span>
         </span>
-        {onDelete && <ProjectActionsMenu onDelete={onDelete} deleteLabel="Excluir análise" />}
         <div className="flex-1" />
-        <button type="button" onClick={() => runAnalysis()} disabled={runState === 'running'}
-          title={filterDirty ? 'Filtro alterado — reexecute para aplicá-lo' : 'Reexecutar a análise'}
-          className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded ${T.body} font-medium text-white disabled:opacity-60`}
-          style={{ background: filterDirty ? '#b45309' : '#991b1b' }}>
-          {runState === 'running'
-            ? <><RefreshCw size={12} className="animate-spin" /><span className="hidden sm:inline">Processando...</span></>
-            : <><Play size={12} /><span className="hidden sm:inline">{filterDirty ? 'Aplicar filtro' : 'Reexecutar análise'}</span></>}
-        </button>
+        {onDelete && <ProjectActionsMenu onDelete={onDelete} deleteLabel="Excluir análise" />}
       </header>
 
       <div className="flex flex-1 min-h-0">
@@ -646,20 +655,38 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
           ) : null}
         </main>
 
-        {/* RIGHT rail — the Trace object, same column, same shape as the Process
-            screen. Its count lives in this header, not in a detached stat tile. */}
-        {analysis && (
-          <aside className="hidden lg:flex flex-col shrink-0 min-h-0 border-l border-border overflow-hidden" style={{ width: 264, background: '#111520' }}>
-            <div className="shrink-0 px-4 py-3 border-b border-border">
-              <p className={`${T.caption} uppercase text-muted-foreground`} style={{ fontFamily: MONO }}>Traces</p>
-              <p className={`${T.caption} text-muted-foreground mt-1`}>
-                {remainingTraces} de {points.length}{pendingExcludedTraces > 0 ? ` · ${pendingExcludedTraces} fora` : ''} · ordem cronológica
-              </p>
-            </div>
+        {/* RIGHT rail — the Trace object: same column, shape and position as the
+            Process screen, with the re-run CTA docked at the rail's bottom in the
+            exact style of the process "Gerar análise de desvios" button. */}
+        <aside className="hidden lg:flex flex-col shrink-0 min-h-0 border-l border-border overflow-hidden" style={{ width: 264, background: '#111520' }}>
+          <div className="shrink-0 px-4 py-3 border-b border-border">
+            <p className={`${T.caption} uppercase text-muted-foreground`} style={{ fontFamily: MONO }}>Traces</p>
+            <p className={`${T.caption} text-muted-foreground mt-1`}>
+              {points.length > 0
+                ? `${remainingTraces} de ${points.length}${pendingExcludedTraces > 0 ? ` · ${pendingExcludedTraces} fora` : ''} · ordem cronológica`
+                : 'Recorte enviado ao ADWIN'}
+            </p>
+          </div>
+          {points.length > 0 ? (
             <TraceList points={points} driftIndexes={driftIndexes} outliers={outliers} excluded={excludedTraces}
               selectedTrace={selectedTrace} onSelect={setSelectedTrace} onToggleExclude={toggleExcludedTrace} />
-          </aside>
-        )}
+          ) : (
+            <div className="flex-1 min-h-0 flex items-center justify-center p-6 text-center">
+              <p className={`${T.caption} text-muted-foreground`}>
+                {runState === 'running' ? 'Analisando os traces…' : 'Nenhum trace para listar.'}
+              </p>
+            </div>
+          )}
+          <div className="shrink-0 p-3 border-t border-border mt-auto sticky bottom-0 z-20"
+            style={{ background: '#111520', boxShadow: '0 -10px 24px rgba(0,0,0,.28)' }}>
+            <button type="button" onClick={() => runAnalysis()} disabled={runState === 'running'}
+              title={filterDirty ? 'Filtro alterado — reexecute para aplicá-lo' : 'Reexecutar a análise'}
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded text-xs font-medium disabled:opacity-35 disabled:cursor-not-allowed"
+              style={{ background: 'rgba(180,83,9,0.16)', color: '#fbbf24', border: '1px solid rgba(180,83,9,0.42)' }}>
+              <Scan size={12} />{runState === 'running' ? 'Processando…' : filterDirty ? 'Aplicar filtro' : 'Reexecutar análise'}
+            </button>
+          </div>
+        </aside>
       </div>
     </div>
   )
