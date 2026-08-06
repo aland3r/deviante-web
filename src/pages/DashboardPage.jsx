@@ -9,6 +9,7 @@ import {
   X,
 } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
+import MachineIllustration from '../components/monitoring/MachineIllustration'
 
 /*
   Ported from the Figma Make export "Process Mining Canvas Design"
@@ -56,28 +57,6 @@ function ProcessThumbnail() {
       <rect x="155" y="90" width="24" height="20" rx="5" fill="var(--surface-raised)" stroke="var(--graph-node-strong)" strokeWidth="1.5" />
       <circle cx="205" cy="65" r="10" fill="var(--surface-base)" stroke="var(--graph-node)" strokeWidth="1.2" />
       <rect x="200" y="60" width="10" height="10" rx="2" fill="var(--graph-node)" opacity="0.6" />
-    </svg>
-  )
-}
-
-/** Monitoring card art — equipment signal traces on a health baseline. */
-function MonitoramentoThumbnail() {
-  return (
-    <svg width="100%" height="100%" viewBox="0 0 220 130" fill="none" preserveAspectRatio="xMidYMid meet">
-      {[35, 65, 95].map((y) => (
-        <line key={y} x1="20" y1={y} x2="200" y2={y} stroke="var(--overlay)" strokeWidth="1" />
-      ))}
-      <line x1="20" y1="50" x2="200" y2="50" stroke="var(--warn)" strokeWidth="1" strokeDasharray="4 3" opacity="0.5" />
-      <path d="M 20 92 L 45 90 L 70 91 L 95 88 L 120 86 L 135 70 L 150 52 L 170 44 L 200 40"
-        stroke="var(--success)" strokeWidth="2" fill="none" opacity="0.9" />
-      {[[45, 90], [95, 88], [135, 70], [170, 44]].map(([cx, cy], i) => (
-        <circle key={i} cx={cx} cy={cy} r="2.6" fill="var(--success)" opacity="0.85" />
-      ))}
-      <circle cx="185" cy="42" r="4" fill="var(--danger)" />
-      <circle cx="185" cy="42" r="8" fill="none" stroke="var(--danger)" strokeWidth="1" opacity="0.4" />
-      <rect x="28" y="104" width="14" height="12" rx="2" fill="var(--surface-raised)" stroke="var(--graph-node)" strokeWidth="1.2" />
-      <rect x="52" y="104" width="14" height="12" rx="2" fill="var(--surface-raised)" stroke="var(--graph-node-strong)" strokeWidth="1.2" />
-      <circle cx="80" cy="110" r="6" fill="var(--surface-base)" stroke="var(--graph-node)" strokeWidth="1.2" />
     </svg>
   )
 }
@@ -264,7 +243,7 @@ function ProjectCard({ item }) {
       onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--hairline)' }}
     >
       <div style={{ height: 108, background: 'var(--surface-deep)', overflow: 'hidden', position: 'relative' }}>
-        {isMonitoring ? <MonitoramentoThumbnail /> : isAnalysis ? <AnaliseThumbnail /> : <ProcessThumbnail />}
+        {isMonitoring ? <MachineIllustration kind={item.machineKind || 'generico'} /> : isAnalysis ? <AnaliseThumbnail /> : <ProcessThumbnail />}
       </div>
       <div style={{ padding: '10px 14px 12px', borderTop: '1px solid var(--overlay)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>

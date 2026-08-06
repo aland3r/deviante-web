@@ -102,6 +102,16 @@
   --indigo: #6366f1;
   --graph-chip: rgba(8, 12, 20, 0.9);   /* edge-frequency label badge */
   --graph-chip-ink: #8cc3e6;
+
+  /* Machine schematic illustration (monitoring cards + dashboard thumbnails).
+     Tuned for high LUMINANCE contrast, not hue — a lighter body fill over a
+     lighter panel, bright blue strokes — so the drawing reads for everyone,
+     including a green-color-blind viewer (persona Odair). No green here. */
+  --illo-bg: #10161f;
+  --illo-fill: #1b2432;
+  --illo-stroke: #6ba8dd;
+  --illo-stroke-soft: #93c7f0;
+  --illo-dot: rgba(255, 255, 255, 0.11);
 }
 
 /*
@@ -116,12 +126,12 @@
 :root.theme-light {
   color-scheme: light;
 
-  --bg: #eef2f9;
-  --surface: #ffffff;
-  --surface-muted: #e9eef7;
-  --text: #3e4c66;
-  --text-strong: #17233d;
-  --border: rgba(23, 35, 61, 0.14);
+  --bg: #e6e6ee;
+  --surface: #fbfbfe;
+  --surface-muted: #e2e2ec;
+  --text: #3a4456;
+  --text-strong: #1a2338;
+  --border: rgba(46, 42, 78, 0.17);
   --accent: #2a4d8f;
   --accent-strong: #1c3a73;
   --accent-soft: rgba(42, 77, 143, 0.10);
@@ -129,57 +139,57 @@
   --success-soft: rgba(14, 158, 140, 0.14);
   --danger: #d64545;
   --danger-soft: rgba(214, 69, 69, 0.12);
-  --shadow: 0 10px 26px rgba(23, 35, 61, 0.10), 0 1px 2px rgba(23, 35, 61, 0.06);
+  --shadow: 0 10px 26px rgba(40, 36, 72, 0.12), 0 1px 2px rgba(40, 36, 72, 0.08);
 
-  --background: #f4f7fc;
-  --foreground: #17233d;
-  --card: #ffffff;
-  --card-foreground: #17233d;
-  --popover: #ffffff;
-  --popover-foreground: #17233d;
+  --background: #ebebf3;
+  --foreground: #1a2338;
+  --card: #fbfbfe;
+  --card-foreground: #1a2338;
+  --popover: #fbfbfe;
+  --popover-foreground: #1a2338;
   --primary: #2a4d8f;
   --primary-foreground: #ffffff;
-  --secondary: #ecedf7;         /* silvered lilac */
-  --secondary-foreground: #3e4c66;
-  --muted: #e9eef7;
-  --muted-foreground: #647089;
+  --secondary: #e6e3f2;         /* violet-silver */
+  --secondary-foreground: #3a4456;
+  --muted: #e2e2ec;
+  --muted-foreground: #5d6276;
   --accent-foreground: #ffffff;
   --destructive: #d64545;
   --destructive-foreground: #ffffff;
   --input: transparent;
-  --input-background: #f1f4fa;
-  --switch-background: #cbd4e4;
+  --input-background: #ebebf3;
+  --switch-background: #c8c5db;
   --ring: #2a4d8f;
-  --chart-1: #2a4d8f;           /* deep blue */
+  --chart-1: #2a4d8f;           /* deep blue (logo) */
   --chart-2: #0e9e8c;           /* mint */
   --chart-3: #7c77c4;           /* lilac */
   --chart-4: #c77a0c;           /* amber */
-  --chart-5: #647089;           /* slate */
-  --sidebar: #f4f7fc;
-  --sidebar-foreground: #17233d;
+  --chart-5: #5d6276;           /* slate */
+  --sidebar: #ebebf3;
+  --sidebar-foreground: #1a2338;
   --sidebar-primary: #2a4d8f;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #ecedf7;
-  --sidebar-accent-foreground: #17233d;
-  --sidebar-border: rgba(23, 35, 61, 0.12);
+  --sidebar-accent: #e6e3f2;
+  --sidebar-accent-foreground: #1a2338;
+  --sidebar-border: rgba(46, 42, 78, 0.14);
   --sidebar-ring: #2a4d8f;
 
   /* Inline-hex replacements re-pointed for light. Surfaces climb from an icy
      page ground to pure-white cards; text darkens to navy/slate; the white
      hover overlays become dark so they stay visible on light. */
-  --surface-deep: #e1e8f3;
-  --surface-base: #eef2f9;
-  --surface-raised: #ffffff;
-  --surface-panel: #f4f7fc;
-  --surface-inset: #eef2f9;
-  --surface-muted-2: #e9eef7;
-  --text-dim: #647089;
-  --text-slate: #8a94a8;
-  --hairline: rgba(23, 35, 61, 0.12);
-  --hairline-strong: rgba(23, 35, 61, 0.18);
-  --overlay-soft: rgba(23, 35, 61, 0.03);
-  --overlay: rgba(23, 35, 61, 0.05);
-  --overlay-strong: rgba(23, 35, 61, 0.09);
+  --surface-deep: #dadbe6;
+  --surface-base: #e6e6ee;
+  --surface-raised: #fbfbfe;
+  --surface-panel: #ebebf3;
+  --surface-inset: #e6e6ee;
+  --surface-muted-2: #e2e2ec;
+  --text-dim: #5d6276;
+  --text-slate: #868ca0;
+  --hairline: rgba(46, 42, 78, 0.13);
+  --hairline-strong: rgba(46, 42, 78, 0.20);
+  --overlay-soft: rgba(40, 36, 72, 0.04);
+  --overlay: rgba(40, 36, 72, 0.06);
+  --overlay-strong: rgba(40, 36, 72, 0.10);
   --graph-node: #2f6fb0;        /* readable blue on white */
   --graph-node-strong: #1e5288;
   --graph-node-edge: #6f9fca;
@@ -195,6 +205,11 @@
   --indigo: #6b62c9;
   --graph-chip: rgba(244, 247, 252, 0.92);  /* light badge on light canvas */
   --graph-chip-ink: #1e5288;
+  --illo-bg: #e5e6f0;
+  --illo-fill: #fbfbfe;
+  --illo-stroke: #2a4d8f;
+  --illo-stroke-soft: #5f83ba;
+  --illo-dot: rgba(40, 36, 72, 0.11);
 }
 
 @theme inline {
@@ -1077,9 +1092,9 @@ h3 {
 :root.theme-light body {
   color: var(--text);
   background:
-    radial-gradient(circle at top right, rgba(124, 119, 196, 0.10), transparent 34%),
-    radial-gradient(circle at top left, rgba(42, 77, 143, 0.06), transparent 30%),
-    linear-gradient(180deg, #f7f9fd 0%, var(--bg) 100%);
+    radial-gradient(circle at top right, rgba(124, 119, 196, 0.18), transparent 38%),
+    radial-gradient(circle at top left, rgba(42, 77, 143, 0.07), transparent 30%),
+    linear-gradient(180deg, #eeedf5 0%, var(--bg) 100%);
 }
 
 :root.theme-light {
