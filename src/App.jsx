@@ -12,7 +12,8 @@ import MachineDetailPage from './pages/MachineDetailPage'
 import OperationsPage from './pages/OperationsPage'
 import EquipmentPage from './pages/EquipmentPage'
 import SchedulesPage from './pages/SchedulesPage'
-import ProtectedRoute, { NoAccessRedirect } from './routes/ProtectedRoute'
+import NoAccessPage from './pages/NoAccessPage'
+import ProtectedRoute from './routes/ProtectedRoute'
 
 export default function App() {
   return (
@@ -24,7 +25,7 @@ export default function App() {
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
           <Route path="/register" element={<Navigate to="/login" replace />} />
 
-          <Route path="/no-access" element={<NoAccessRedirect />} />
+          <Route path="/no-access" element={<NoAccessPage />} />
 
           <Route element={<ProtectedRoute />}>
             {/* The canvas owns its full-screen header (Figma Make v20), so it

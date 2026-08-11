@@ -1,4 +1,4 @@
-import { Link, Navigate, Outlet } from 'react-router-dom'
+import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export default function ProtectedRoute() {
@@ -21,22 +21,4 @@ export default function ProtectedRoute() {
   }
 
   return <Outlet />
-}
-
-export function NoAccessRedirect() {
-  return (
-    <div className="loading-screen">
-      <h1>Sem acesso</h1>
-      <p className="muted">
-        Sua conta Google está autenticada, mas este produto ainda não foi liberado para você.
-        Peça ao owner para liberar o acesso.
-      </p>
-      <p>
-        <Link to="/">Voltar ao início</Link>
-      </p>
-      <p>
-        <Link to="/login">Tentar outra conta</Link>
-      </p>
-    </div>
-  )
 }

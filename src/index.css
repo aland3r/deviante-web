@@ -917,6 +917,42 @@ h3 {
   gap: 1rem;
 }
 
+.auth-split__title {
+  margin: 0;
+  font-size: var(--type-title-size, 1.5rem);
+  line-height: 1.2;
+  color: var(--text-strong);
+  text-align: center;
+}
+
+.auth-split__field-label {
+  font-size: var(--type-small-size);
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+.auth-split__textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--input-background);
+  padding: 0.85rem 0.9rem;
+  font: inherit;
+  color: var(--text-strong);
+  resize: vertical;
+  min-height: 6rem;
+}
+
+.auth-split__textarea:focus {
+  border-color: var(--accent);
+  outline: 2px solid rgba(220, 38, 38, 0.18);
+}
+
+.auth-split__textarea::placeholder {
+  color: var(--text);
+  opacity: 0.6;
+}
+
 .auth-email-field {
   display: flex;
   align-items: center;
