@@ -23,16 +23,6 @@ export const GESTALT_PRODUCTS = [
     subdomain: 'milebrick.alander.io',
     dashboardPath: '/dashboard',
   },
-  {
-    code: 'harpia',
-    name: 'Harpia',
-    tagline: 'Coming soon',
-    description: 'Reserved product — access by invitation.',
-    port: 5175,
-    subdomain: 'harpia.alander.io',
-    dashboardPath: '/dashboard',
-    comingSoon: true,
-  },
 ]
 
 export function getProductByCode(code) {
