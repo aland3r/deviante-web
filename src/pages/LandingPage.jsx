@@ -54,29 +54,33 @@ export default function LandingPage() {
 
       <main className="relative z-10 flex-1 flex items-center">
         <section className="mx-auto w-full max-w-3xl px-6 py-16 md:py-24 text-center">
-          <p className="text-xs uppercase tracking-[0.3em] text-primary mb-6">
+          <p className="text-xs uppercase tracking-[0.3em] text-primary mb-8">
             {STATEMENTS.eyebrow}
           </p>
 
-          <h1 className="text-4xl md:text-6xl font-semibold leading-[1.05] text-foreground text-balance">
+          <h1 className="text-4xl md:text-6xl font-semibold leading-[1.08] tracking-tight text-foreground text-balance">
             {STATEMENTS.headline}
           </h1>
 
-          <p className="mt-6 text-base md:text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+          <p className="mt-8 text-base md:text-lg text-muted-foreground leading-[1.75] max-w-xl mx-auto text-pretty">
             {STATEMENTS.lead}
           </p>
 
           {/* CTA lives on the page, right below the hero copy — portfolio-home
               style. This is the only prominent action; the docs sit quietly in
               the nav above. */}
-          <div className="mt-10 flex justify-center">
-            <Button size="lg" onClick={() => navigate('/login')} className="px-8">
+          <div className="mt-12 flex justify-center">
+            <Button
+              size="lg"
+              onClick={() => navigate('/login')}
+              className="w-full max-w-xs px-12"
+            >
               Começar
               <ArrowRight className="size-4" />
             </Button>
           </div>
 
-          <ul className="mt-14 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-muted-foreground">
+          <ul className="mt-16 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-sm text-muted-foreground">
             {STATEMENTS.values.map((value) => (
               <li key={value} className="flex items-center gap-2">
                 <span aria-hidden className="size-1.5 rounded-full bg-primary" />
