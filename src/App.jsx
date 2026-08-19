@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext'
 import AccountSettingsPage from './pages/AccountSettingsPage'
 import DashboardPage from './pages/DashboardPage'
 import LandingPage from './pages/LandingPage'
+import DocsView from './pages/DocsView'
 import LoginPage from './pages/LoginPage'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import ProcessCanvasPage from './pages/ProcessCanvasPage'
@@ -46,6 +47,9 @@ export default function App() {
           </Route>
 
           <Route path="/" element={<LandingPage />} />
+          <Route path="/documentacao" element={<DocsView />} />
+          <Route path="/casos-de-uso" element={<DocsView />} />
+          <Route path="/objetos" element={<DocsView />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </BrowserRouter>
