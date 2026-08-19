@@ -4,6 +4,7 @@ import AppLayout from './components/layout/AppLayout'
 import { AuthProvider } from './context/AuthContext'
 import AccountSettingsPage from './pages/AccountSettingsPage'
 import DashboardPage from './pages/DashboardPage'
+import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import ProcessCanvasPage from './pages/ProcessCanvasPage'
@@ -44,7 +45,7 @@ export default function App() {
             </Route>
           </Route>
 
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </BrowserRouter>

@@ -2,6 +2,7 @@
 @import '@gestalt/tokens/typography.css';
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@plugin '@tailwindcss/typography';
 
 /*
   Deviante v1.0 dark/red theme — supersedes the prior light-blue palette
