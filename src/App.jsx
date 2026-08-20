@@ -22,7 +22,19 @@ import ProtectedRoute from './routes/ProtectedRoute'
 // light theme (owner 19/08); the app honors the persisted 'dv-theme' toggle,
 // defaulting to dark. This keeps <html>.theme-light in sync across client-side
 // navigation — the pre-paint script in index.html covers the initial load.
-const PUBLIC_PATHS = new Set(['/', '/documentacao', '/casos-de-uso', '/objetos'])
+// The public site AND the pre-dashboard auth flow (login / callback / no-access)
+// render in the light theme — the "first flow" stays visually consistent with
+// the landing. Only the authenticated app keeps the dark default.
+const PUBLIC_PATHS = new Set([
+  '/',
+  '/documentacao',
+  '/casos-de-uso',
+  '/objetos',
+  '/login',
+  '/register',
+  '/auth/callback',
+  '/no-access',
+])
 
 function ThemeSync() {
   const { pathname } = useLocation()

@@ -11,7 +11,7 @@ export default function AuthSplitLayout({
       <section className="auth-split__form">
         <div className="auth-split__form-inner">
           <Link to="/" className="auth-split__brand">
-            <span className="auth-split__brand-mark">DV</span>
+            <span className="auth-split__wordmark">IPDD</span>
           </Link>
 
           {children}

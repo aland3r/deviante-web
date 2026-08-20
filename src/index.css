@@ -1168,3 +1168,44 @@ h3 {
 :root.theme-light .app-header {
   background: rgba(255, 255, 255, 0.9);
 }
+
+/* ── Login (first flow): light theme, two-tone split ───────────────────────
+   The first flow renders light to match the landing. The FORM half (left)
+   blends with the landing — light ground + the same soft red glow. The HERO
+   half (right) stays a dark branded panel ("como está"), so its colors are
+   pinned regardless of theme. */
+:root.theme-light .auth-split {
+  background: var(--bg);
+}
+
+:root.theme-light .auth-split__form {
+  background:
+    radial-gradient(60% 60% at 50% 0%, rgba(220, 38, 38, 0.14), transparent 70%),
+    var(--background);
+}
+
+.auth-split__hero,
+:root.theme-light .auth-split__hero {
+  background:
+    radial-gradient(circle at top left, rgba(220, 38, 38, 0.18), transparent 36%),
+    linear-gradient(160deg, #1c2432 0%, #0d1017 100%);
+}
+
+/* Hero text is pinned light so it reads on the dark panel in either theme. */
+.auth-split__hero .auth-split__eyebrow {
+  color: #f87171;
+}
+
+.auth-split__hero .auth-split__headline {
+  color: #f1f5f9;
+}
+
+/* Brand wordmark on the form side — the logo, given room and weight. */
+.auth-split__wordmark {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-strong);
+}

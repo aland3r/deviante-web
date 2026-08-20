@@ -11,7 +11,7 @@
       //  - Everything else (the app) defaults to dark, honoring the persisted
       //    'dv-theme' preference set by the in-app toggle.
       try {
-        var PUBLIC = ['/', '/documentacao', '/casos-de-uso', '/objetos'];
+        var PUBLIC = ['/', '/documentacao', '/casos-de-uso', '/objetos', '/login', '/register', '/auth/callback', '/no-access'];
         if (PUBLIC.indexOf(location.pathname) !== -1
             || localStorage.getItem('dv-theme') === 'light') {
           document.documentElement.classList.add('theme-light');
