@@ -644,6 +644,11 @@ h3 {
   justify-content: flex-end;
 }
 
+/* Menu toggle button — hidden by default, shown on mobile */
+.app-header__menu-toggle {
+  display: none;
+}
+
 @media (max-width: 860px) {
   .app-header {
     grid-template-columns: 1fr auto;
@@ -747,11 +752,6 @@ h3 {
   }
 }
 
-@media (min-width: 861px) {
-  .app-header__menu-toggle {
-    display: none;
-  }
-}
 
 .home {
   min-height: 100vh;
