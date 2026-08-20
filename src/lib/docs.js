@@ -14,19 +14,12 @@ export const docsViews = [
   {
     slug: 'documentacao',
     label: 'Documentação',
-    eyebrow: 'Visão geral',
-    blurb: 'O panorama do produto e a arquitetura por trás dele.',
+    eyebrow: 'Arquitetura',
+    blurb: 'Arquitetura em arc42, com diagramas C4 e UML.',
     sections: [
       {
-        section: 'Visão geral',
-        items: [{ label: 'README', path: 'README.md' }],
-      },
-      {
-        section: 'Arquitetura',
-        items: [
-          { label: 'Modelo C4', placeholder: 'Em construção — modelo C4 (contexto, containers) ainda não publicado.' },
-          { label: 'UML', placeholder: 'Em construção — diagramas UML ainda não publicados.' },
-        ],
+        section: 'Arquitetura (arc42)',
+        items: [{ label: 'Documento arc42', path: 'architecture/arc42.md' }],
       },
     ],
   },
@@ -79,11 +72,6 @@ export const docsViews = [
 export function getView(slug) {
   return docsViews.find((view) => view.slug === slug) ?? null
 }
-
-// Every doc item across every view — used only for footer counts.
-export const allDocItems = docsViews.flatMap((view) =>
-  view.sections.flatMap((group) => group.items),
-)
 
 const cache = new Map()
 

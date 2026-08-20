@@ -3,15 +3,14 @@ import { ArrowRight } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { docsViews } from '../lib/docs'
 
-// Temporary statements for the Deviante landing (owner 19/08 — "se não tiver
-// coloque temporários"). Deviante has no `statements` table of its own yet, so
+// Temporary statements for the IPDD landing (owner 19/08 — "se não tiver
+// coloque temporários"). IPDD has no `statements` table of its own yet, so
 // these live in code for now; when a source of truth exists, swap this block
 // for a fetch. Kept in PT-BR, in the product's own voice.
 const STATEMENTS = {
-  eyebrow: 'Deviante',
   headline: 'Manutenção que enxerga o desvio antes da falha.',
   lead:
-    'Deviante transforma o event log do chão de fábrica em decisão: detecta desvios de desempenho em tempo real e antecipa quando a máquina vai precisar de manutenção — para que a parada seja escolha, não surpresa.',
+    'O IPDD transforma o event log do chão de fábrica em decisão: detecta desvios de desempenho em tempo real e antecipa quando a máquina vai precisar de manutenção — para que a parada seja escolha, não surpresa.',
   values: [
     'Detecção de drift em tempo real',
     'Previsão orientada a dados',
@@ -35,9 +34,9 @@ export default function LandingPage() {
         }}
       />
 
-      <header className="relative z-10 px-6 py-5 flex items-center justify-between gap-4">
-        <p className="text-sm font-semibold uppercase tracking-widest text-foreground">
-          Deviante
+      <header className="relative z-10 px-8 py-8 flex items-center justify-between gap-6">
+        <p className="text-2xl md:text-3xl font-bold uppercase tracking-[0.18em] text-foreground">
+          IPDD
         </p>
         <nav className="flex items-center gap-1">
           {docsViews.map((view) => (
@@ -54,15 +53,15 @@ export default function LandingPage() {
 
       <main className="relative z-10 flex-1 flex items-center">
         <section className="mx-auto w-full max-w-3xl px-6 py-16 md:py-24 text-center">
-          <p className="text-xs uppercase tracking-[0.3em] text-primary mb-8">
-            {STATEMENTS.eyebrow}
-          </p>
-
-          <h1 className="text-4xl md:text-6xl font-semibold leading-[1.08] tracking-tight text-foreground text-balance">
+          <h1 className="text-3xl md:text-5xl font-semibold leading-[1.1] tracking-tight text-foreground text-balance">
             {STATEMENTS.headline}
           </h1>
 
-          <p className="mt-8 text-base md:text-lg text-muted-foreground leading-[1.75] max-w-xl mx-auto text-pretty">
+          {/* Spacing uses padding, not margin: the global `p { margin: 0 }`
+              reset in index.css is unlayered and would beat Tailwind's layered
+              margin utilities on <p>, collapsing the gap to zero. Equal rhythm:
+              headline→lead and lead→CTA share the same 3rem gap. */}
+          <p className="pt-12 text-base md:text-lg text-muted-foreground leading-[1.75] max-w-xl mx-auto text-pretty">
             {STATEMENTS.lead}
           </p>
 
@@ -92,7 +91,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="relative z-10 px-6 py-5 text-center text-xs text-muted-foreground">
-        Deviante — suporte à decisão em manutenção industrial.
+        IPDD — suporte à decisão em manutenção industrial.
       </footer>
     </div>
   )

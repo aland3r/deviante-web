@@ -55,7 +55,7 @@ export default function NoAccessPage() {
       <AuthSplitLayout footer={footer}>
         <h1 className="auth-split__title">Solicitação enviada</h1>
         <p className="auth-split__divider">
-          Recebemos seu pedido de acesso ao Deviante. O responsável vai avaliar e
+          Recebemos seu pedido de acesso ao IPDD. O responsável vai avaliar e
           liberar sua conta manualmente. Você poderá entrar assim que for aprovado.
         </p>
       </AuthSplitLayout>
@@ -67,7 +67,7 @@ export default function NoAccessPage() {
       <h1 className="auth-split__title">Sem acesso ainda</h1>
       <p className="auth-split__divider">
         Sua conta Google <strong>{user?.email}</strong> está autenticada, mas o
-        Deviante é liberado conta por conta. Envie uma solicitação e o responsável
+        IPDD é liberado conta por conta. Envie uma solicitação e o responsável
         avalia o acesso.
       </p>
 

@@ -15,9 +15,9 @@
   --font-heading: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  --bg: #0d1017;
-  --surface: #161c28;
-  --surface-muted: #1a2030;
+  --bg: #141a26;
+  --surface: #1c2432;
+  --surface-muted: #212a3b;
   --text: #94a3b8;
   --text-strong: #e2e8f0;
   --border: rgba(255, 255, 255, 0.07);
@@ -34,17 +34,17 @@
   --radius-cta: 0.375rem;
 
   /* shadcn/Radix primitives (src/components/ui/*.jsx) read these */
-  --background: #0d1017;
+  --background: #141a26;
   --foreground: #e2e8f0;
-  --card: #161c28;
+  --card: #1c2432;
   --card-foreground: #e2e8f0;
-  --popover: #1a2133;
+  --popover: #212a3d;
   --popover-foreground: #e2e8f0;
   --primary: #dc2626;
   --primary-foreground: #ffffff;
   --secondary: #1e2738;
   --secondary-foreground: #94a3b8;
-  --muted: #1a2030;
+  --muted: #212a3b;
   --muted-foreground: #64748b;
   --accent-foreground: #ffffff;
   --destructive: #dc2626;
@@ -58,7 +58,7 @@
   --chart-3: #f87171;
   --chart-4: #64748b;
   --chart-5: #94a3b8;
-  --sidebar: #111827;
+  --sidebar: #182031;
   --sidebar-foreground: #e2e8f0;
   --sidebar-primary: #dc2626;
   --sidebar-primary-foreground: #ffffff;
@@ -75,10 +75,10 @@
    * these resolve to exactly the prior literals, so the conversion is a no-op
    * visually; `.theme-light` re-points every one of them.
    */
-  --surface-deep: #090d14;      /* deepest wells (#090d14/#080c14) */
-  --surface-base: #0d1017;      /* page background */
-  --surface-raised: #111520;    /* header + raised panels */
-  --surface-panel: #0f141e;     /* inset panels */
+  --surface-deep: #0f141d;      /* deepest wells (#090d14/#080c14) */
+  --surface-base: #141a26;      /* page background */
+  --surface-raised: #1a2130;    /* header + raised panels */
+  --surface-panel: #171d29;     /* inset panels */
   --surface-inset: #1e2738;     /* input-ish insets, chips */
   --surface-muted-2: #16202e;   /* secondary muted fill */
   --text-dim: #475569;          /* dimmer than --text */
@@ -332,7 +332,7 @@ body {
   color: var(--text);
   background:
     radial-gradient(circle at top left, rgba(220, 38, 38, 0.10), transparent 28%),
-    linear-gradient(180deg, #10141d 0%, var(--bg) 100%);
+    linear-gradient(180deg, #181f2c 0%, var(--bg) 100%);
 }
 
 @layer base {
@@ -1066,7 +1066,7 @@ h3 {
 .auth-split__hero {
   background:
     radial-gradient(circle at top left, rgba(220, 38, 38, 0.16), transparent 32%),
-    linear-gradient(180deg, #10141d 0%, var(--bg) 100%);
+    linear-gradient(180deg, #181f2c 0%, var(--bg) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
