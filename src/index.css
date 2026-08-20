@@ -593,12 +593,95 @@ h3 {
 
 @media (max-width: 860px) {
   .app-header {
-    grid-template-columns: 1fr;
-    justify-items: stretch;
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
   }
 
-  .app-header__nav,
-  .app-header__user,
+  .app-header__menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: var(--text-strong);
+    cursor: pointer;
+    padding: 0.5rem;
+    width: 44px;
+    height: 44px;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+  }
+
+  .app-header__menu-toggle:hover {
+    background-color: var(--surface-muted);
+  }
+
+  .app-header__menu-toggle svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .app-header__nav {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0.5rem 0;
+    display: none;
+    z-index: 20;
+  }
+
+  .app-header__nav.open {
+    display: flex;
+  }
+
+  .app-header__nav .nav-link {
+    border-radius: 0;
+    padding: 0.75rem 1.5rem;
+    color: var(--text);
+  }
+
+  .app-header__nav .nav-link.active,
+  .app-header__nav .nav-link:hover {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+  }
+
+  .app-header__user {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 1.5rem;
+    display: none;
+    z-index: 19;
+    margin-top: 50px;
+  }
+
+  .app-header__user.open {
+    display: flex;
+  }
+
+  .app-header__user .user-chip {
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+  }
+
+  .app-header__user .button {
+    width: 100%;
+    justify-content: center;
+  }
+
   .page__header,
   .process-card__meta {
     flex-direction: column;
@@ -608,6 +691,12 @@ h3 {
   .detail-grid,
   .form-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 861px) {
+  .app-header__menu-toggle {
+    display: none;
   }
 }
 
