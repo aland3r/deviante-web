@@ -3,14 +3,14 @@ import { ArrowRight } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { docsViews } from '../lib/docs'
 
-// Temporary statements for the IPDD landing (owner 19/08 — "se não tiver
-// coloque temporários"). IPDD has no `statements` table of its own yet, so
+// Temporary statements for the Deviante landing (owner 19/08 — "se não tiver
+// coloque temporários"). Deviante has no `statements` table of its own yet, so
 // these live in code for now; when a source of truth exists, swap this block
 // for a fetch. Kept in PT-BR, in the product's own voice.
 const STATEMENTS = {
   headline: 'Manutenção que enxerga o desvio antes da falha.',
   lead:
-    'O IPDD transforma o event log do chão de fábrica em decisão: detecta desvios de desempenho em tempo real e antecipa quando a máquina vai precisar de manutenção — para que a parada seja escolha, não surpresa.',
+    'O Deviante transforma o event log do chão de fábrica em decisão: detecta desvios de desempenho em tempo real e antecipa quando a máquina vai precisar de manutenção — para que a parada seja escolha, não surpresa.',
   values: [
     'Detecção de drift em tempo real',
     'Previsão orientada a dados',
@@ -35,8 +35,8 @@ export default function LandingPage() {
       />
 
       <header className="relative z-10 px-8 py-8 flex items-center justify-between gap-6">
-        <p className="text-2xl md:text-3xl font-bold uppercase tracking-[0.18em] text-foreground">
-          IPDD
+        <p className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+          Deviante
         </p>
         <nav className="flex items-center gap-1">
           {docsViews.map((view) => (
@@ -91,7 +91,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="relative z-10 px-6 py-5 text-center text-xs text-muted-foreground">
-        IPDD — suporte à decisão em manutenção industrial.
+        Deviante — suporte à decisão em manutenção industrial.
       </footer>
     </div>
   )

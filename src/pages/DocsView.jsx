@@ -148,7 +148,7 @@ export default function DocsView() {
             className="flex items-center gap-2.5 shrink-0 group"
           >
             <ArrowLeft className="size-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-            <span className="hidden sm:inline text-xl font-bold uppercase tracking-[0.18em] text-foreground">IPDD</span>
+            <span className="hidden sm:inline text-xl font-bold tracking-tight text-foreground">Deviante</span>
           </Link>
           <nav className="flex items-center gap-2 overflow-x-auto">
             {docsViews.map((item) => (
@@ -210,14 +210,15 @@ export default function DocsView() {
               </div>
             )}
 
-            {/* Table of Contents — auto from headings. No continuous rule; the
-                active entry gets a short accent tick instead of a full line. */}
+            {/* Table of Contents — auto from headings. No rules or ticks: the
+                active entry is marked by weight + color alone, so the list reads
+                as a clean stack with no stray vertical line. */}
             {headings.length > 0 && (
               <nav aria-label="Índice">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/80 mb-3">
                   Índice
                 </p>
-                <ul className="space-y-1">
+                <ul>
                   {headings.map((h) => {
                     const on = activeId === h.id
                     return (
@@ -225,11 +226,11 @@ export default function DocsView() {
                         <button
                           type="button"
                           onClick={() => goTo(h.id)}
-                          style={{ paddingLeft: `${h.level - 1}rem` }}
-                          className={`w-full text-left text-[15px] py-2 border-l-2 transition-colors ${
+                          style={{ paddingLeft: `${(h.level - 2) * 0.875}rem` }}
+                          className={`w-full text-left text-[15px] py-1 transition-colors ${
                             on
-                              ? 'border-primary text-foreground font-medium'
-                              : 'border-transparent text-muted-foreground hover:text-foreground'
+                              ? 'text-foreground font-medium'
+                              : 'text-muted-foreground hover:text-foreground'
                           }`}
                         >
                           {h.text}
