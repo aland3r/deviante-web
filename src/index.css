@@ -4,16 +4,74 @@
 @import 'tw-animate-css';
 
 /*
-  Deviante v1.0 dark/red theme — supersedes the prior light-blue palette
-  (decision 21/07, see gestalt-kit/plans/sprint-plan-2026-07.md). The
-  canonical Figma file (DzMGsKozRhijjcFFngdy4S) needs updating to match;
-  tracked separately for ui-designer, not blocking this code change.
+  Deviante theme system:
+  - Site (public / before login): Light theme
+  - Dashboard (after login): Dark/red theme (Figma Make "Process Mining Canvas Design")
+  Decision 21/07, see gestalt-kit/plans/sprint-plan-2026-07.md
 */
+
+/* Light theme (site / public pages) */
 :root {
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-heading: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
+  /* Light theme defaults */
+  --bg: #ffffff;
+  --surface: #f8fafc;
+  --surface-muted: #f1f5f9;
+  --text: #64748b;
+  --text-strong: #1e293b;
+  --border: rgba(15, 23, 42, 0.12);
+  --accent: #dc2626;
+  --accent-strong: #991b1b;
+  --accent-soft: rgba(220, 38, 38, 0.08);
+  --success: #10b981;
+  --success-soft: rgba(16, 185, 129, 0.08);
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.08);
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --radius: 0.375rem;
+  --radius-sm: 0.25rem;
+  --radius-cta: 0.375rem;
+
+  /* shadcn/Radix primitives — light theme defaults */
+  --background: #ffffff;
+  --foreground: #1e293b;
+  --card: #f8fafc;
+  --card-foreground: #1e293b;
+  --popover: #ffffff;
+  --popover-foreground: #1e293b;
+  --primary: #dc2626;
+  --primary-foreground: #ffffff;
+  --secondary: #e2e8f0;
+  --secondary-foreground: #64748b;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --input: #ffffff;
+  --input-background: #f8fafc;
+  --switch-background: #e2e8f0;
+  --ring: #dc2626;
+  --chart-1: #dc2626;
+  --chart-2: #ef4444;
+  --chart-3: #f87171;
+  --chart-4: #64748b;
+  --chart-5: #94a3b8;
+  --sidebar: #f8fafc;
+  --sidebar-foreground: #1e293b;
+  --sidebar-primary: #dc2626;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e2e8f0;
+  --sidebar-accent-foreground: #1e293b;
+  --sidebar-border: rgba(15, 23, 42, 0.12);
+  --sidebar-ring: #dc2626;
+}
+
+/* Dark theme override for app-shell (dashboard after login) */
+.app-shell {
   --bg: #0d1017;
   --surface: #161c28;
   --surface-muted: #1a2030;
@@ -28,43 +86,24 @@
   --danger: #dc2626;
   --danger-soft: rgba(220, 38, 38, 0.14);
   --shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
-  --radius: 0.375rem;
-  --radius-sm: 0.25rem;
-  --radius-cta: 0.375rem;
-
-  /* shadcn/Radix primitives (src/components/ui/*.jsx) read these */
   --background: #0d1017;
   --foreground: #e2e8f0;
   --card: #161c28;
   --card-foreground: #e2e8f0;
   --popover: #1a2133;
   --popover-foreground: #e2e8f0;
-  --primary: #dc2626;
-  --primary-foreground: #ffffff;
   --secondary: #1e2738;
   --secondary-foreground: #94a3b8;
   --muted: #1a2030;
   --muted-foreground: #64748b;
-  --accent-foreground: #ffffff;
-  --destructive: #dc2626;
-  --destructive-foreground: #ffffff;
   --input: transparent;
   --input-background: #1e2738;
   --switch-background: #2d3748;
-  --ring: #dc2626;
-  --chart-1: #dc2626;
-  --chart-2: #ef4444;
-  --chart-3: #f87171;
-  --chart-4: #64748b;
-  --chart-5: #94a3b8;
   --sidebar: #111827;
   --sidebar-foreground: #e2e8f0;
-  --sidebar-primary: #dc2626;
-  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #1e2738;
   --sidebar-accent-foreground: #e2e8f0;
   --sidebar-border: rgba(255, 255, 255, 0.07);
-  --sidebar-ring: #dc2626;
 }
 
 @theme inline {
@@ -125,6 +164,20 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   color: var(--text);
+  background: var(--bg);
+  transition: background 0.2s ease-out;
+}
+
+/* Light background for public pages */
+body {
+  background:
+    radial-gradient(circle at 60% 0%, rgba(220, 38, 38, 0.04), transparent 50%),
+    linear-gradient(180deg, #fafafa 0%, #f0f4f8 100%);
+}
+
+/* Dark background for dashboard (inherits from .app-shell) */
+.app-shell body,
+body.dark-theme {
   background:
     radial-gradient(circle at top left, rgba(220, 38, 38, 0.10), transparent 28%),
     linear-gradient(180deg, #10141d 0%, var(--bg) 100%);
