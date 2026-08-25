@@ -1169,6 +1169,112 @@ h3 {
   background: rgba(255, 255, 255, 0.9);
 }
 
+/* =========================================================================
+   GESTALT SHELL — the public site (landing + 3 docs tabs), ported from the
+   Figma Make "Templated Product Shell UI". Scoped to .gestalt-shell so it
+   re-themes ONLY the public pages; the authenticated app keeps its dark/red
+   theme. Light mode only (owner 25/08). This is the neutral base each product
+   later re-skins by overriding these tokens.
+
+   The palette is the Make NEUTRAL light set: grayscale + one slate accent.
+   Because the app global h1/h2/h3 element rules read the type and text vars,
+   we re-point those vars here so headings render at the Make scale without
+   fighting the Tailwind layer order. Margins the global reset zeroes out are
+   restored explicitly for .doc-prose.
+   ========================================================================= */
+/* Tokens live on :root.theme-shell (toggled on <html> for public routes) —
+   the same mechanism Deviante uses for .theme-light. A bare .class rule loses
+   its custom-property declarations under Tailwind v4, so :root is the reliable
+   scope. ThemeSync in App.jsx adds .theme-shell on landing + the 3 docs tabs. */
+:root.theme-shell {
+  color-scheme: light;
+
+  /* neutral color roles (the brand-override interface) */
+  --background: #fbfbfc;
+  --foreground: #17171b;
+  --card: #ffffff;
+  --card-foreground: #17171b;
+  --primary: #18181b;
+  --primary-foreground: #fafafa;
+  --secondary: #f2f2f4;
+  --secondary-foreground: #27272a;
+  --muted: #f4f4f6;
+  --muted-foreground: #6b6b74;
+  --accent: #4d5b78;
+  --accent-foreground: #ffffff;
+  --border: #e7e7ec;
+  --ring: #4d5b78;
+  --bg: #fbfbfc;
+
+  /* also drive the legacy semantic tokens so any inherited rule matches */
+  --surface: var(--card);
+  --surface-muted: var(--muted);
+  --text: var(--muted-foreground);
+  --text-strong: var(--foreground);
+
+  /* typography roles (products swap families only) */
+  --font-display: "Inter", system-ui, sans-serif;
+  --font-heading: "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-eyebrow: "JetBrains Mono", ui-monospace, monospace;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* re-point the heading scale the global h1/h2/h3 rules read */
+  --type-h1-size: 2rem;
+  --type-h1-line-height: 1.15;
+  --type-h1-weight: 600;
+  --type-h1-letter-spacing: -0.02em;
+  --type-h2-size: 1.5rem;
+  --type-h2-line-height: 1.25;
+  --type-h2-weight: 600;
+  --type-h2-letter-spacing: -0.01em;
+  --type-h3-size: 1.125rem;
+  --type-h3-line-height: 1.3;
+  --type-h3-weight: 600;
+  --type-h3-letter-spacing: -0.01em;
+
+  --radius: 0.75rem;
+  --radius-sm: 0.5rem;
+  --shadow-panel: 0 1px 2px rgba(20, 20, 30, 0.04), 0 8px 24px rgba(20, 20, 30, 0.06);
+}
+
+/* Neutralize the app dark/red body gradient under the shell theme. */
+:root.theme-shell body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.gestalt-shell {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+}
+
+/* Reading column: restore the flow spacing the global {margin:0} reset
+   zeroes, matching the Make DocViewer rhythm. Only .doc-prose gets this
+   so chrome (header/sidebar/cards) is untouched. */
+.gestalt-shell .doc-prose > :first-child { margin-top: 0; }
+.gestalt-shell .doc-prose p { margin-top: 1.25rem; line-height: 1.75; }
+.gestalt-shell .doc-prose h2 {
+  margin-top: 3.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+}
+.gestalt-shell .doc-prose h3 { margin-top: 2.5rem; }
+.gestalt-shell .doc-prose ul,
+.gestalt-shell .doc-prose ol { margin-top: 1.25rem; padding-left: 1.25rem; }
+.gestalt-shell .doc-prose ul > li { list-style: disc; }
+.gestalt-shell .doc-prose ol > li { list-style: decimal; }
+.gestalt-shell .doc-prose li { margin-top: 0.4rem; line-height: 1.7; }
+.gestalt-shell .doc-prose li::marker { color: var(--muted-foreground); }
+
+/* Landing hero title — larger than a doc h1. */
+.gestalt-shell .shell-hero-title {
+  font-size: clamp(2.75rem, 6vw, 4.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+}
+
 /* ── Login (first flow): light theme, two-tone split ───────────────────────
    The first flow renders light to match the landing. The FORM half (left)
    blends with the landing — light ground + the same soft red glow. The HERO

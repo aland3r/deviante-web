@@ -10,6 +10,15 @@
 export const DOCS_REPO = 'aland3r/deviante-docs'
 export const DOCS_BRANCH = 'main'
 
+// Canonical public-site tabs (the shared skeleton — gestalt-kit lp-skeleton).
+// Same tabs across products; only content differs. `Casos de Uso` is DB-driven
+// (portfolio.use_cases) and handled by UseCasesView, not by docsViews below.
+export const siteTabs = [
+  { slug: 'documentacao', label: 'Documentação' },
+  { slug: 'casos-de-uso', label: 'Casos de Uso' },
+  { slug: 'objetos', label: 'Objetos' },
+]
+
 export const docsViews = [
   {
     slug: 'documentacao',
@@ -20,33 +29,6 @@ export const docsViews = [
       {
         section: 'Arquitetura (arc42)',
         items: [{ label: 'Documento arc42', path: 'architecture/arc42.md' }],
-      },
-    ],
-  },
-  {
-    slug: 'casos-de-uso',
-    label: 'Casos de Uso',
-    eyebrow: 'Processo ORCA',
-    blurb: 'A descoberta ORCA e os requisitos de cada objeto do domínio.',
-    sections: [
-      {
-        section: 'Processo ORCA (discovery)',
-        items: [
-          { label: 'UC1 — componentes', path: 'UX/orca/UC1-componentes.md' },
-          { label: 'Caso', path: 'UX/orca/5. Object Requirements/CASO.md' },
-          { label: 'Evento', path: 'UX/orca/5. Object Requirements/EVENTO.md' },
-          { label: 'Falha', path: 'UX/orca/5. Object Requirements/FALHA.md' },
-          { label: 'Inspeção', path: 'UX/orca/5. Object Requirements/INSPEÇÃO.md' },
-          { label: 'Manutenção', path: 'UX/orca/5. Object Requirements/MANUTENÇÃO.md' },
-          { label: 'Máquina', path: 'UX/orca/5. Object Requirements/MÁQUINA.md' },
-          { label: 'Sojourn time (Atividade)', path: 'UX/orca/Attributes Requirements/Atividade/sojourn time.md' },
-          {
-            label: 'Tempo de finalização (Atividade)',
-            path: 'UX/orca/Attributes Requirements/Atividade/tempo de finalização.md',
-          },
-          { label: 'Tempo de início (Atividade)', path: 'UX/orca/Attributes Requirements/Atividade/tempo de início.md' },
-          { label: 'Event Log (Process)', path: 'UX/orca/Attributes Requirements/Process/Event Log.md' },
-        ],
       },
     ],
   },

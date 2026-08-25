@@ -7,6 +7,7 @@ import AccountSettingsPage from './pages/AccountSettingsPage'
 import DashboardPage from './pages/DashboardPage'
 import LandingPage from './pages/LandingPage'
 import DocsView from './pages/DocsView'
+import UseCasesView from './pages/UseCasesView'
 import LoginPage from './pages/LoginPage'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import ProcessCanvasPage from './pages/ProcessCanvasPage'
@@ -18,30 +19,27 @@ import SchedulesPage from './pages/SchedulesPage'
 import NoAccessPage from './pages/NoAccessPage'
 import ProtectedRoute from './routes/ProtectedRoute'
 
-// The public site (landing + the three docs views) is always rendered in the
-// light theme (owner 19/08); the app honors the persisted 'dv-theme' toggle,
-// defaulting to dark. This keeps <html>.theme-light in sync across client-side
-// navigation — the pre-paint script in index.html covers the initial load.
-// The public site AND the pre-dashboard auth flow (login / callback / no-access)
-// render in the light theme — the "first flow" stays visually consistent with
-// the landing. Only the authenticated app keeps the dark default.
-const PUBLIC_PATHS = new Set([
-  '/',
-  '/documentacao',
-  '/casos-de-uso',
-  '/objetos',
-  '/login',
-  '/register',
-  '/auth/callback',
-  '/no-access',
-])
+// The public site renders light. The landing + the three docs tabs use the
+// NEUTRAL Gestalt shell theme (`theme-shell`, owner 25/08 — ported from the
+// Figma Make), while the pre-dashboard auth flow (login / callback / no-access)
+// keeps the branded `theme-light`. Only the authenticated app keeps the dark
+// default. This keeps <html> in sync across client-side navigation; the
+// pre-paint script in index.html covers the initial load.
+const SHELL_PATHS = new Set(['/', '/documentacao', '/casos-de-uso', '/objetos'])
+const AUTH_LIGHT_PATHS = new Set(['/login', '/register', '/auth/callback', '/no-access'])
 
 function ThemeSync() {
   const { pathname } = useLocation()
 
   useEffect(() => {
     const el = document.documentElement
-    if (PUBLIC_PATHS.has(pathname)) {
+    el.classList.remove('theme-shell', 'theme-light')
+
+    if (SHELL_PATHS.has(pathname)) {
+      el.classList.add('theme-shell')
+      return
+    }
+    if (AUTH_LIGHT_PATHS.has(pathname)) {
       el.classList.add('theme-light')
       return
     }
@@ -89,7 +87,7 @@ export default function App() {
 
           <Route path="/" element={<LandingPage />} />
           <Route path="/documentacao" element={<DocsView />} />
-          <Route path="/casos-de-uso" element={<DocsView />} />
+          <Route path="/casos-de-uso" element={<UseCasesView />} />
           <Route path="/objetos" element={<DocsView />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

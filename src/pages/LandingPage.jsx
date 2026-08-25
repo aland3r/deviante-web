@@ -1,20 +1,19 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
-import { Button } from '../components/ui/button'
-import { docsViews } from '../lib/docs'
+import ShellHeader from '../components/shell/ShellHeader'
+import ShellFooter from '../components/shell/ShellFooter'
 
-// Temporary statements for the Deviante landing (owner 19/08 — "se não tiver
-// coloque temporários"). Deviante has no `statements` table of its own yet, so
-// these live in code for now; when a source of truth exists, swap this block
-// for a fetch. Kept in PT-BR, in the product's own voice.
+// Landing — the Gestalt shell landing ported from the Figma Make, with
+// Deviante's own copy (temporary statements, owner 19/08). Light-only.
 const STATEMENTS = {
+  eyebrow: 'Manutenção preditiva',
   headline: 'Manutenção que enxerga o desvio antes da falha.',
   lead:
     'O Deviante transforma o event log do chão de fábrica em decisão: detecta desvios de desempenho em tempo real e antecipa quando a máquina vai precisar de manutenção — para que a parada seja escolha, não surpresa.',
   values: [
-    'Detecção de drift em tempo real',
-    'Previsão orientada a dados',
-    'Do event log à decisão',
+    { title: 'Detecção de drift em tempo real', body: 'ADWIN sobre o event log encontra a mudança de desempenho no instante em que ela acontece.' },
+    { title: 'Previsão orientada a dados', body: 'Do desvio à antecipação: quando a máquina vai pedir manutenção, com base no que o processo mostra.' },
+    { title: 'Do event log à decisão', body: 'O dado bruto do chão de fábrica vira ação proativa de manutenção — não relatório parado.' },
   ],
 }
 
@@ -22,77 +21,73 @@ export default function LandingPage() {
   const navigate = useNavigate()
 
   return (
-    <div className="relative min-h-screen bg-background text-foreground flex flex-col overflow-hidden">
-      {/* Soft accent glow so the page reads as a lit landing, not a flat dark
-          well. Sits behind everything, ignores pointer events. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[70vh] opacity-90"
-        style={{
-          background:
-            'radial-gradient(60% 55% at 50% 0%, rgba(220,38,38,0.20), transparent 70%)',
-        }}
-      />
+    <div className="gestalt-shell min-h-screen bg-background text-foreground">
+      <ShellHeader activeSlug={null} />
 
-      <header className="relative z-10 px-8 py-8 flex items-center justify-between gap-6">
-        <p className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-          Deviante
-        </p>
-        <nav className="flex items-center gap-1">
-          {docsViews.map((view) => (
-            <Link
-              key={view.slug}
-              to={`/${view.slug}`}
-              className="text-sm rounded-full px-3 py-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-            >
-              {view.label}
-            </Link>
-          ))}
-        </nav>
-      </header>
-
-      <main className="relative z-10 flex-1 flex items-center">
-        <section className="mx-auto w-full max-w-3xl px-6 py-16 md:py-24 text-center">
-          <h1 className="text-3xl md:text-5xl font-semibold leading-[1.1] tracking-tight text-foreground text-balance">
-            {STATEMENTS.headline}
-          </h1>
-
-          {/* Spacing uses padding, not margin: the global `p { margin: 0 }`
-              reset in index.css is unlayered and would beat Tailwind's layered
-              margin utilities on <p>, collapsing the gap to zero. Equal rhythm:
-              headline→lead and lead→CTA share the same 3rem gap. */}
-          <p className="pt-12 text-base md:text-lg text-muted-foreground leading-[1.75] max-w-xl mx-auto text-pretty">
-            {STATEMENTS.lead}
-          </p>
-
-          {/* CTA lives on the page, right below the hero copy — portfolio-home
-              style. This is the only prominent action; the docs sit quietly in
-              the nav above. */}
-          <div className="mt-12 flex justify-center">
-            <Button
-              size="lg"
-              onClick={() => navigate('/login')}
-              className="w-full max-w-xs px-12"
-            >
-              Começar
-              <ArrowRight className="size-4" />
-            </Button>
+      <div className="mx-auto max-w-[1200px] px-6 lg:px-10">
+        {/* Hero */}
+        <section className="grid grid-cols-1 gap-12 pt-16 pb-24 lg:grid-cols-12 lg:gap-8 lg:pt-24 lg:pb-32">
+          <div className="lg:col-span-7">
+            <div className="flex flex-col gap-7">
+              <p className="font-[family-name:var(--font-eyebrow)] text-xs font-medium uppercase tracking-[0.2em] text-accent">
+                {STATEMENTS.eyebrow}
+              </p>
+              <h1 className="shell-hero-title max-w-[18ch] font-[family-name:var(--font-display)] font-semibold text-foreground">
+                {STATEMENTS.headline}
+              </h1>
+              <p className="max-w-[52ch] text-lg leading-relaxed text-muted-foreground">{STATEMENTS.lead}</p>
+            </div>
+            <div className="mt-10 flex flex-wrap items-center gap-4">
+              <button
+                onClick={() => navigate('/login')}
+                className="group inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-medium text-primary-foreground transition-opacity hover:opacity-90"
+              >
+                Começar
+                <ArrowRight className="size-[18px] transition-transform group-hover:translate-x-0.5" />
+              </button>
+              <span className="text-sm text-muted-foreground">Documentação · Casos de Uso · Objetos</span>
+            </div>
           </div>
 
-          <ul className="mt-16 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-sm text-muted-foreground">
-            {STATEMENTS.values.map((value) => (
-              <li key={value} className="flex items-center gap-2">
-                <span aria-hidden className="size-1.5 rounded-full bg-primary" />
-                {value}
-              </li>
-            ))}
-          </ul>
+          {/* Neutral placeholder block — no brand imagery */}
+          <div className="lg:col-span-5">
+            <div className="grid h-full min-h-[280px] grid-cols-6 grid-rows-6 gap-2 rounded-[var(--radius)] border border-border bg-card p-2 shadow-[var(--shadow-panel)]">
+              <div className="col-span-4 row-span-2 rounded-md bg-secondary" />
+              <div className="col-span-2 row-span-3 rounded-md bg-accent/15" />
+              <div className="col-span-2 row-span-2 rounded-md bg-muted" />
+              <div className="col-span-2 row-span-4 rounded-md bg-secondary" />
+              <div className="col-span-4 row-span-2 rounded-md bg-muted" />
+              <div className="col-span-2 row-span-2 rounded-md bg-accent/10" />
+            </div>
+          </div>
         </section>
-      </main>
 
-      <footer className="relative z-10 px-6 py-5 text-center text-xs text-muted-foreground">
-        Deviante — suporte à decisão em manutenção industrial.
-      </footer>
+        {/* Values */}
+        <section className="py-24">
+          <p className="font-[family-name:var(--font-eyebrow)] text-xs font-medium uppercase tracking-[0.2em] text-accent">
+            Valores
+          </p>
+          <div className="mt-8 grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-3">
+            {STATEMENTS.values.map((v, i) => (
+              <div key={v.title} className="border-t border-border pt-6">
+                <span className="font-[family-name:var(--font-eyebrow)] text-sm text-muted-foreground">0{i + 1}</span>
+                <div className="mt-3 flex flex-col gap-2">
+                  <div
+                    role="heading"
+                    aria-level={3}
+                    className="font-[family-name:var(--font-heading)] text-xl font-semibold tracking-tight text-foreground"
+                  >
+                    {v.title}
+                  </div>
+                  <p className="leading-relaxed text-muted-foreground">{v.body}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <ShellFooter note="Deviante — suporte à decisão em manutenção industrial." />
+      </div>
     </div>
   )
 }

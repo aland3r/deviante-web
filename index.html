@@ -7,14 +7,19 @@
     <title>Deviante</title>
     <script>
       // Apply theme before paint to avoid a flash.
-      //  - The public site (landing + docs views) is ALWAYS light (owner 19/08).
+      //  - Landing + the 3 docs tabs use the neutral Gestalt shell (theme-shell).
+      //  - The auth flow (login/callback/no-access) uses branded theme-light.
       //  - Everything else (the app) defaults to dark, honoring the persisted
       //    'dv-theme' preference set by the in-app toggle.
       try {
-        var PUBLIC = ['/', '/documentacao', '/casos-de-uso', '/objetos', '/login', '/register', '/auth/callback', '/no-access'];
-        if (PUBLIC.indexOf(location.pathname) !== -1
+        var SHELL = ['/', '/documentacao', '/casos-de-uso', '/objetos'];
+        var AUTH_LIGHT = ['/login', '/register', '/auth/callback', '/no-access'];
+        var cls = document.documentElement.classList;
+        if (SHELL.indexOf(location.pathname) !== -1) {
+          cls.add('theme-shell');
+        } else if (AUTH_LIGHT.indexOf(location.pathname) !== -1
             || localStorage.getItem('dv-theme') === 'light') {
-          document.documentElement.classList.add('theme-light');
+          cls.add('theme-light');
         }
       } catch (e) {}
     </script>
