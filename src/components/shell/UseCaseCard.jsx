@@ -4,17 +4,19 @@ import { ChevronDown } from 'lucide-react'
 // Ported from the Make shell (UseCaseCard.tsx). The template's edit pencil is
 // dropped — the public site is read-only. `useCase` shape matches the Make's
 // contract; it is fed from the DB (see lib/useCases → toUseCaseView).
-const MONO = 'font-[family-name:var(--font-eyebrow)] uppercase tracking-[0.15em] text-muted-foreground'
+// Single JetBrains-Mono style across the card: one size (text-xs), one weight
+// (owner 25/08 — the mono font must exist in only one size/style).
+const MONO = 'font-[family-name:var(--font-eyebrow)] text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground'
 
-export default function UseCaseCard({ useCase, index, total }) {
-  const [open, setOpen] = useState(true)
+export default function UseCaseCard({ useCase, index, total, defaultOpen = true }) {
+  const [open, setOpen] = useState(defaultOpen)
 
   return (
     <section className="overflow-hidden rounded-[var(--radius)] border border-border bg-card shadow-[var(--shadow-panel)]">
       {/* Header */}
       <div className="flex items-center gap-3 px-5 py-4">
         <span className="size-2.5 shrink-0 rounded-full bg-emerald-500 shadow-[0_0_8px] shadow-emerald-500/50" aria-hidden />
-        <code className="shrink-0 font-[family-name:var(--font-mono)] text-xs font-semibold tracking-[0.12em] text-muted-foreground">
+        <code className="shrink-0 font-[family-name:var(--font-mono)] text-xs font-medium tracking-[0.12em] text-muted-foreground">
           {useCase.id}
         </code>
         <div
@@ -40,7 +42,7 @@ export default function UseCaseCard({ useCase, index, total }) {
             <div className="h-1 w-28 overflow-hidden rounded-full bg-secondary">
               <div className="h-full rounded-full bg-foreground/40" style={{ width: `${((index + 1) / total) * 100}%` }} />
             </div>
-            <span className="font-[family-name:var(--font-mono)] text-xs tabular-nums text-muted-foreground">
+            <span className="font-[family-name:var(--font-mono)] text-xs font-medium tabular-nums text-muted-foreground">
               {index + 1}/{total}
             </span>
           </div>
@@ -52,7 +54,7 @@ export default function UseCaseCard({ useCase, index, total }) {
           {/* Description */}
           {useCase.description && (
             <div className="border-l-2 border-accent px-5 py-5">
-              <div className={`${MONO} mb-3 text-[0.7rem]`}>Descrição</div>
+              <div className={`${MONO} mb-3`}>Descrição</div>
               <p className="leading-relaxed text-foreground/85">{useCase.description}</p>
             </div>
           )}
@@ -61,15 +63,15 @@ export default function UseCaseCard({ useCase, index, total }) {
           <SectionBar label="Contexto" />
           <div className="grid grid-cols-1 border-t border-border sm:grid-cols-[auto_1fr_auto_1fr]">
             <Cell className={MONO}>Ator</Cell>
-            <Cell className="text-foreground/90">{useCase.actor || '—'}</Cell>
+            <Cell className="text-sm text-foreground/90">{useCase.actor || '—'}</Cell>
             <Cell className={MONO}>Objeto</Cell>
-            <Cell className="text-foreground/90">{useCase.object || '—'}</Cell>
+            <Cell className="text-sm text-foreground/90">{useCase.object || '—'}</Cell>
 
             <Cell className={`${MONO} sm:col-span-1`}>Pré-condição</Cell>
-            <Cell className="text-foreground/90 sm:col-span-3">{useCase.preCondition || '—'}</Cell>
+            <Cell className="text-sm text-foreground/90 sm:col-span-3">{useCase.preCondition || '—'}</Cell>
 
             <Cell className={`${MONO} sm:col-span-1`}>Pós-condição</Cell>
-            <Cell className="text-foreground/90 sm:col-span-3">{useCase.postCondition || '—'}</Cell>
+            <Cell className="text-sm text-foreground/90 sm:col-span-3">{useCase.postCondition || '—'}</Cell>
           </div>
 
           {/* Flows */}
@@ -94,7 +96,7 @@ function SectionBar({ label, count }) {
 }
 
 function Cell({ children, className = '' }) {
-  return <div className={`border-b border-border px-5 py-3 text-sm leading-relaxed ${className}`}>{children}</div>
+  return <div className={`border-b border-border px-5 py-3 leading-relaxed ${className}`}>{children}</div>
 }
 
 function Flow({ flow, showBar }) {
@@ -105,13 +107,13 @@ function Flow({ flow, showBar }) {
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-t border-border bg-secondary/30">
-              <th className="w-16 border-r border-border px-3 py-2.5 text-center font-[family-name:var(--font-eyebrow)] text-[0.7rem] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+              <th className="w-16 border-r border-border px-3 py-2.5 text-center font-[family-name:var(--font-eyebrow)] text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
                 Passo
               </th>
-              <th className="w-1/2 border-r border-border px-4 py-2.5 text-center font-[family-name:var(--font-eyebrow)] text-[0.7rem] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+              <th className="w-1/2 border-r border-border px-4 py-2.5 text-center font-[family-name:var(--font-eyebrow)] text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
                 Ação do ator
               </th>
-              <th className="px-4 py-2.5 text-center font-[family-name:var(--font-eyebrow)] text-[0.7rem] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+              <th className="px-4 py-2.5 text-center font-[family-name:var(--font-eyebrow)] text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
                 Resposta do sistema (caixa-preta)
               </th>
             </tr>
@@ -119,7 +121,7 @@ function Flow({ flow, showBar }) {
           <tbody>
             {flow.steps.map((s) => (
               <tr key={s.step} className="border-t border-border align-top">
-                <td className="border-r border-border px-3 py-4 text-center font-[family-name:var(--font-mono)] text-sm text-muted-foreground">
+                <td className="border-r border-border px-3 py-4 text-center font-[family-name:var(--font-mono)] text-xs font-medium text-muted-foreground">
                   {s.step}
                 </td>
                 <td className="border-r border-border px-4 py-4 leading-relaxed text-foreground/90">{s.action}</td>
