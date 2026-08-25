@@ -24,11 +24,20 @@ export const docsViews = [
     slug: 'documentacao',
     label: 'Documentação',
     eyebrow: 'Arquitetura',
-    blurb: 'Arquitetura em arc42, com diagramas C4 e UML.',
+    blurb: 'Arquitetura em arc42, com diagramas C4 e UML. Os .mmd em architecture/c4 são a referência dos diagramas, renderizados aqui em mermaid.',
     sections: [
       {
         section: 'Arquitetura (arc42)',
         items: [{ label: 'Documento arc42', path: 'architecture/arc42.md' }],
+      },
+      {
+        section: 'Diagramas C4 (referência .mmd)',
+        items: [
+          { label: 'C4 · Nível 1 — Contexto', path: 'architecture/c4/level 1.mmd' },
+          { label: 'C4 · Nível 2 — Contêineres', path: 'architecture/c4/level 2.mmd' },
+          { label: 'C4 · Nível 3 — Componentes', path: 'architecture/c4/level 3.mmd' },
+          { label: 'C4 · Nível 4 — Código (UML)', path: 'architecture/c4/level 4.mmd' },
+        ],
       },
     ],
   },

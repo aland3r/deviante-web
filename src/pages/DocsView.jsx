@@ -5,6 +5,7 @@ import ShellHeader from '../components/shell/ShellHeader'
 import ShellSidebar from '../components/shell/ShellSidebar'
 import ShellFooter from '../components/shell/ShellFooter'
 import DocViewer from '../components/shell/DocViewer'
+import Mermaid from '../components/shell/Mermaid'
 import Toc from '../components/shell/Toc'
 import { fetchDoc, getView, DOCS_REPO } from '../lib/docs'
 import { extractHeadings } from '../lib/shell-headings'
@@ -47,7 +48,12 @@ export default function DocsView() {
     }
   }, [activePath])
 
-  const headings = useMemo(() => (status === 'ready' ? extractHeadings(content) : []), [content, status])
+  const isDiagram = (activePath ?? '').endsWith('.mmd')
+  const activeDoc = docs.find((d) => d.path === activePath)
+  const headings = useMemo(
+    () => (status === 'ready' && !isDiagram ? extractHeadings(content) : []),
+    [content, status, isDiagram],
+  )
 
   if (!view) return <Navigate to="/" replace />
 
@@ -87,7 +93,18 @@ export default function DocsView() {
                 .
               </p>
             )}
-            {status === 'ready' && <DocViewer body={content} />}
+            {status === 'ready' && isDiagram && (
+              <article className="doc-prose max-w-none">
+                <h1 className="font-[family-name:var(--font-display)] text-foreground">{activeDoc?.label}</h1>
+                <Mermaid code={content} />
+                <p className="text-sm text-muted-foreground">
+                  Diagrama renderizado direto do arquivo <code>{activePath}</code> (mermaid). Este .mmd é a
+                  referência — editar e dar push atualiza esta página.
+                </p>
+              </article>
+            )}
+
+            {status === 'ready' && !isDiagram && <DocViewer body={content} />}
 
             <ShellFooter
               note="Publicado direto do vault Obsidian. Editar e dar push atualiza esta página."
