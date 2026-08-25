@@ -13,6 +13,8 @@ import { fetchDevianteUseCases, toUseCaseView } from '../lib/useCases'
 export default function UseCasesView() {
   const [useCases, setUseCases] = useState([])
   const [status, setStatus] = useState('loading')
+  // Accordion: at most one UC open at a time (mirrors the portfolio UC list).
+  const [openId, setOpenId] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -82,7 +84,8 @@ export default function UseCasesView() {
                 useCase={toUseCaseView(uc)}
                 index={i}
                 total={useCases.length}
-                defaultOpen={false}
+                open={openId === uc.short_id}
+                onToggle={() => setOpenId((prev) => (prev === uc.short_id ? null : uc.short_id))}
               />
             ))}
           </div>
