@@ -1324,3 +1324,23 @@ h3 {
   letter-spacing: -0.01em;
   color: var(--text-strong);
 }
+
+/* Documentação (Figma Make Arc42View): hidden scrollbars, first table column
+   highlighted like DocTable, and a stacked layout on small screens. */
+.doc-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+.doc-scroll::-webkit-scrollbar { display: none; }
+.arc42-view td:first-child { color: #c8dff0 !important; }
+.arc42-view tbody tr:last-child { border-bottom: none !important; }
+@media (max-width: 860px) {
+  .arc42-view .arc42-toc { display: none; }
+  .arc42-view .arc42-content { padding: 32px 20px 64px !important; }
+}
+@media (max-width: 640px) {
+  .arc42-view .arc42-crumb { display: none; }
+  .arc42-view > div { flex-direction: column; }
+  .arc42-view .arc42-nav {
+    width: 100% !important; display: flex; overflow-x: auto; overflow-y: hidden !important;
+    padding: 6px 0 !important; border-right: none !important; border-bottom: 1px solid rgba(77,143,192,0.10);
+  }
+  .arc42-view .arc42-nav > button { width: auto !important; white-space: nowrap; }
+}
