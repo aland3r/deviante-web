@@ -1,22 +1,49 @@
 import { useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
-import ShellHeader from '../components/shell/ShellHeader'
-import ShellFooter from '../components/shell/ShellFooter'
+import { Link, useLocation } from 'react-router-dom'
+import { BookOpen, Layers } from 'lucide-react'
 import LoginCard from '../components/auth/LoginCard'
 
-// Landing — the Gestalt shell landing with Deviante's own copy (owner 19/08).
-// Since 05/10 the login lives here (Figma Make "LoginScreen"): hero on the
-// left, access card on the right; /login redirects to /#entrar. Dark Figma palette (theme-shell).
-const STATEMENTS = {
-  eyebrow: 'Manutenção preditiva',
-  headline: 'Manutenção que enxerga o desvio antes da falha.',
-  lead:
-    'O Deviante transforma o event log do chão de fábrica em decisão: detecta desvios de desempenho em tempo real e antecipa quando a máquina vai precisar de manutenção — para que a parada seja escolha, não surpresa.',
-  values: [
-    { title: 'Detecção de drift em tempo real', body: 'ADWIN sobre o event log encontra a mudança de desempenho no instante em que ela acontece.' },
-    { title: 'Previsão orientada a dados', body: 'Do desvio à antecipação: quando a máquina vai pedir manutenção, com base no que o processo mostra.' },
-    { title: 'Do event log à decisão', body: 'O dado bruto do chão de fábrica vira ação proativa de manutenção — não relatório parado.' },
-  ],
+// Landing — port fiel do "LoginScreen" do Figma Make (05/10): nav com marca e
+// os dois itens de menu, hero à esquerda e o card de acesso à direita.
+// Estilos inline como no Figma para manter a fidelidade.
+
+function DevianteLogo({ size = 28 }) {
+  return (
+    <div style={{ width: size, height: size, borderRadius: Math.round(size * 0.22), background: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <svg width={size * 0.5} height={size * 0.5} viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <circle cx="3" cy="7" r="2" fill="white" />
+        <circle cx="11" cy="3" r="2" fill="white" opacity="0.7" />
+        <circle cx="11" cy="11" r="2" fill="white" opacity="0.7" />
+        <line x1="5" y1="6.2" x2="9" y2="3.8" stroke="white" strokeWidth="1.2" opacity="0.8" />
+        <line x1="5" y1="7.8" x2="9" y2="10.2" stroke="white" strokeWidth="1.2" opacity="0.5" />
+      </svg>
+    </div>
+  )
+}
+
+const NAV_ITEMS = [
+  { to: '/documentacao', label: 'Documentação', Icon: Layers },
+  { to: '/casos-de-uso', label: 'Casos de Uso', Icon: BookOpen },
+]
+
+const FEATURES = [
+  'Grafo de processo interativo com DFG',
+  'Análise de drift e desvios automática',
+  'Visualizador 3D de máquinas industriais',
+  'Process mining com logs XES/CSV',
+]
+
+function NavButton({ to, label, Icon }) {
+  return (
+    <Link
+      to={to}
+      style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', color: '#94a3b8', fontSize: 13, fontWeight: 500, textDecoration: 'none', transition: 'all 0.15s' }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#f1f5f9' }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = '#94a3b8' }}
+    >
+      <Icon size={13} /> {label}
+    </Link>
+  )
 }
 
 export default function LandingPage() {
@@ -29,54 +56,55 @@ export default function LandingPage() {
   }, [hash])
 
   return (
-    <div className="gestalt-shell shell-backdrop min-h-screen bg-background text-foreground">
-      <ShellHeader activeSlug={null} />
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#0f1118', fontFamily: "'Inter',sans-serif", position: 'relative', overflow: 'hidden' }}>
 
-      <div className="mx-auto max-w-[1200px] px-6 lg:px-10">
-        {/* Hero */}
-        <section className="grid grid-cols-1 gap-12 pt-16 pb-24 lg:grid-cols-12 lg:gap-8 lg:pt-24 lg:pb-32">
-          <div className="lg:col-span-7">
-            <div className="flex flex-col gap-7">
-              <p className="font-[family-name:var(--font-eyebrow)] text-xs font-medium uppercase tracking-[0.2em] text-accent">
-                {STATEMENTS.eyebrow}
-              </p>
-              <h1 className="shell-hero-title max-w-[18ch] font-[family-name:var(--font-display)] font-semibold text-foreground">
-                {STATEMENTS.headline}
-              </h1>
-              <p className="max-w-[52ch] text-lg leading-relaxed text-muted-foreground">{STATEMENTS.lead}</p>
-            </div>
+      {/* Background dot grid */}
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px)', backgroundSize: '28px 28px', pointerEvents: 'none' }} />
+      {/* Ambient red glow */}
+      <div style={{ position: 'absolute', top: -220, left: '50%', transform: 'translateX(-50%)', width: 700, height: 500, borderRadius: '50%', background: 'rgba(153,27,27,0.07)', filter: 'blur(90px)', pointerEvents: 'none' }} />
+
+      {/* Top nav */}
+      <nav style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, padding: '18px 32px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <DevianteLogo size={30} />
+          <span style={{ fontSize: 16, fontWeight: 700, color: '#f1f5f9', letterSpacing: '-0.02em' }}>Deviante</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {NAV_ITEMS.map((item) => <NavButton key={item.to} {...item} />)}
+        </div>
+      </nav>
+
+      {/* Main two-column content */}
+      <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', padding: '48px 32px 64px', position: 'relative', zIndex: 10, gap: 72 }}>
+
+        {/* ── Left: Hero ── */}
+        <div style={{ maxWidth: 460, flexShrink: 1 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 12px', borderRadius: 20, background: 'rgba(220,38,38,0.10)', border: '1px solid rgba(220,38,38,0.22)', marginBottom: 28 }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#dc2626' }} />
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#fca5a5', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Process Mining · Industrial SaaS</span>
           </div>
 
-          <div className="lg:col-span-5 lg:pt-2">
-            <LoginCard />
-          </div>
-        </section>
+          <h1 style={{ fontFamily: "'Inter',sans-serif", fontSize: 46, fontWeight: 800, color: '#f1f5f9', lineHeight: 1.08, letterSpacing: '-0.03em', margin: '0 0 20px' }}>
+            Identifique desvios.<br />
+            <span style={{ color: '#dc2626' }}>Antes que custam.</span>
+          </h1>
 
-        {/* Values */}
-        <section className="py-24">
-          <p className="font-[family-name:var(--font-eyebrow)] text-xs font-medium uppercase tracking-[0.2em] text-accent">
-            Valores
+          <p style={{ fontSize: 15, color: '#64748b', lineHeight: 1.65, margin: '0 0 40px' }}>
+            Plataforma de process mining para indústrias. Detecte desvios operacionais, analise variantes de processos e visualize máquinas em 3D — tudo em tempo real.
           </p>
-          <div className="mt-8 grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-3">
-            {STATEMENTS.values.map((v, i) => (
-              <div key={v.title} className="border-t border-border pt-6">
-                <span className="font-[family-name:var(--font-eyebrow)] text-sm text-muted-foreground">0{i + 1}</span>
-                <div className="mt-3 flex flex-col gap-2">
-                  <div
-                    role="heading"
-                    aria-level={3}
-                    className="font-[family-name:var(--font-heading)] text-xl font-semibold tracking-tight text-foreground"
-                  >
-                    {v.title}
-                  </div>
-                  <p className="leading-relaxed text-muted-foreground">{v.body}</p>
-                </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
+            {FEATURES.map((label) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#dc2626', flexShrink: 0, opacity: 0.7 }} />
+                <span style={{ fontSize: 14, color: '#8a8a8a' }}>{label}</span>
               </div>
             ))}
           </div>
-        </section>
+        </div>
 
-        <ShellFooter note="Deviante — suporte à decisão em manutenção industrial." />
+        {/* ── Right: Login card ── */}
+        <LoginCard />
       </div>
     </div>
   )
