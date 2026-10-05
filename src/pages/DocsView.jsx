@@ -8,11 +8,11 @@ import Toc from '../components/shell/Toc'
 import { fetchDoc, getView, DOCS_REPO } from '../lib/docs'
 import { extractHeadings } from '../lib/shell-headings'
 
-// Documentação / Objetos — markdown fetched from the public docs repo, rendered
+// Documentação — markdown fetched from the public docs repo, rendered
 // in the Gestalt shell. Layout (owner 25/08): the navigable index ("Nesta
 // página") lives on the LEFT; there is no title/blurb sidebar. Diagrams are
 // embedded inline in the markdown (```mermaid), not as separate entries. The
-// doc switcher only appears for tabs with more than one doc (e.g. Objetos).
+// doc switcher only appears for tabs with more than one doc.
 export default function DocsView() {
   const { pathname } = useLocation()
   const slug = pathname.replace(/^\/+/, '')

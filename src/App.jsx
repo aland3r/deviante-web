@@ -8,7 +8,6 @@ import DashboardPage from './pages/DashboardPage'
 import LandingPage from './pages/LandingPage'
 import DocsView from './pages/DocsView'
 import UseCasesView from './pages/UseCasesView'
-import LoginPage from './pages/LoginPage'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import ProcessCanvasPage from './pages/ProcessCanvasPage'
 import MonitoringPage from './pages/MonitoringPage'
@@ -19,14 +18,13 @@ import SchedulesPage from './pages/SchedulesPage'
 import NoAccessPage from './pages/NoAccessPage'
 import ProtectedRoute from './routes/ProtectedRoute'
 
-// The public site renders light. The landing + the three docs tabs use the
-// NEUTRAL Gestalt shell theme (`theme-shell`, owner 25/08 — ported from the
-// Figma Make), while the pre-dashboard auth flow (login / callback / no-access)
-// keeps the branded `theme-light`. Only the authenticated app keeps the dark
+// The landing + the two docs tabs use the Gestalt shell theme (`theme-shell`,
+// dark Figma Make palette since 05/10), while the pre-dashboard auth flow
+// (callback / no-access) keeps the branded `theme-light`. Only the authenticated app keeps the dark
 // default. This keeps <html> in sync across client-side navigation; the
 // pre-paint script in index.html covers the initial load.
-const SHELL_PATHS = new Set(['/', '/documentacao', '/casos-de-uso', '/objetos'])
-const AUTH_LIGHT_PATHS = new Set(['/login', '/register', '/auth/callback', '/no-access'])
+const SHELL_PATHS = new Set(['/', '/documentacao', '/casos-de-uso'])
+const AUTH_LIGHT_PATHS = new Set(['/auth/callback', '/no-access'])
 
 function ThemeSync() {
   const { pathname } = useLocation()
@@ -62,7 +60,7 @@ export default function App() {
         <BrowserRouter>
         <ThemeSync />
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/login" element={<Navigate to="/#entrar" replace />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
           <Route path="/register" element={<Navigate to="/login" replace />} />
 
@@ -88,7 +86,7 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/documentacao" element={<DocsView />} />
           <Route path="/casos-de-uso" element={<UseCasesView />} />
-          <Route path="/objetos" element={<DocsView />} />
+          <Route path="/objetos" element={<Navigate to="/documentacao" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </BrowserRouter>

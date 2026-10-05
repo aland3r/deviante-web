@@ -16,7 +16,6 @@ export const DOCS_BRANCH = 'main'
 export const siteTabs = [
   { slug: 'documentacao', label: 'Documentação' },
   { slug: 'casos-de-uso', label: 'Casos de Uso' },
-  { slug: 'objetos', label: 'Objetos' },
 ]
 
 export const docsViews = [
@@ -29,23 +28,6 @@ export const docsViews = [
       {
         section: 'Arquitetura (arc42)',
         items: [{ label: 'Documento arc42', path: 'architecture/arc42.md' }],
-      },
-    ],
-  },
-  {
-    slug: 'objetos',
-    label: 'Objetos',
-    eyebrow: 'UX — OOUX',
-    blurb: 'Os objetos do produto, seus relacionamentos, CTAs e atributos.',
-    sections: [
-      {
-        section: 'UX — Objetos (OOUX)',
-        items: [
-          { label: 'Objetos', path: 'UX/OBJECTS.md' },
-          { label: 'Relacionamentos', path: 'UX/RELATIONSHIPS.md' },
-          { label: 'CTAs', path: 'UX/CTAs.md' },
-          { label: 'Atributos', path: 'UX/ATTRIBUTES.md' },
-        ],
       },
     ],
   },

@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import mermaid from 'mermaid'
 
-// Ported from the Make shell (Mermaid.tsx). Light-only: theme 'neutral'.
+// Ported from the Make shell (Mermaid.tsx). The shell is dark: theme 'dark'.
 let initialized = false
 function configure() {
   if (initialized) return
@@ -9,7 +9,7 @@ function configure() {
   mermaid.initialize({
     startOnLoad: false,
     securityLevel: 'strict',
-    theme: 'neutral',
+    theme: 'dark',
     fontFamily: 'var(--font-body)',
   })
 }

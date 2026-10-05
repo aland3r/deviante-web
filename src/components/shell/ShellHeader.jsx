@@ -3,7 +3,7 @@ import { ArrowLeft } from 'lucide-react'
 import { siteTabs } from '../../lib/docs'
 
 // Ported from the Make shell (Header.tsx). Adapted to react-router: tabs are
-// Links to the routes; back returns to the landing. Light-only, so the Make's
+// Links to the routes; back returns to the landing. Dark shell theme only, so the Make's
 // theme toggle is dropped. `activeSlug` is null on the landing.
 export default function ShellHeader({ activeSlug = null }) {
   const navigate = useNavigate()
@@ -52,7 +52,7 @@ export default function ShellHeader({ activeSlug = null }) {
         {/* Right: enter app */}
         <div className="ml-auto flex items-center gap-2">
           <button
-            onClick={() => navigate('/login')}
+            onClick={() => navigate('/#entrar')}
             className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
           >
             Entrar no app

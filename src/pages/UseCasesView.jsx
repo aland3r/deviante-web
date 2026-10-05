@@ -9,7 +9,7 @@ import { fetchDevianteUseCases, toUseCaseView } from '../lib/useCases'
 // rendered in the Gestalt shell. All UC cards are stacked in one column (like
 // the portfolio UCs page, owner 25/08): the list of collapsible cards IS the
 // navigable summary, so there is no left sidebar. Each card opens one at a
-// time; they start collapsed. Light-only.
+// time; they start collapsed. Shell theme (dark).
 export default function UseCasesView() {
   const [useCases, setUseCases] = useState([])
   const [status, setStatus] = useState('loading')

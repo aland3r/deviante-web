@@ -5,7 +5,7 @@ import Mermaid from './Mermaid'
 
 // Ported from the Make shell (DocViewer.tsx). Renders a markdown `body` string;
 // `figures` optionally resolves `![alt](fig:key)` to imported assets. Heading
-// ids mirror extractHeadings() so the Toc anchors line up. Light-only.
+// ids mirror extractHeadings() so the Toc anchors line up. Shell theme (dark).
 function textOf(node) {
   if (node == null || node === false) return ''
   if (typeof node === 'string' || typeof node === 'number') return String(node)

@@ -7,6 +7,7 @@ import {
 } from '../lib/auth'
 import { ensureOwnerBootstrap, getAuthSessionUser } from '@gestalt/auth'
 import { isSupabaseConfigured } from '../lib/supabase'
+import { DEMO_PASSWORD, findDemoAccount } from '../lib/demoAccounts'
 
 const SESSION_EVENTS = new Set(['INITIAL_SESSION', 'SIGNED_IN', 'SIGNED_OUT'])
 
@@ -142,6 +143,16 @@ export function AuthProvider({ children }) {
 
   const authReady = !loading && accessReady
 
+  async function loginWithCredentials(credentials) {
+    const result = await api.login(credentials)
+    setUser(result.user)
+    setSessionAuthenticated(true)
+    const sessionUser = await getAuthSessionUser()
+    syncedUserIdRef.current = sessionUser?.id ?? null
+    await syncAccess(sessionUser, result.user)
+    return result.user
+  }
+
   const value = useMemo(() => ({
     user,
     loading,
@@ -149,13 +160,11 @@ export function AuthProvider({ children }) {
     authReady,
     hasAccess,
     isAuthenticated: sessionAuthenticated,
-    async login(credentials) {
-      const result = await api.login(credentials)
-      setUser(result.user)
-      setSessionAuthenticated(true)
-      const sessionUser = await getAuthSessionUser()
-      await syncAccess(sessionUser, result.user)
-      return result.user
+    login: loginWithCredentials,
+    async loginAsDemo(email) {
+      const account = findDemoAccount(email)
+      if (!account) throw new Error('Conta de demonstração desconhecida.')
+      return loginWithCredentials({ email: account.email, password: DEMO_PASSWORD })
     },
     async loginWithGoogle() {
       await api.loginWithGoogle()

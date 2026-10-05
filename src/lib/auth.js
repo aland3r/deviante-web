@@ -9,6 +9,7 @@ import {
   subscribeToAuthChanges as sharedSubscribeToAuthChanges,
 } from '@gestalt/auth'
 import { getSupabase } from './supabase'
+import { findDemoAccount } from './demoAccounts'
 
 const PRODUCT_CODE = 'deviante'
 const DEVIANTE_PRODUCTION_ORIGIN = 'https://deviante.alander.io'
@@ -124,6 +125,8 @@ async function mapSessionUser(sessionUser) {
     id: sessionUser.id,
     email,
     role: fromDb?.role ?? 'manager',
+    // Papel de demonstração (login de teste); null para contas reais.
+    demoRole: findDemoAccount(email)?.role ?? null,
     fullName: fromDb?.fullName || fromMeta.fullName || email.split('@')[0] || 'Usuário',
     firstLanguage: fromDb?.firstLanguage ?? fromMeta.firstLanguage,
     targetLanguage: fromDb?.targetLanguage ?? fromMeta.targetLanguage,

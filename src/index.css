@@ -1187,24 +1187,26 @@ h3 {
    its custom-property declarations under Tailwind v4, so :root is the reliable
    scope. ThemeSync in App.jsx adds .theme-shell on landing + the 3 docs tabs. */
 :root.theme-shell {
-  color-scheme: light;
+  color-scheme: dark;
 
-  /* neutral color roles (the brand-override interface) */
-  --background: #fbfbfc;
-  --foreground: #17171b;
-  --card: #ffffff;
-  --card-foreground: #17171b;
-  --primary: #18181b;
-  --primary-foreground: #fafafa;
-  --secondary: #f2f2f4;
-  --secondary-foreground: #27272a;
-  --muted: #f4f4f6;
-  --muted-foreground: #6b6b74;
-  --accent: #4d5b78;
-  --accent-foreground: #ffffff;
-  --border: #e7e7ec;
-  --ring: #4d5b78;
-  --bg: #fbfbfc;
+  /* neutral color roles (the brand-override interface). Dark palette from
+     the Figma Make LoginScreen (owner 05/10): same components and type
+     scale as before, only the colors change. */
+  --background: #0f1118;
+  --foreground: #f1f5f9;
+  --card: #18191f;
+  --card-foreground: #f1f5f9;
+  --primary: #dc2626;
+  --primary-foreground: #ffffff;
+  --secondary: #1e2026;
+  --secondary-foreground: #e2e8f0;
+  --muted: #1c1e26;
+  --muted-foreground: #94a3b8;
+  --accent: #f87171;
+  --accent-foreground: #0f1118;
+  --border: rgba(255, 255, 255, 0.09);
+  --ring: #dc2626;
+  --bg: #0f1118;
 
   /* also drive the legacy semantic tokens so any inherited rule matches */
   --surface: var(--card);
@@ -1235,7 +1237,7 @@ h3 {
 
   --radius: 0.75rem;
   --radius-sm: 0.5rem;
-  --shadow-panel: 0 1px 2px rgba(20, 20, 30, 0.04), 0 8px 24px rgba(20, 20, 30, 0.06);
+  --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.4), 0 24px 64px rgba(0, 0, 0, 0.45);
 }
 
 /* Neutralize the app dark/red body gradient under the shell theme. */
@@ -1267,6 +1269,14 @@ h3 {
 .gestalt-shell .doc-prose ol > li { list-style: decimal; }
 .gestalt-shell .doc-prose li { margin-top: 0.4rem; line-height: 1.7; }
 .gestalt-shell .doc-prose li::marker { color: var(--muted-foreground); }
+
+/* Landing backdrop — the Figma Make dot grid and ambient red glow. */
+.gestalt-shell .shell-backdrop {
+  background-image:
+    radial-gradient(ellipse 700px 500px at 50% -220px, rgba(153, 27, 27, 0.16), transparent 70%),
+    radial-gradient(circle, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
+  background-size: 100% 100%, 28px 28px;
+}
 
 /* Landing hero title — larger than a doc h1. */
 .gestalt-shell .shell-hero-title {
