@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, BookOpen, Loader2 } from 'lucide-react'
+import { BookOpen, Loader2 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import Mermaid from '../components/shell/Mermaid'
+import { Arc42Header, C, DocCallout, HeaderButton, NavItem } from '../components/arc42/chrome'
 import { fetchDoc, DOCS_REPO } from '../lib/docs'
 
 // Documentação — port fiel do "Arc42View" do Figma Make (05/10): barra de 52px,
@@ -12,34 +12,6 @@ import { fetchDoc, DOCS_REPO } from '../lib/docs'
 // (main), dividido nas seções `## N. Título` e subseções `### N.M`.
 
 const ARC42_PATH = 'architecture/arc42.md'
-
-const C = {
-  page: '#111318',
-  bar: '#0d0f14',
-  line: 'rgba(77,143,192,0.10)',
-  blue: '#4d8fc0',
-  red: '#dc2626',
-  strong: '#c8dff0',
-  body: '#7a93b0',
-  dim: '#475569',
-  faint: '#334155',
-  mono: "'JetBrains Mono',monospace",
-  sans: "'Inter',sans-serif",
-}
-
-function DevianteLogo({ size = 28 }) {
-  return (
-    <div style={{ width: size, height: size, borderRadius: Math.round(size * 0.22), background: C.red, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-      <svg width={size * 0.5} height={size * 0.5} viewBox="0 0 14 14" fill="none" aria-hidden="true">
-        <circle cx="3" cy="7" r="2" fill="white" />
-        <circle cx="11" cy="3" r="2" fill="white" opacity="0.7" />
-        <circle cx="11" cy="11" r="2" fill="white" opacity="0.7" />
-        <line x1="5" y1="6.2" x2="9" y2="3.8" stroke="white" strokeWidth="1.2" opacity="0.8" />
-        <line x1="5" y1="7.8" x2="9" y2="10.2" stroke="white" strokeWidth="1.2" opacity="0.5" />
-      </svg>
-    </div>
-  )
-}
 
 function textOf(node) {
   if (node == null || node === false) return ''
@@ -75,15 +47,6 @@ function parseArc42(markdown) {
     intro: intro.join('\n').replace(/^\s*---\s*$/gm, '').trim(),
     sections: sections.map((s) => ({ ...s, body: s.lines.join('\n').trim() })),
   }
-}
-
-function DocCallout({ title, children }) {
-  return (
-    <div style={{ padding: '13px 16px 13px 18px', borderRadius: 7, background: 'rgba(77,143,192,0.07)', borderLeft: `3px solid ${C.blue}`, margin: '18px 0', lineHeight: 1.65 }}>
-      {title && <p style={{ margin: '0 0 5px', fontSize: 10, fontWeight: 700, color: C.blue, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{title}</p>}
-      <div style={{ fontSize: 13, color: C.body }}>{children}</div>
-    </div>
-  )
 }
 
 const P_STYLE = { color: C.body, lineHeight: 1.75, fontSize: 13, margin: '0 0 14px' }
@@ -148,22 +111,6 @@ const MD_COMPONENTS = {
   ),
 }
 
-function HeaderButton({ to, children, accent = false }) {
-  const base = accent
-    ? { border: '1px solid rgba(220,38,38,0.35)', background: 'rgba(220,38,38,0.08)', color: '#fca5a5' }
-    : { border: '1px solid rgba(77,143,192,0.18)', background: 'rgba(77,143,192,0.08)', color: '#94a3b8' }
-  return (
-    <Link
-      to={to}
-      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 14px', borderRadius: 6, fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', textDecoration: 'none', transition: 'all 0.15s', ...base }}
-      onMouseEnter={(e) => { const b = e.currentTarget; b.style.background = accent ? 'rgba(220,38,38,0.18)' : 'rgba(77,143,192,0.18)'; b.style.color = accent ? '#fff' : C.strong }}
-      onMouseLeave={(e) => { const b = e.currentTarget; b.style.background = base.background; b.style.color = base.color }}
-    >
-      {children}
-    </Link>
-  )
-}
-
 // One line per arc42 section for the "Anterior / Próxima" cards, following
 // the arc42 template's own section summaries.
 const SECTION_BLURBS = {
@@ -213,7 +160,6 @@ function PagerCard({ section, direction, onClick }) {
 }
 
 export default function DocsView() {
-  const navigate = useNavigate()
   const [markdown, setMarkdown] = useState('')
   const [status, setStatus] = useState('loading')
   const [activeSection, setActiveSection] = useState('1')
@@ -251,53 +197,18 @@ export default function DocsView() {
   return (
     <div className="arc42-view" style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', fontFamily: C.sans, background: C.page, overflow: 'hidden' }}>
       {/* Header */}
-      <header style={{ height: 52, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12, padding: '0 20px', borderBottom: `1px solid ${C.line}`, background: C.bar }}>
-        <button
-          type="button"
-          onClick={() => navigate('/')}
-          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 6, border: 'none', background: 'rgba(77,143,192,0.08)', color: '#94a3b8', cursor: 'pointer', fontSize: 11, transition: 'all 0.15s' }}
-          onMouseEnter={(e) => { const b = e.currentTarget; b.style.background = 'rgba(77,143,192,0.18)'; b.style.color = C.strong }}
-          onMouseLeave={(e) => { const b = e.currentTarget; b.style.background = 'rgba(77,143,192,0.08)'; b.style.color = '#94a3b8' }}
-        >
-          <ArrowLeft size={11} /> Voltar
-        </button>
-        <div style={{ width: 1, height: 20, background: 'rgba(77,143,192,0.15)' }} />
-        <DevianteLogo size={22} />
-        <span className="arc42-crumb" style={{ fontSize: 13, color: '#64748b' }}>Deviante</span>
-        <span className="arc42-crumb" style={{ fontSize: 13, color: 'rgba(77,143,192,0.30)' }}>›</span>
-        <span className="arc42-crumb" style={{ fontSize: 13, fontWeight: 600, color: C.strong, whiteSpace: 'nowrap' }}>Documentação Arc42</span>
-        <div style={{ flex: 1 }} />
+      <Arc42Header title="Documentação Arc42">
         <HeaderButton to="/casos-de-uso"><BookOpen size={12} /> Casos de Uso</HeaderButton>
         <HeaderButton to="/#entrar" accent>Entrar →</HeaderButton>
-      </header>
+      </Arc42Header>
 
       {/* Body */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         {/* Left nav */}
         <nav className="doc-scroll arc42-nav" style={{ width: 240, flexShrink: 0, borderRight: `1px solid ${C.line}`, background: C.bar, overflowY: 'auto', padding: '18px 0 24px' }}>
-          {sections.map((s) => {
-            const isActive = section?.id === s.id
-            return (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => goToSection(s.id)}
-                style={{
-                  width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '8px 18px', textAlign: 'left', border: 'none', cursor: 'pointer',
-                  background: isActive ? 'rgba(77,143,192,0.09)' : 'transparent',
-                  borderLeft: `2px solid ${isActive ? C.blue : 'transparent'}`,
-                  color: isActive ? C.strong : C.dim,
-                  fontSize: 13, fontWeight: isActive ? 500 : 400, transition: 'all 0.14s',
-                }}
-                onMouseEnter={(e) => { if (!isActive) { const b = e.currentTarget; b.style.color = C.body; b.style.background = 'rgba(77,143,192,0.04)' } }}
-                onMouseLeave={(e) => { if (!isActive) { const b = e.currentTarget; b.style.color = C.dim; b.style.background = 'transparent' } }}
-              >
-                <span style={{ fontFamily: C.mono, fontSize: 11, color: isActive ? C.red : C.dim, flexShrink: 0, minWidth: 22, fontWeight: isActive ? 700 : 400 }}>{s.num}</span>
-                {s.title}
-              </button>
-            )
-          })}
+          {sections.map((s) => (
+            <NavItem key={s.id} num={s.num} label={s.title} active={section?.id === s.id} onClick={() => goToSection(s.id)} />
+          ))}
         </nav>
 
         {/* Content + sticky right TOC inside */}

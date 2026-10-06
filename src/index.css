@@ -1346,3 +1346,9 @@ h3 {
   .arc42-view .arc42-pager { grid-template-columns: 1fr !important; }
   .arc42-view .arc42-pager > button { grid-column: 1 !important; }
 }
+
+/* Casos de Uso: soft fade when switching UC */
+.uc-enter { animation: uc-enter 0.22s ease-out; }
+@keyframes uc-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .uc-enter { animation: none; } }
+@media (max-width: 640px) { .uc-filter, .uc-nav-label { display: none !important; } }
