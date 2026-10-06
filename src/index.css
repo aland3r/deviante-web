@@ -1343,4 +1343,6 @@ h3 {
     padding: 6px 0 !important; border-right: none !important; border-bottom: 1px solid rgba(77,143,192,0.10);
   }
   .arc42-view .arc42-nav > button { width: auto !important; white-space: nowrap; }
+  .arc42-view .arc42-pager { grid-template-columns: 1fr !important; }
+  .arc42-view .arc42-pager > button { grid-column: 1 !important; }
 }

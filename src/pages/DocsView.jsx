@@ -164,6 +164,54 @@ function HeaderButton({ to, children, accent = false }) {
   )
 }
 
+// One line per arc42 section for the "Anterior / Próxima" cards, following
+// the arc42 template's own section summaries.
+const SECTION_BLURBS = {
+  1: 'Requisitos, metas de qualidade e stakeholders',
+  2: 'Restrições técnicas, organizacionais e convenções',
+  3: 'Contexto de negócio e técnico, interfaces externas',
+  4: 'Decisões fundamentais e estratégias de solução',
+  5: 'Decomposição estática do sistema em blocos',
+  6: 'Comportamento dos blocos em cenários de execução',
+  7: 'Infraestrutura técnica e mapeamento dos blocos',
+  8: 'Regras e soluções que valem para vários blocos',
+  9: 'Decisões importantes, caras ou arriscadas',
+  10: 'Árvore e cenários de qualidade',
+  11: 'Riscos e dívidas técnicas conhecidos',
+  12: 'Termos de domínio e técnicos',
+}
+
+function PagerCard({ section, direction, onClick }) {
+  const next = direction === 'next'
+  const base = {
+    background: next ? 'rgba(77,143,192,0.08)' : C.bar,
+    borderColor: next ? 'rgba(77,143,192,0.35)' : 'rgba(77,143,192,0.14)',
+  }
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        display: 'flex', flexDirection: 'column', gap: 6, alignItems: next ? 'flex-end' : 'flex-start',
+        textAlign: next ? 'right' : 'left', padding: '16px 18px', borderRadius: 8, cursor: 'pointer',
+        border: `1px solid ${base.borderColor}`, background: base.background, transition: 'all 0.15s',
+        gridColumn: next ? 2 : 1,
+      }}
+      onMouseEnter={(e) => { const b = e.currentTarget; b.style.borderColor = C.blue; b.style.background = 'rgba(77,143,192,0.12)' }}
+      onMouseLeave={(e) => { const b = e.currentTarget; b.style.borderColor = base.borderColor; b.style.background = base.background }}
+    >
+      <span style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        {next ? 'Próxima →' : '← Anterior'}
+      </span>
+      <span style={{ fontSize: 15, fontWeight: 600, color: C.strong }}>
+        <span style={{ fontFamily: C.mono, fontSize: 12, color: C.red, marginRight: 8 }}>{section.num}</span>
+        {section.title}
+      </span>
+      {SECTION_BLURBS[section.id] && <span style={{ fontSize: 13, color: C.body, lineHeight: 1.5 }}>{SECTION_BLURBS[section.id]}</span>}
+    </button>
+  )
+}
+
 export default function DocsView() {
   const navigate = useNavigate()
   const [markdown, setMarkdown] = useState('')
@@ -182,6 +230,9 @@ export default function DocsView() {
 
   const { intro, sections } = useMemo(() => parseArc42(markdown), [markdown])
   const section = sections.find((s) => s.id === activeSection) ?? sections[0]
+  const index = sections.indexOf(section)
+  const prev = index > 0 ? sections[index - 1] : null
+  const next = index >= 0 && index < sections.length - 1 ? sections[index + 1] : null
 
   useEffect(() => {
     setActiveSubId(section?.sub[0]?.id ?? null)
@@ -285,13 +336,21 @@ export default function DocsView() {
                   <ReactMarkdown remarkPlugins={[remarkGfm]} components={MD_COMPONENTS}>
                     {section.body}
                   </ReactMarkdown>
+                  {(prev || next) && (
+                    <nav aria-label="Navegação entre seções" className="arc42-pager" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 48, paddingTop: 28, borderTop: `1px solid ${C.line}` }}>
+                      {prev && <PagerCard section={prev} direction="prev" onClick={() => goToSection(prev.id)} />}
+                      {next && <PagerCard section={next} direction="next" onClick={() => goToSection(next.id)} />}
+                    </nav>
+                  )}
                 </div>
               )}
             </div>
 
             {/* Sticky right TOC — "Nesta página" */}
+            {/* Rendered even when empty so every section keeps the same text width. */}
+            <div className="arc42-toc" style={{ width: 160, flexShrink: 0, position: 'sticky', top: 52 }}>
             {section?.sub.length > 0 && (
-              <div className="arc42-toc" style={{ width: 160, flexShrink: 0, position: 'sticky', top: 52 }}>
+              <>
                 <p style={{ margin: '0 0 10px', fontSize: 10, fontWeight: 700, color: C.blue, textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: C.mono }}>
                   Nesta página
                 </p>
@@ -317,8 +376,9 @@ export default function DocsView() {
                     </button>
                   )
                 })}
-              </div>
+              </>
             )}
+            </div>
           </div>
         </div>
       </div>
