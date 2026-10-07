@@ -29,7 +29,7 @@
     "clsx": "^2.1.1",
     "github-slugger": "^2.0.0",
     "lucide-react": "^0.474.0",
-    "mermaid": "^11.17.0",
+    "mermaid": "^12.1.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-markdown": "^10.1.0",

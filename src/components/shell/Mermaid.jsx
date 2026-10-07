@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Maximize2, X } from 'lucide-react'
+import { Maximize2, Minus, Plus, ScanSearch, X } from 'lucide-react'
 import mermaid from 'mermaid'
 
 // Ported from the Make shell (Mermaid.tsx). The shell is dark: theme 'dark'.
@@ -83,13 +83,6 @@ export default function Mermaid({ code }) {
     }
   }, [code, id])
 
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e) => e.key === 'Escape' && setOpen(false)
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open])
-
   if (error) {
     return (
       <pre className="my-6 overflow-x-auto rounded-[var(--radius)] border border-border bg-muted p-4 font-mono text-sm text-muted-foreground">
@@ -116,30 +109,95 @@ export default function Mermaid({ code }) {
           </span>
         )}
       </div>
-      {open &&
-        createPortal(
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Diagrama ampliado"
-            onClick={() => setOpen(false)}
-            className="fixed inset-0 z-[100] flex cursor-zoom-out items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
-          >
-            <button
-              type="button"
-              aria-label="Fechar"
-              onClick={() => setOpen(false)}
-              className="absolute right-6 top-6 z-10 rounded-md border border-border bg-card p-2 text-muted-foreground hover:text-foreground"
-            >
-              <X size={18} />
-            </button>
-            <div
-              className="h-full w-full rounded-[var(--radius)] border border-border bg-card p-3 [&_svg]:!h-full [&_svg]:!w-full [&_svg]:!max-w-none"
-              dangerouslySetInnerHTML={{ __html: svgMarkup }}
-            />
-          </div>,
-          document.body,
-        )}
+      {open && createPortal(<ZoomOverlay svgMarkup={svgMarkup} onClose={() => setOpen(false)} />, document.body)}
     </>
+  )
+}
+
+// Full-screen view: starts fitted to the screen width (readable even for tall
+// diagrams), scrolls in both directions and zooms with the buttons, + / -,
+// or Ctrl + scroll wheel.
+const MIN_SCALE = 0.25
+const MAX_SCALE = 6
+const STEP = 1.25
+
+function naturalSize(markup) {
+  const m = markup.match(/viewBox="([-\d.\s]+)"/)
+  if (!m) return { width: 1000, height: 1000 }
+  const [, , width, height] = m[1].trim().split(/\s+/).map(Number)
+  return { width, height }
+}
+
+function ZoomOverlay({ svgMarkup, onClose }) {
+  const scrollRef = useRef(null)
+  const size = naturalSize(svgMarkup)
+  const [scale, setScale] = useState(null)
+
+  const fitWidth = () => {
+    const el = scrollRef.current
+    if (!el) return
+    setScale(Math.min(MAX_SCALE, Math.max(MIN_SCALE, (el.clientWidth - 32) / size.width)))
+  }
+  const zoom = (factor) => setScale((s) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, (s ?? 1) * factor)))
+
+  useEffect(() => {
+    fitWidth()
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose()
+      else if (e.key === '+' || e.key === '=') zoom(STEP)
+      else if (e.key === '-') zoom(1 / STEP)
+      else if (e.key === '0') fitWidth()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const onWheel = (e) => {
+      if (!e.ctrlKey && !e.metaKey) return
+      e.preventDefault()
+      zoom(e.deltaY < 0 ? STEP : 1 / STEP)
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [])
+
+  const button =
+    'rounded-md border border-border bg-card p-2 text-muted-foreground hover:text-foreground'
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Diagrama ampliado"
+      className="fixed inset-0 z-[100] flex flex-col bg-black/85 backdrop-blur-sm"
+    >
+      <div className="flex items-center justify-end gap-2 p-3">
+        <span className="mr-auto pl-1 text-xs text-muted-foreground">
+          {scale ? `${Math.round(scale * 100)}%` : ''} · Ctrl + rolagem para zoom
+        </span>
+        <button type="button" aria-label="Diminuir zoom" onClick={() => zoom(1 / STEP)} className={button}>
+          <Minus size={18} />
+        </button>
+        <button type="button" aria-label="Ajustar à largura" onClick={fitWidth} className={button}>
+          <ScanSearch size={18} />
+        </button>
+        <button type="button" aria-label="Aumentar zoom" onClick={() => zoom(STEP)} className={button}>
+          <Plus size={18} />
+        </button>
+        <button type="button" aria-label="Fechar" onClick={onClose} className={button}>
+          <X size={18} />
+        </button>
+      </div>
+      <div ref={scrollRef} className="flex-1 overflow-auto px-4 pb-4">
+        <div
+          className="mx-auto rounded-[var(--radius)] border border-border bg-card p-4 [&_svg]:!h-full [&_svg]:!w-full [&_svg]:!max-w-none"
+          style={scale ? { width: size.width * scale + 32, height: size.height * scale + 32 } : { visibility: 'hidden' }}
+          dangerouslySetInnerHTML={{ __html: svgMarkup }}
+        />
+      </div>
+    </div>
   )
 }
