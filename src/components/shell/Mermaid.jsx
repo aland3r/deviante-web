@@ -34,6 +34,15 @@ function restoreScreen() {
   if (--widened === 0) delete window.screen.availWidth
 }
 
+// Mermaid's C4 draws relations (lines and labels) in a fixed #444444 that
+// disappears on the dark shell. Swap that default for a light grey; colours
+// set with UpdateRelStyle are left alone.
+const C4_DEFAULT_LINE = /"#444444"/g
+const C4_LIGHT_LINE = '"#cbd5e1"'
+function lightenC4Lines(svg) {
+  return svg.includes('aria-roledescription="c4"') ? svg.replace(C4_DEFAULT_LINE, C4_LIGHT_LINE) : svg
+}
+
 function cropSvg(svg) {
   // Invisible spacer shapes (used in C4 to steer the layout) still count in
   // the bounding box; take them out so the crop hugs what is actually seen.
@@ -67,7 +76,7 @@ export default function Mermaid({ code }) {
       .render(`mmd-${id}`, code)
       .then(({ svg }) => {
         if (cancelled || !ref.current) return
-        ref.current.innerHTML = svg
+        ref.current.innerHTML = lightenC4Lines(svg)
         const el = ref.current.querySelector('svg')
         if (el) {
           cropSvg(el)
