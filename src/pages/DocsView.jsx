@@ -189,6 +189,18 @@ export default function DocsView() {
     if (contentRef.current) contentRef.current.scrollTop = 0
   }
 
+  // Scroll spy for "Nesta página": the last heading above the top third wins.
+  function onScroll() {
+    const root = contentRef.current
+    if (!root || !section?.sub.length) return
+    const limit = root.getBoundingClientRect().top + root.clientHeight / 3
+    let current = section.sub[0].id
+    root.querySelectorAll('[data-anchor]').forEach((el) => {
+      if (el.getBoundingClientRect().top <= limit) current = el.dataset.anchor
+    })
+    setActiveSubId(current)
+  }
+
   function scrollToSub(subId) {
     setActiveSubId(subId)
     contentRef.current?.querySelector(`[data-anchor="${subId}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -212,7 +224,7 @@ export default function DocsView() {
         </nav>
 
         {/* Content + sticky right TOC inside */}
-        <div ref={contentRef} className="doc-scroll" style={{ flex: 1, overflowY: 'auto', background: C.page }}>
+        <div ref={contentRef} onScroll={onScroll} className="doc-scroll" style={{ flex: 1, overflowY: 'auto', background: C.page }}>
           <div className="arc42-content" style={{ maxWidth: 960, margin: '0 auto', padding: '52px 40px 80px', display: 'flex', gap: 52, alignItems: 'flex-start' }}>
             {/* Main text */}
             <div style={{ flex: 1, minWidth: 0 }}>
