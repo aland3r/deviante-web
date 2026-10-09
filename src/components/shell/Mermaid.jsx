@@ -58,6 +58,40 @@ function cropSvg(svg) {
   svg.style.height = 'auto'
 }
 
+// Mermaid's orthogonal router often puts a 1–2px stub under the inheritance
+// triangle, then bends 90°. That kink sits on the triangle and hides it.
+// Rebuild those edges as: long vertical stem → horizontal → down to child.
+const INHERIT_STEM = 56
+function straightenInheritanceStems(svg) {
+  for (const path of svg.querySelectorAll('path.relation')) {
+    const marker = getComputedStyle(path).markerStart || ''
+    if (!/extension/i.test(marker)) continue
+    const raw = path.getAttribute('d')
+    if (!raw || !raw.includes('Q')) continue
+    const nums = [...raw.matchAll(/(-?[\d.]+),(-?[\d.]+)/g)].map((m) => ({ x: +m[1], y: +m[2] }))
+    if (nums.length < 3) continue
+    const start = nums[0]
+    const second = nums[1]
+    const end = nums[nums.length - 1]
+    // First segment must be a short vertical stub at the parent (triangle).
+    if (Math.abs(start.x - second.x) > 0.5) continue
+    const available = Math.abs(end.y - start.y)
+    const stem = Math.min(INHERIT_STEM, Math.max(28, available * 0.45))
+    const stub = second.y - start.y
+    if (Math.abs(stub) >= stem - 1 || Math.abs(stub) < 0.05) continue
+    if (available < stem + 12) continue
+    if (!nums.some((p) => Math.abs(p.x - start.x) > 8)) continue
+    const dir = Math.sign(end.y - start.y) || Math.sign(stub) || 1
+    const yBranch = start.y + dir * stem
+    if (dir > 0 && yBranch >= end.y - 8) continue
+    if (dir < 0 && yBranch <= end.y + 8) continue
+    path.setAttribute('d', `M${start.x},${start.y}L${start.x},${yBranch}L${end.x},${yBranch}L${end.x},${end.y}`)
+    // Drop Mermaid's draw-in dash pattern so the rebuilt path paints fully.
+    path.style.strokeDasharray = ''
+    path.style.strokeDashoffset = ''
+  }
+}
+
 export default function Mermaid({ code }) {
   const id = useId().replace(/:/g, '')
   const ref = useRef(null)
@@ -79,6 +113,7 @@ export default function Mermaid({ code }) {
         ref.current.innerHTML = lightenC4Lines(svg)
         const el = ref.current.querySelector('svg')
         if (el) {
+          straightenInheritanceStems(el)
           cropSvg(el)
           setSvgMarkup(el.outerHTML)
         }
