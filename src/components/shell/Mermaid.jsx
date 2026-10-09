@@ -22,12 +22,17 @@ function configure() {
 const PAD = 12
 const MAX_ZOOM = 1.8
 const LAYOUT_WIDTH = 1200
+const CLASS_LAYOUT_WIDTH = 2200
 
 // Several diagrams render at once, so the override is reference-counted.
 let widened = 0
-function widenScreen() {
-  if (widened++ === 0 && window.screen.availWidth < LAYOUT_WIDTH) {
-    Object.defineProperty(window.screen, 'availWidth', { value: LAYOUT_WIDTH, configurable: true })
+function layoutWidthFor(code) {
+  return /\bclassDiagram\b/.test(code) ? CLASS_LAYOUT_WIDTH : LAYOUT_WIDTH
+}
+function widenScreen(code) {
+  const want = layoutWidthFor(code)
+  if (widened++ === 0 && window.screen.availWidth < want) {
+    Object.defineProperty(window.screen, 'availWidth', { value: want, configurable: true })
   }
 }
 function restoreScreen() {
@@ -156,7 +161,7 @@ export default function Mermaid({ code }) {
     // Mermaid's C4 layout wraps rows at screen.availWidth, so on a phone the
     // diagram collapses into one tall column. Lay it out as on a desktop; the
     // crop below scales it to fit and the overlay shows it full size.
-    widenScreen()
+    widenScreen(code)
     mermaid
       .render(`mmd-${id}`, code)
       .then(({ svg }) => {
