@@ -59,36 +59,87 @@ function cropSvg(svg) {
 }
 
 // Mermaid's orthogonal router often puts a 1–2px stub under the inheritance
-// triangle, then bends 90°. That kink sits on the triangle and hides it.
-// Rebuild those edges as: long vertical stem → horizontal → down to child.
+// triangle (or at the arrow tip), then bends 90°. Rebuild as a clean stem.
 const INHERIT_STEM = 56
+const TIP_STUB_MAX = 8
+
+function pathPoints(d) {
+  return [...d.matchAll(/(-?[\d.]+),(-?[\d.]+)/g)].map((m) => ({ x: +m[1], y: +m[2] }))
+}
+
+function clearPathDash(path) {
+  path.style.strokeDasharray = ''
+  path.style.strokeDashoffset = ''
+}
+
+function setOrthoPath(path, points) {
+  if (points.length < 2) return
+  let d = `M${points[0].x},${points[0].y}`
+  for (let i = 1; i < points.length; i++) d += `L${points[i].x},${points[i].y}`
+  path.setAttribute('d', d)
+  clearPathDash(path)
+}
+
 function straightenInheritanceStems(svg) {
   for (const path of svg.querySelectorAll('path.relation')) {
-    const marker = getComputedStyle(path).markerStart || ''
+    const style = getComputedStyle(path)
+    const marker = `${style.markerStart || ''} ${style.markerEnd || ''}`
     if (!/extension/i.test(marker)) continue
     const raw = path.getAttribute('d')
-    if (!raw || !raw.includes('Q')) continue
-    const nums = [...raw.matchAll(/(-?[\d.]+),(-?[\d.]+)/g)].map((m) => ({ x: +m[1], y: +m[2] }))
-    if (nums.length < 3) continue
+    if (!raw) continue
+    const nums = pathPoints(raw)
+    if (nums.length < 2) continue
     const start = nums[0]
-    const second = nums[1]
     const end = nums[nums.length - 1]
-    // First segment must be a short vertical stub at the parent (triangle).
-    if (Math.abs(start.x - second.x) > 0.5) continue
-    const available = Math.abs(end.y - start.y)
-    const stem = Math.min(INHERIT_STEM, Math.max(28, available * 0.45))
-    const stub = second.y - start.y
-    if (Math.abs(stub) >= stem - 1 || Math.abs(stub) < 0.05) continue
-    if (available < stem + 12) continue
-    if (!nums.some((p) => Math.abs(p.x - start.x) > 8)) continue
-    const dir = Math.sign(end.y - start.y) || Math.sign(stub) || 1
-    const yBranch = start.y + dir * stem
-    if (dir > 0 && yBranch >= end.y - 8) continue
-    if (dir < 0 && yBranch <= end.y + 8) continue
-    path.setAttribute('d', `M${start.x},${start.y}L${start.x},${yBranch}L${end.x},${yBranch}L${end.x},${end.y}`)
-    // Drop Mermaid's draw-in dash pattern so the rebuilt path paints fully.
-    path.style.strokeDasharray = ''
-    path.style.strokeDashoffset = ''
+    const dx = end.x - start.x
+    const dy = end.y - start.y
+
+    // Aligned: one straight segment (no tip kink).
+    if (Math.abs(dx) < 1.5) {
+      setOrthoPath(path, [start, { x: start.x, y: end.y }])
+      continue
+    }
+    if (Math.abs(dy) < 1.5) {
+      setOrthoPath(path, [start, { x: end.x, y: start.y }])
+      continue
+    }
+
+    // Dominant vertical: long stem from parent, then across, then into child.
+    if (Math.abs(dy) >= Math.abs(dx) * 0.55) {
+      const dir = Math.sign(dy) || 1
+      const stem = Math.min(INHERIT_STEM, Math.max(28, Math.abs(dy) * 0.4))
+      if (Math.abs(dy) < stem + 12) continue
+      const yBranch = start.y + dir * stem
+      if ((dir > 0 && yBranch >= end.y - 6) || (dir < 0 && yBranch <= end.y + 6)) continue
+      setOrthoPath(path, [start, { x: start.x, y: yBranch }, { x: end.x, y: yBranch }, end])
+      continue
+    }
+
+    // Dominant horizontal (LR layouts): stem sideways from parent first.
+    const dir = Math.sign(dx) || 1
+    const stem = Math.min(INHERIT_STEM, Math.max(28, Math.abs(dx) * 0.35))
+    if (Math.abs(dx) < stem + 12) continue
+    const xBranch = start.x + dir * stem
+    if ((dir > 0 && xBranch >= end.x - 6) || (dir < 0 && xBranch <= end.x + 6)) continue
+    setOrthoPath(path, [start, { x: xBranch, y: start.y }, { x: xBranch, y: end.y }, end])
+  }
+}
+
+// Drop tiny stubs at the arrow tip of association edges (not inheritance —
+// those are rebuilt above). Mermaid often jogs 1–2px right at marker-end.
+function unkinkRelationTips(svg) {
+  for (const path of svg.querySelectorAll('path.relation')) {
+    const style = getComputedStyle(path)
+    const marker = `${style.markerStart || ''} ${style.markerEnd || ''}`
+    if (/extension/i.test(marker)) continue
+    const raw = path.getAttribute('d')
+    if (!raw) continue
+    let pts = pathPoints(raw)
+    if (pts.length < 3) continue
+    const b = pts[pts.length - 2]
+    const c = pts[pts.length - 1]
+    if (Math.hypot(c.x - b.x, c.y - b.y) >= TIP_STUB_MAX) continue
+    setOrthoPath(path, [...pts.slice(0, -2), c])
   }
 }
 
@@ -114,6 +165,7 @@ export default function Mermaid({ code }) {
         const el = ref.current.querySelector('svg')
         if (el) {
           straightenInheritanceStems(el)
+          unkinkRelationTips(el)
           cropSvg(el)
           setSvgMarkup(el.outerHTML)
         }
