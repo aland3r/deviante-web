@@ -15,6 +15,8 @@ import MachineDetailPage from './pages/MachineDetailPage'
 import OperationsPage from './pages/OperationsPage'
 import EquipmentPage from './pages/EquipmentPage'
 import ActivitiesPage from './pages/ActivitiesPage'
+import FeatureRoute from './components/auth/FeatureRoute'
+import { FEATURES } from './lib/features'
 import { MonitoringProvider } from './context/MonitoringContext'
 import SchedulesPage from './pages/SchedulesPage'
 import NoAccessPage from './pages/NoAccessPage'
@@ -79,10 +81,14 @@ export default function App() {
               <Route path="/monitoring/:monitoringId" element={<MonitoringPage />} />
               <Route path="/monitoring/:monitoringId/machines/:machineId" element={<MachineDetailPage />} />
               <Route path="/operations" element={<OperationsPage />} />
-              <Route path="/equipment" element={<EquipmentPage />} />
-              <Route path="/equipment/:machineId" element={<MachineDetailPage />} />
+              <Route element={<FeatureRoute feature={FEATURES.equipment} />}>
+                <Route path="/equipment" element={<EquipmentPage />} />
+                <Route path="/equipment/:machineId" element={<MachineDetailPage />} />
+              </Route>
               <Route path="/activities" element={<ActivitiesPage />} />
-              <Route path="/schedules" element={<SchedulesPage />} />
+              <Route element={<FeatureRoute feature={FEATURES.schedules} />}>
+                <Route path="/schedules" element={<SchedulesPage />} />
+              </Route>
               <Route path="/account" element={<AccountSettingsPage />} />
             </Route>
           </Route>

@@ -39,11 +39,14 @@ export default function UserMenu() {
           background: 'var(--surface-inset)',
           border: '1px solid var(--hairline-strong)',
           color: 'var(--text-strong)',
-          maxWidth: 220,
+          maxWidth: 320,
           cursor: 'pointer',
         }}
       >
         <span className="truncate">{name}</span>
+        {user?.company && (
+          <span className="truncate font-normal" style={{ color: 'var(--muted-foreground)' }}>· {user.company}</span>
+        )}
         <ChevronDown
           size={13}
           style={{ opacity: 0.6, flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}

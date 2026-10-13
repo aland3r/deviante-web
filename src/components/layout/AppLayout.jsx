@@ -2,6 +2,8 @@ import { NavLink, Outlet } from 'react-router-dom'
 import BrandMark from './BrandMark'
 import ThemeToggle from './ThemeToggle'
 import UserMenu from './UserMenu'
+import { useAuth } from '../../context/AuthContext'
+import { FEATURES, hasFeature } from '../../lib/features'
 
 /*
   App shell for /dashboard and /account.
@@ -15,6 +17,7 @@ import UserMenu from './UserMenu'
 */
 
 export default function AppLayout() {
+  const { user } = useAuth()
   return (
     <div className="app-shell" style={{ background: 'var(--surface-base)', minHeight: '100vh' }}>
       <header className="shrink-0 flex items-center gap-2 sm:gap-4 px-3 sm:px-5 border-b border-border sticky top-0 z-10"
@@ -29,9 +32,9 @@ export default function AppLayout() {
             ['/dashboard', 'Projetos'],
             ['/operations', 'Operações'],
             ['/activities', 'Atividades'],
-            ['/equipment', 'Equipamentos'],
-            ['/schedules', 'Agendamentos'],
-          ].map(([to, label]) => (
+            ['/equipment', 'Equipamentos', FEATURES.equipment],
+            ['/schedules', 'Agendamentos', FEATURES.schedules],
+          ].filter(([, , feature]) => !feature || hasFeature(user, feature)).map(([to, label]) => (
             <NavLink key={to} to={to} className="px-3 py-1.5 rounded text-[11px] text-center no-underline"
               style={({ isActive }) => ({ color: isActive ? 'var(--text-strong)' : 'var(--muted-foreground)', background: isActive ? 'var(--overlay)' : 'transparent', textDecoration: 'none' })}>
               {label}

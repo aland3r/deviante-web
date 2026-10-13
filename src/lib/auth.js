@@ -103,6 +103,9 @@ async function loadManagerProfile() {
     return {
       fullName: manager.fullName,
       role: manager.role,
+      company: manager.client,
+      plan: manager.plan,
+      features: manager.features,
       firstLanguage: manager.firstLanguage,
       targetLanguage: manager.targetLanguage,
       locationEnabled: manager.locationEnabled,
@@ -127,6 +130,10 @@ async function mapSessionUser(sessionUser) {
     role: fromDb?.role ?? 'manager',
     // Papel de demonstração (login de teste); null para contas reais.
     demoRole: findDemoAccount(email)?.role ?? null,
+    // Empresa e variante do produto (Reuso 03, variabilidade).
+    company: fromDb?.company ?? findDemoAccount(email)?.company ?? null,
+    plan: fromDb?.plan ?? null,
+    features: fromDb?.features ?? [],
     fullName: fromDb?.fullName || fromMeta.fullName || email.split('@')[0] || 'Usuário',
     firstLanguage: fromDb?.firstLanguage ?? fromMeta.firstLanguage,
     targetLanguage: fromDb?.targetLanguage ?? fromMeta.targetLanguage,
