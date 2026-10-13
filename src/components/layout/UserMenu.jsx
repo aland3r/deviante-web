@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Settings, LogOut, ChevronDown } from 'lucide-react'
+import { Settings, LogOut, ChevronDown, Lightbulb } from 'lucide-react'
+import { reopenHints } from '../../lib/hints'
 import { useAuth } from '../../context/AuthContext'
 
 /*
@@ -67,6 +68,15 @@ export default function UserMenu() {
             style={{ color: 'var(--text-strong)' }}
           >
             <Settings size={13} />Preferências
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => { setOpen(false); reopenHints() }}
+            className="w-full flex items-center gap-2 px-2.5 py-2 rounded text-left text-xs hover:bg-secondary transition-colors"
+            style={{ color: 'var(--text-strong)' }}
+          >
+            <Lightbulb size={13} />Mostrar colas de variabilidade
           </button>
           <button
             type="button"

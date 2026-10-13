@@ -8,6 +8,7 @@ import {
 import { ensureOwnerBootstrap, getAuthSessionUser } from '@gestalt/auth'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { DEMO_PASSWORD, findDemoAccount } from '../lib/demoAccounts'
+import { clearDemoCompany, setDemoCompany } from '../lib/demoCompany'
 
 const SESSION_EVENTS = new Set(['INITIAL_SESSION', 'SIGNED_IN', 'SIGNED_OUT'])
 
@@ -161,12 +162,14 @@ export function AuthProvider({ children }) {
     hasAccess,
     isAuthenticated: sessionAuthenticated,
     login: loginWithCredentials,
-    async loginAsDemo(email) {
+    async loginAsDemo(email, company) {
       const account = findDemoAccount(email)
       if (!account) throw new Error('Conta de demonstração desconhecida.')
+      setDemoCompany(company ?? account.company)
       return loginWithCredentials({ email: account.email, password: DEMO_PASSWORD })
     },
     async loginWithGoogle() {
+      clearDemoCompany()
       await api.loginWithGoogle()
     },
     async updateAccount(data) {
@@ -176,6 +179,7 @@ export function AuthProvider({ children }) {
     },
     async logout() {
       await api.logout()
+      clearDemoCompany()
       setUser(null)
       setSessionAuthenticated(false)
       setHasAccess(false)

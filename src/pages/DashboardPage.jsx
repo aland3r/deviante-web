@@ -9,6 +9,7 @@ import {
   X,
 } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
+import { useAuth } from '../context/AuthContext'
 import MachineIllustration from '../components/monitoring/MachineIllustration'
 
 /*
@@ -251,6 +252,7 @@ function ProjectCard({ item }) {
             {isMonitoring ? <RadioTower size={8} color="white" /> : isAnalysis ? <AnalysisBarsIcon size={8} /> : <Activity size={8} color="white" />}
           </div>
           <span style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 13, color: 'var(--text-strong)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
+          {item.company ? <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: '#f59e0b', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 4, padding: '1px 5px', flexShrink: 0 }}>{item.company}</span> : null}
         </div>
         <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'var(--text-dim)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {subtitle}
@@ -303,6 +305,9 @@ function ProjectListItem({ item }) {
 }
 
 export default function DashboardPage() {
+  const { user } = useAuth()
+  // Variabilidade: quem vê todas as empresas recebe o selo da empresa em cada processo.
+  const seesAllCompanies = ['admin', 'owner', 'mentor'].includes(user?.role)
   const navigate = useNavigate()
   const [processes, setProcesses] = useState([])
   const [analyses, setAnalyses] = useState([])
@@ -386,6 +391,7 @@ export default function DashboardPage() {
       name: p.name,
       updatedAt: p.updatedAt,
       sector: p.sector,
+      company: seesAllCompanies ? p.company : null,
     }))
     const analysisItems = analyses.map((a) => ({
       ...a,
@@ -401,7 +407,7 @@ export default function DashboardPage() {
     return [...processItems, ...analysisItems, ...monitoringItems].sort((a, b) =>
       String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')),
     )
-  }, [processes, analyses, monitorings])
+  }, [processes, analyses, monitorings, seesAllCompanies])
 
   const visible = items.filter((item) => {
     const q = search.toLowerCase()

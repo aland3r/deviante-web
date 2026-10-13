@@ -10,6 +10,7 @@ import {
 } from '@gestalt/auth'
 import { getSupabase } from './supabase'
 import { findDemoAccount } from './demoAccounts'
+import { companyHeader, getDemoCompany } from './demoCompany'
 
 const PRODUCT_CODE = 'deviante'
 const DEVIANTE_PRODUCTION_ORIGIN = 'https://deviante.alander.io'
@@ -31,6 +32,7 @@ async function apiFetch(path, options = {}) {
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
+      ...companyHeader(),
       ...(options.headers ?? {}),
     },
   })
@@ -131,7 +133,7 @@ async function mapSessionUser(sessionUser) {
     // Papel de demonstração (login de teste); null para contas reais.
     demoRole: findDemoAccount(email)?.role ?? null,
     // Empresa e variante do produto (Reuso 03, variabilidade).
-    company: fromDb?.company ?? findDemoAccount(email)?.company ?? null,
+    company: fromDb?.company ?? (findDemoAccount(email) ? getDemoCompany() ?? findDemoAccount(email).company : null),
     plan: fromDb?.plan ?? null,
     features: fromDb?.features ?? [],
     fullName: fromDb?.fullName || fromMeta.fullName || email.split('@')[0] || 'Usuário',

@@ -5,6 +5,7 @@ import UserMenu from './UserMenu'
 import { useAuth } from '../../context/AuthContext'
 import { FEATURES, hasFeature } from '../../lib/features'
 import PlannedMaintenanceBadge from './PlannedMaintenanceBadge'
+import VariabilityHints from '../variability/VariabilityHints'
 
 /*
   App shell for /dashboard and /account.
@@ -55,6 +56,7 @@ export default function AppLayout() {
       <main className="app-main">
         <Outlet />
       </main>
+      <VariabilityHints />
     </div>
   )
 }

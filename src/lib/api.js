@@ -23,6 +23,7 @@ import {
   validateRequired,
 } from './validation'
 import { ApiError } from './errors'
+import { companyHeader } from './demoCompany'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '/api'
 const MOCK_OWNER_EMAILS = new Set(['design@alander.io', 'alanderavila@gmail.com'])
@@ -244,7 +245,7 @@ async function authHeader() {
   if (!isSupabaseConfigured()) return {}
   const { data } = await getSupabase().auth.getSession()
   const token = data.session?.access_token
-  return token ? { Authorization: `Bearer ${token}` } : {}
+  return token ? { Authorization: `Bearer ${token}`, ...companyHeader() } : {}
 }
 
 async function request(path, options = {}) {

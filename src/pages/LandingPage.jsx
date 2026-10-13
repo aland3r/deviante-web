@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { BookOpen, Layers } from 'lucide-react'
 import LoginCard from '../components/auth/LoginCard'
+import LoginHints from '../components/variability/LoginHints'
 
 // Landing — port fiel do "LoginScreen" do Figma Make (05/10): nav com marca e
 // os dois itens de menu, hero à esquerda e o card de acesso à direita.
@@ -105,6 +106,7 @@ export default function LandingPage() {
 
         {/* ── Right: Login card ── */}
         <LoginCard />
+        <LoginHints />
       </div>
     </div>
   )

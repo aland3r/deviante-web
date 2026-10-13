@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { DEMO_ACCOUNTS } from '../../lib/demoAccounts'
+import { COMPANIES, getDemoCompany } from '../../lib/demoCompany'
 
 export function GoogleLogo({ size = 18 }) {
   return (
@@ -14,6 +15,8 @@ export function GoogleLogo({ size = 18 }) {
     </svg>
   )
 }
+
+const arrowStyle = { width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 7, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#cbd5e1', cursor: 'pointer', flexShrink: 0 }
 
 function initials(name) {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('')
@@ -28,6 +31,10 @@ export default function LoginCard() {
   const [hovered, setHovered] = useState(null)
   const [pending, setPending] = useState(null)
   const [error, setError] = useState('')
+  // Variabilidade: as setas trocam a empresa (variante do produto) dos 4 papéis.
+  const [companyIndex, setCompanyIndex] = useState(() => Math.max(0, COMPANIES.findIndex((c) => c.name === getDemoCompany())))
+  const company = COMPANIES[companyIndex]
+  const stepCompany = (delta) => setCompanyIndex((i) => (i + delta + COMPANIES.length) % COMPANIES.length)
 
   async function handleGoogle() {
     setPending('google')
@@ -44,7 +51,7 @@ export default function LoginCard() {
     setPending(account.role)
     setError('')
     try {
-      await loginAsDemo(account.email)
+      await loginAsDemo(account.email, company.name)
       navigate('/dashboard')
     } catch (err) {
       setError(err?.message || 'Não foi possível entrar com a conta de demonstração.')
@@ -121,6 +128,16 @@ export default function LoginCard() {
                 <span style={{ fontSize: 10, fontWeight: 600, color: '#3b4a5c', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Modo Protótipo</span>
                 <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.05)' }} />
               </div>
+              <div style={{ margin: '0 4px 8px', display: 'flex', alignItems: 'center', gap: 6, padding: '6px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)' }}>
+                <button type="button" aria-label="Empresa anterior" disabled={busy} onClick={() => stepCompany(-1)} style={arrowStyle}><ChevronLeft size={14} /></button>
+                <div style={{ flex: 1, textAlign: 'center', minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0' }}>{company.name}</div>
+                  <div style={{ fontSize: 10, color: '#64748b', fontFamily: "'JetBrains Mono',monospace" }}>
+                    plano {company.plan}{company.exclusive.length ? ' + CSV exclusivo' : ''} · {companyIndex + 1}/{COMPANIES.length}
+                  </div>
+                </div>
+                <button type="button" aria-label="Próxima empresa" disabled={busy} onClick={() => stepCompany(1)} style={arrowStyle}><ChevronRight size={14} /></button>
+              </div>
               {DEMO_ACCOUNTS.map((u) => {
                 const isHov = hovered === u.role
                 return (
@@ -138,7 +155,7 @@ export default function LoginCard() {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 12, fontWeight: 600, color: '#cbd5e1', marginBottom: 1 }}>{u.name}</div>
-                      <div style={{ fontSize: 10, color: '#64748b', fontFamily: "'JetBrains Mono',monospace" }}>{u.role} · {u.company}</div>
+                      <div style={{ fontSize: 10, color: '#64748b', fontFamily: "'JetBrains Mono',monospace" }}>{u.role} · {company.name}</div>
                     </div>
                     <ArrowRight size={12} style={{ color: isHov || pending === u.role ? u.color : '#2d3a4e', flexShrink: 0, transition: 'color 0.12s' }} />
                   </button>
