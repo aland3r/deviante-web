@@ -337,6 +337,7 @@ export const api = {
     method: 'PUT',
     body: JSON.stringify({ name: data.name, description: data.description ?? '' }),
   }),
+  deleteActivity: (id) => request(`/activities/${id}`, { method: 'DELETE' }),
   listProcessActivities: (processId) => request(`/processes/${processId}/activities`),
   addProcessActivity: (processId, activityId) => request(`/processes/${processId}/activities/${activityId}`, {
     method: 'PUT',
@@ -500,6 +501,7 @@ export const api = {
   },
   createSchedule: (data) => request('/schedules', { method: 'POST', body: JSON.stringify(data) }),
   updateSchedule: (id, patch) => request(`/schedules/${id}`, { method: 'PUT', body: JSON.stringify(patch) }),
+  deleteSchedule: (id) => request(`/schedules/${id}`, { method: 'DELETE' }),
   recordMaintenanceOccurrence: (scheduleId, data) => request(`/schedules/${scheduleId}/occurrences`, {
     method: 'POST', body: JSON.stringify(data),
   }),

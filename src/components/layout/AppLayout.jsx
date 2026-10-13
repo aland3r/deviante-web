@@ -28,6 +28,7 @@ export default function AppLayout() {
           {[
             ['/dashboard', 'Projetos'],
             ['/operations', 'Operações'],
+            ['/activities', 'Atividades'],
             ['/equipment', 'Equipamentos'],
             ['/schedules', 'Agendamentos'],
           ].map(([to, label]) => (

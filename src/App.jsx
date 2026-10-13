@@ -14,6 +14,8 @@ import MonitoringPage from './pages/MonitoringPage'
 import MachineDetailPage from './pages/MachineDetailPage'
 import OperationsPage from './pages/OperationsPage'
 import EquipmentPage from './pages/EquipmentPage'
+import ActivitiesPage from './pages/ActivitiesPage'
+import { MonitoringProvider } from './context/MonitoringContext'
 import SchedulesPage from './pages/SchedulesPage'
 import NoAccessPage from './pages/NoAccessPage'
 import ProtectedRoute from './routes/ProtectedRoute'
@@ -57,6 +59,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
+      <MonitoringProvider>
         <BrowserRouter>
         <ThemeSync />
         <Routes>
@@ -78,6 +81,7 @@ export default function App() {
               <Route path="/operations" element={<OperationsPage />} />
               <Route path="/equipment" element={<EquipmentPage />} />
               <Route path="/equipment/:machineId" element={<MachineDetailPage />} />
+              <Route path="/activities" element={<ActivitiesPage />} />
               <Route path="/schedules" element={<SchedulesPage />} />
               <Route path="/account" element={<AccountSettingsPage />} />
             </Route>
@@ -90,6 +94,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </BrowserRouter>
+      </MonitoringProvider>
       </AuthProvider>
     </ErrorBoundary>
   )

@@ -2,6 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Upload } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
+import { useAuth } from '../context/AuthContext'
+import { canDelete } from '../lib/permissions'
+import { useProcessDriftStatus } from '../context/MonitoringContext'
 import BrandMark from '../components/layout/BrandMark'
 import ThemeToggle from '../components/layout/ThemeToggle'
 import ProcessGraphTab from '../components/process-graph/ProcessGraphTab'
@@ -32,6 +35,8 @@ import ProjectActionsMenu from '../components/projects/ProjectActionsMenu'
 
 export default function ProcessCanvasPage() {
   const { processId } = useParams()
+  const { user } = useAuth()
+  const driftStatus = useProcessDriftStatus(processId)
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -138,7 +143,7 @@ export default function ProcessCanvasPage() {
         processId={processId}
         processName={process.name || 'Processo sem nome'}
         analysisId={analysisId}
-        onDelete={analysisId ? async () => {
+        onDelete={analysisId && canDelete(user) ? async () => {
           if (!window.confirm('Excluir esta análise persistida? Esta ação não pode ser desfeita.')) return
           try {
             await api.deleteAnalysis(analysisId)
@@ -189,7 +194,13 @@ export default function ProcessCanvasPage() {
           )}
           {titleError && <span className="text-[11px] leading-none mt-0.5 truncate" style={{ color: 'var(--crit-soft)' }}>{titleError}</span>}
         </div>
-        <ProjectActionsMenu onDelete={deleteCurrentProcess} deleteLabel="Excluir processo" />
+        {driftStatus && (
+          <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px]"
+            style={{ color: driftStatus.hasDrift ? 'var(--crit-soft)' : 'var(--success)', background: 'var(--overlay)' }}>
+            {driftStatus.hasDrift ? `Com drift (${driftStatus.drifts})` : 'Sem drift'}
+          </span>
+        )}
+        {canDelete(user) && <ProjectActionsMenu onDelete={deleteCurrentProcess} deleteLabel="Excluir processo" />}
 
         <div className="flex-1" />
 

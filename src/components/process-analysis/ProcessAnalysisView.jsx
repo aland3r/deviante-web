@@ -6,6 +6,9 @@ import {
 import BrandMark from '../layout/BrandMark'
 import ProjectActionsMenu from '../projects/ProjectActionsMenu'
 import { api } from '../../lib/api'
+import { driftSubject } from '../../lib/driftSubject'
+import AnalysisHud from './AnalysisHud'
+import InvestigationPanel from './InvestigationPanel'
 
 const formatSeconds = (value) => `${Number(value ?? 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} s`
 const EMPTY_LIST = []
@@ -469,8 +472,15 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
       const result = await api.runProcessAnalysis(processId, analysisId, request)
       eventLogIdsRef.current = (result.eventLogs?.length ? result.eventLogs : [result.eventLog]).filter(Boolean).map((log) => log.id)
       setAnalysis(result)
-      setSelectedDrift(result.drifts[0]?.index ?? null)
       setSelectedTrace(null)
+      // Observer: avisa todos os inscritos (InvestigationPanel, MonitoringContext,
+      // AnalysisHud) sem saber quem são.
+      driftSubject.notify({
+        type: result.drifts.length ? 'drift-detected' : 'analysis-completed',
+        processId,
+        analysisId,
+        drifts: result.drifts,
+      })
       setElapsed((performance.now() - started) / 1000)
     } catch (requestError) {
       setError(requestError.message)
@@ -624,8 +634,10 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
           <Scan size={13} /><span className="hidden sm:inline">Análise de desvios</span>
         </span>
         <div className="flex-1" />
+        <AnalysisHud processId={processId} />
         {onDelete && <ProjectActionsMenu onDelete={onDelete} deleteLabel="Excluir análise" />}
       </header>
+      <InvestigationPanel processId={processId} onInvestigate={setSelectedDrift} />
 
       <div className="flex flex-1 min-h-0">
         {/* LEFT rail — parameters, always visible (never a hidden dropdown). */}
