@@ -2,18 +2,23 @@
 // empresa cliente. Cada empresa é uma variante do produto, definida no
 // application.yaml da API (plano + funções exclusivas). A escolha vai em todas
 // as requisições no cabeçalho X-Deviante-Company; a API só aceita o cabeçalho
-// de contas demo e responde com os recursos e os dados daquela empresa.
+// de contas demo e responde com os recursos e os dados daquela empresa (cada
+// registro guarda no banco a empresa dona). A Deviante não entra aqui: é a
+// empresa de quem entra pelo Google.
 export const COMPANIES = [
-  { name: 'Deviante', plan: 'Manutenção', exclusive: ['CSV'] },
   { name: 'Metalúrgica Alfa', plan: 'Manutenção', exclusive: ['CSV'] },
   { name: 'Metalúrgica Beta', plan: 'Essencial', exclusive: [] },
   { name: 'Metalúrgica Gama', plan: 'Manutenção', exclusive: [] },
+  { name: 'Metalúrgica Delta', plan: 'Essencial', exclusive: [] },
 ]
 
 const KEY = 'deviante.demoCompany'
 
 export function getDemoCompany() {
-  try { return window.localStorage.getItem(KEY) } catch { return null }
+  let name = null
+  try { name = window.localStorage.getItem(KEY) } catch { /* sem armazenamento */ }
+  // Uma escolha antiga que saiu da lista (ex.: Deviante) não vale mais.
+  return COMPANIES.some((c) => c.name === name) ? name : null
 }
 
 export function setDemoCompany(name) {

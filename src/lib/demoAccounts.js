@@ -10,7 +10,7 @@ export const DEMO_ACCOUNTS = [
   {
     role: 'admin',
     name: 'Ana Carvalho',
-    company: 'Deviante',
+    company: 'Metalúrgica Delta',
     email: 'demo-administrador@deviante.alander.io',
     description: 'Acesso total · gerencia tenants',
     color: '#dc2626',

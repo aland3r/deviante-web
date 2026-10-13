@@ -35,14 +35,14 @@ export default function VariabilityHints() {
       body: seesAll
         ? <>Como <b>administrador</b>, você vê os processos de todas as empresas; o selo em cada processo diz de qual empresa ele é. Os outros papéis veem só os da própria empresa.</>
         : <>Você vê só os processos e análises da <b>{company}</b>. Troque a empresa nas setas do login para ver outras instâncias; o administrador vê todas.</>,
-      where: 'API: CompanyScope em Routing.kt (GET /api/processes) · Web: cabeçalho X-Deviante-Company (lib/demoCompany.js)',
+      where: 'Banco: deviante.businesses + business_id em cada registro · API: CompanyScope em Routing.kt (GET /api/processes) · Web: cabeçalho X-Deviante-Company (lib/demoCompany.js)',
     },
     pathname.startsWith('/schedules') && {
       id: `csv-${csv ? 'sim' : 'nao'}`,
       title: csv ? 'Função exclusiva: Exportar CSV' : 'Sem a função exclusiva',
       body: csv
-        ? <>O botão <b>Exportar CSV</b> foi feito só para alguns clientes (Deviante e Metalúrgica Alfa). Na Metalúrgica Gama, mesmo plano, ele não aparece.</>
-        : <>Esta empresa tem o módulo de manutenção, mas não contratou o <b>Exportar CSV</b>, exclusivo de Deviante e Metalúrgica Alfa. Mesma tela, variante diferente.</>,
+        ? <>O botão <b>Exportar CSV</b> foi feito só para um cliente, a Metalúrgica Alfa. Na Metalúrgica Gama, mesmo plano, ele não aparece.</>
+        : <>Esta empresa tem o módulo de manutenção, mas não contratou o <b>Exportar CSV</b>, exclusivo da Metalúrgica Alfa. Mesma tela, variante diferente.</>,
       where: 'API: /api/schedules/export.csv com requireFeature(SCHEDULE_EXPORT) → 403 · Web: SchedulesPage.jsx (hasFeature)',
     },
     pathname.startsWith('/equipment') && {
