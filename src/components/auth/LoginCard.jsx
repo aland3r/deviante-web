@@ -155,7 +155,7 @@ export default function LoginCard() {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 12, fontWeight: 600, color: '#cbd5e1', marginBottom: 1 }}>{u.name}</div>
-                      <div style={{ fontSize: 10, color: '#64748b', fontFamily: "'JetBrains Mono',monospace" }}>{u.role} · {company.name}</div>
+                      <div style={{ fontSize: 10, color: '#64748b', fontFamily: "'JetBrains Mono',monospace" }}>{u.role}</div>
                     </div>
                     <ArrowRight size={12} style={{ color: isHov || pending === u.role ? u.color : '#2d3a4e', flexShrink: 0, transition: 'color 0.12s' }} />
                   </button>
