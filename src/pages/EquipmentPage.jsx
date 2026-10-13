@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Cpu, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { Cpu, Pencil, Plus, Trash2 } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import { canDelete } from '../lib/permissions'
+import FormModal, { Field, Select, TextInput } from '../components/ui/FormModal'
 import { FilterSelect, SearchBox, State, Surface } from './OperationsPage'
 
 // Campos aceitos por POST/PUT /api/equipment (EquipmentRequest). O PUT grava
@@ -107,7 +108,18 @@ const Header = ({ children, right = false }) => <th className={`px-4 py-2.5 font
 const Cell = ({ children, right = false, mono = false }) => <td className={`px-4 py-3 text-[11px] text-muted-foreground align-middle ${right ? 'text-right' : ''}`} style={mono ? { fontFamily: "'JetBrains Mono',monospace" } : undefined}>{children}</td>
 
 function CreateEquipmentModal({ initial = null, onClose, onCreate }) {
-  const [values, setValues] = useState({ name: initial?.name ?? '', kind: initial?.kind ?? 'generico', tag: initial?.tag ?? '', location: initial?.location ?? '', manufacturer: initial?.manufacturer ?? '', model: initial?.model ?? '' }); const [busy, setBusy] = useState(false)
-  const field = (key, placeholder) => <input value={values[key]} onChange={(event) => setValues((current) => ({ ...current, [key]: event.target.value }))} placeholder={placeholder} className="px-3 py-2 rounded-lg border border-border text-xs text-foreground" style={{ background: 'var(--surface-base)' }} />
-  return <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(3,6,12,.78)' }}><form onSubmit={async (event) => { event.preventDefault(); if (!values.name.trim()) return; setBusy(true); try { await onCreate(values) } finally { setBusy(false) } }} className="w-full rounded-xl border border-border" style={{ maxWidth: 480, background: 'var(--surface-raised)' }}><div className="flex justify-between px-4 py-3 border-b border-border"><div><h2 className="text-sm font-semibold text-foreground">{initial ? 'Editar equipamento' : 'Cadastrar equipamento'}</h2><p className="text-[11px] text-muted-foreground mt-1">{initial ? 'Altere os dados de identificação do ativo.' : 'Crie o ativo antes de associá-lo a processos ou monitoramentos.'}</p></div><button type="button" onClick={onClose}><X size={13} /></button></div><div className="grid gap-3 p-4 sm:grid-cols-2"><label className="flex flex-col gap-1 text-[10px] text-muted-foreground sm:col-span-2">Nome *{field('name', 'Ex.: Torno CNC Prod1')}</label><label className="flex flex-col gap-1 text-[10px] text-muted-foreground">Tipo<select value={values.kind} onChange={(event) => setValues((current) => ({ ...current, kind: event.target.value }))} className="px-3 py-2 rounded-lg border border-border text-xs text-foreground" style={{ background: 'var(--surface-base)' }}><option value="torno">Torno CNC</option><option value="fresadora">Fresadora</option><option value="compressor">Compressor</option><option value="esteira">Esteira</option><option value="generico">Genérico</option></select></label><label className="flex flex-col gap-1 text-[10px] text-muted-foreground">TAG{field('tag', 'Ex.: TRN-01')}</label><label className="flex flex-col gap-1 text-[10px] text-muted-foreground">Fabricante{field('manufacturer', 'Ex.: Romi')}</label><label className="flex flex-col gap-1 text-[10px] text-muted-foreground">Modelo{field('model', 'Ex.: GL 240')}</label><label className="flex flex-col gap-1 text-[10px] text-muted-foreground sm:col-span-2">Localização{field('location', 'Ex.: Célula 01')}</label></div><div className="flex justify-end gap-2 px-4 py-3 border-t border-border"><button type="button" onClick={onClose} className="px-3 py-2 text-xs text-muted-foreground">Cancelar</button><button disabled={busy || !values.name.trim()} className="px-3 py-2 rounded-lg text-xs font-semibold text-white disabled:opacity-50" style={{ background: 'var(--ok-strong)' }}>{busy ? 'Salvando…' : initial ? 'Salvar' : 'Cadastrar'}</button></div></form></div>
+  const [values, setValues] = useState({ name: initial?.name ?? '', kind: initial?.kind ?? 'generico', tag: initial?.tag ?? '', location: initial?.location ?? '', manufacturer: initial?.manufacturer ?? '', model: initial?.model ?? '' })
+  const [busy, setBusy] = useState(false)
+  const set = (key) => (event) => setValues((current) => ({ ...current, [key]: event.target.value }))
+  const submit = async () => { setBusy(true); try { await onCreate(values) } finally { setBusy(false) } }
+  return <FormModal title={initial ? 'Editar equipamento' : 'Cadastrar equipamento'} subtitle={initial ? 'Altere os dados de identificação do ativo.' : 'Crie o ativo antes de associá-lo a processos ou monitoramentos.'}
+    onClose={onClose} onSubmit={submit} busy={busy} canSubmit={Boolean(values.name.trim())} submitLabel={initial ? 'Salvar' : 'Cadastrar'}>
+    <Field label="Nome *" wide><TextInput value={values.name} onChange={set('name')} placeholder="Ex.: Torno CNC Prod1" /></Field>
+    <Field label="Tipo"><Select value={values.kind} onChange={set('kind')}><option value="torno">Torno CNC</option><option value="fresadora">Fresadora</option><option value="compressor">Compressor</option><option value="esteira">Esteira</option><option value="generico">Genérico</option></Select></Field>
+    <Field label="TAG"><TextInput value={values.tag} onChange={set('tag')} placeholder="Ex.: TRN-01" /></Field>
+    <Field label="Fabricante"><TextInput value={values.manufacturer} onChange={set('manufacturer')} placeholder="Ex.: Romi" /></Field>
+    <Field label="Modelo"><TextInput value={values.model} onChange={set('model')} placeholder="Ex.: GL 240" /></Field>
+    <Field label="Localização" wide><TextInput value={values.location} onChange={set('location')} placeholder="Ex.: Célula 01" /></Field>
+  </FormModal>
 }
+

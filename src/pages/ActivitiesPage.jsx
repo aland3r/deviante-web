@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ListChecks, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { ListChecks, Pencil, Plus, Trash2 } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import { canDelete } from '../lib/permissions'
 import { SearchBox, State, Surface } from './OperationsPage'
+import FormModal, { Field, TextArea, TextInput } from '../components/ui/FormModal'
 
 /*
   CRUD de Atividade (catálogo de etapas reutilizado pelos processos).
@@ -92,9 +93,7 @@ function ActivityModal({ initial, onClose, onSaved }) {
     return next
   })
 
-  async function submit(event) {
-    event.preventDefault()
-    if (!name.trim()) return
+  async function submit() {
     setBusy(true); setError('')
     try {
       const saved = initial.id
@@ -114,26 +113,16 @@ function ActivityModal({ initial, onClose, onSaved }) {
     }
   }
 
-  const input = 'px-3 py-2 rounded-lg border border-border text-xs text-foreground'
-  return <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(3,6,12,.78)' }}>
-    <form onSubmit={submit} className="w-full rounded-xl border border-border" style={{ maxWidth: 480, background: 'var(--surface-raised)' }}>
-      <div className="flex justify-between px-4 py-3 border-b border-border"><h2 className="text-sm font-semibold text-foreground">{initial.id ? 'Editar atividade' : 'Nova atividade'}</h2><button type="button" onClick={onClose} aria-label="Fechar"><X size={13} /></button></div>
-      <div className="grid gap-3 p-4">
-        <label className="flex flex-col gap-1 text-[10px] text-muted-foreground">Nome *<input value={name} onChange={(event) => setName(event.target.value)} placeholder="Ex.: Inspeção visual" className={input} style={{ background: 'var(--surface-base)' }} /></label>
-        <label className="flex flex-col gap-1 text-[10px] text-muted-foreground">Descrição<textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={3} className={input} style={{ background: 'var(--surface-base)' }} /></label>
-        <fieldset className="flex flex-col gap-1.5">
-          <legend className="text-[10px] text-muted-foreground mb-1">Processos que usam esta atividade</legend>
-          {processes.map((process) => <label key={process.id} className="flex items-center gap-2 text-xs text-foreground">
-            <input type="checkbox" checked={selected.has(process.id)} onChange={() => toggle(process.id)} />{process.name || 'Processo sem nome'}
-          </label>)}
-          {!processes.length && <p className="text-[11px] text-muted-foreground">Nenhum processo cadastrado.</p>}
-        </fieldset>
-        {error && <p className="text-[11px]" style={{ color: 'var(--crit-soft)' }}>{error}</p>}
-      </div>
-      <div className="flex justify-end gap-2 px-4 py-3 border-t border-border">
-        <button type="button" onClick={onClose} className="px-3 py-2 text-xs text-muted-foreground">Cancelar</button>
-        <button disabled={busy || !name.trim()} className="px-3 py-2 rounded-lg text-xs font-semibold text-white disabled:opacity-50" style={{ background: 'var(--ok-strong)' }}>{busy ? 'Salvando…' : 'Salvar'}</button>
-      </div>
-    </form>
-  </div>
+  return <FormModal title={initial.id ? 'Editar atividade' : 'Nova atividade'} onClose={onClose} onSubmit={submit} busy={busy} canSubmit={Boolean(name.trim())} error={error} columns={1}>
+    <Field label="Nome *"><TextInput value={name} onChange={(event) => setName(event.target.value)} placeholder="Ex.: Inspeção visual" /></Field>
+    <Field label="Descrição"><TextArea value={description} onChange={(event) => setDescription(event.target.value)} /></Field>
+    <fieldset className="flex flex-col gap-1.5">
+      <legend className="text-[10px] text-muted-foreground mb-1">Processos que usam esta atividade</legend>
+      {processes.map((process) => <label key={process.id} className="flex items-center gap-2 text-xs text-foreground">
+        <input type="checkbox" checked={selected.has(process.id)} onChange={() => toggle(process.id)} />{process.name || 'Processo sem nome'}
+      </label>)}
+      {!processes.length && <p className="text-[11px] text-muted-foreground">Nenhum processo cadastrado.</p>}
+    </fieldset>
+  </FormModal>
 }
+

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { CalendarDays, Columns3, Download, List, Plus, Trash2, Wrench, X } from 'lucide-react'
+import { CalendarDays, Columns3, Download, List, Plus, Trash2, Wrench } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import { canDelete } from '../lib/permissions'
 import { FEATURES, hasFeature } from '../lib/features'
+import FormModal, { Field, Select, TextArea, TextInput } from '../components/ui/FormModal'
 import { State, Surface } from './OperationsPage'
 
 const VIEWS = [{ id: 'list', label: 'Lista', icon: List }, { id: 'kanban', label: 'Kanban', icon: Columns3 }, { id: 'calendar', label: 'Calendário', icon: CalendarDays }]
@@ -66,32 +67,20 @@ function ScheduleModal({ initial, onClose, onSave, onDelete }) {
   const [busy, setBusy] = useState(false); const [error, setError] = useState('')
   useEffect(() => { api.listAllMachines().then((data) => setEquipment(Array.isArray(data) ? data : data?.items ?? [])).catch(() => setEquipment([])) }, [])
   const set = (key) => (event) => setValues((current) => ({ ...current, [key]: event.target.value }))
-  const valid = values.equipmentId && values.title.trim() && values.scheduledStart && (!values.scheduledEnd || values.scheduledEnd >= values.scheduledStart)
+  const valid = Boolean(values.equipmentId && values.title.trim() && values.scheduledStart && (!values.scheduledEnd || values.scheduledEnd >= values.scheduledStart))
   const run = async (action) => { setBusy(true); setError(''); try { await action() } catch (err) { setError(err instanceof ApiError ? err.message : 'Não foi possível salvar a manutenção.') } finally { setBusy(false) } }
-  const submit = (event) => { event.preventDefault(); if (!valid) return; run(() => onSave({
+  const submit = () => run(() => onSave({
     equipmentId: values.equipmentId, processId: initial.processId ?? null, recommendationId: initial.recommendationId ?? null,
     title: values.title.trim(), notes: values.notes.trim(), scheduledStart: toIso(values.scheduledStart), scheduledEnd: toIso(values.scheduledEnd), status: values.status,
-  })) }
-  const input = 'px-3 py-2 rounded-lg border border-border text-xs text-foreground'
-  const label = 'flex flex-col gap-1 text-[10px] text-muted-foreground'
-  return <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(3,6,12,.78)' }}>
-    <form onSubmit={submit} className="w-full rounded-xl border border-border" style={{ maxWidth: 480, background: 'var(--surface-raised)' }}>
-      <div className="flex justify-between px-4 py-3 border-b border-border"><h2 className="text-sm font-semibold text-foreground">{initial.id ? 'Editar manutenção' : 'Nova manutenção'}</h2><button type="button" onClick={onClose} aria-label="Fechar"><X size={13} /></button></div>
-      <div className="grid gap-3 p-4 sm:grid-cols-2">
-        <label className={`${label} sm:col-span-2`}>Título *<input value={values.title} onChange={set('title')} placeholder="Ex.: Troca de rolamentos" className={input} style={{ background: 'var(--surface-base)' }} /></label>
-        <label className={`${label} sm:col-span-2`}>Equipamento *<select value={values.equipmentId} onChange={set('equipmentId')} className={input} style={{ background: 'var(--surface-base)' }}><option value="">Selecione…</option>{equipment.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-        <label className={label}>Início *<input type="datetime-local" value={values.scheduledStart} onChange={set('scheduledStart')} className={input} style={{ background: 'var(--surface-base)' }} /></label>
-        <label className={label}>Fim<input type="datetime-local" value={values.scheduledEnd} onChange={set('scheduledEnd')} className={input} style={{ background: 'var(--surface-base)' }} /></label>
-        <label className={label}>Situação<select value={values.status} onChange={set('status')} className={input} style={{ background: 'var(--surface-base)' }}>{Object.entries(STATUS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select></label>
-        <label className={`${label} sm:col-span-2`}>Observações<textarea value={values.notes} onChange={set('notes')} rows={3} className={input} style={{ background: 'var(--surface-base)' }} /></label>
-        {error && <p className="sm:col-span-2 text-[11px]" style={{ color: 'var(--crit-soft)' }}>{error}</p>}
-      </div>
-      <div className="flex items-center gap-2 px-4 py-3 border-t border-border">
-        {onDelete && <button type="button" disabled={busy} onClick={() => run(onDelete)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs" style={{ color: 'var(--crit-soft)' }}><Trash2 size={12} />Excluir</button>}
-        <div className="flex-1" />
-        <button type="button" onClick={onClose} className="px-3 py-2 text-xs text-muted-foreground">Cancelar</button>
-        <button disabled={busy || !valid} className="px-3 py-2 rounded-lg text-xs font-semibold text-white disabled:opacity-50" style={{ background: 'var(--ok-strong)' }}>{busy ? 'Salvando…' : 'Salvar'}</button>
-      </div>
-    </form>
-  </div>
+  }))
+  const remove = onDelete && <button type="button" disabled={busy} onClick={() => run(onDelete)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs" style={{ color: 'var(--crit-soft)' }}><Trash2 size={12} />Excluir</button>
+  return <FormModal title={initial.id ? 'Editar manutenção' : 'Nova manutenção'} onClose={onClose} onSubmit={submit} busy={busy} canSubmit={valid} error={error} footerStart={remove}>
+    <Field label="Título *" wide><TextInput value={values.title} onChange={set('title')} placeholder="Ex.: Troca de rolamentos" /></Field>
+    <Field label="Equipamento *" wide><Select value={values.equipmentId} onChange={set('equipmentId')}><option value="">Selecione…</option>{equipment.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</Select></Field>
+    <Field label="Início *"><TextInput type="datetime-local" value={values.scheduledStart} onChange={set('scheduledStart')} /></Field>
+    <Field label="Fim"><TextInput type="datetime-local" value={values.scheduledEnd} onChange={set('scheduledEnd')} /></Field>
+    <Field label="Situação"><Select value={values.status} onChange={set('status')}>{Object.entries(STATUS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}</Select></Field>
+    <Field label="Observações" wide><TextArea value={values.notes} onChange={set('notes')} /></Field>
+  </FormModal>
 }
+
