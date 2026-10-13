@@ -5,6 +5,7 @@ import { api, ApiError } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import { canDelete } from '../lib/permissions'
 import { FEATURES, hasFeature } from '../lib/features'
+import { maintenanceSubject } from '../lib/maintenanceSubject'
 import FormModal, { Field, Select, TextArea, TextInput } from '../components/ui/FormModal'
 import { State, Surface } from './OperationsPage'
 
@@ -20,16 +21,19 @@ export default function SchedulesPage() {
   const { user } = useAuth()
   const load = () => api.listSchedules({ equipmentId }).then((data) => setRows(Array.isArray(data) ? data : data?.items ?? [])).catch((err) => setError(err instanceof ApiError ? err.message : 'Não foi possível carregar os agendamentos.')).finally(() => setLoading(false))
   useEffect(() => { load() }, [equipmentId]) // eslint-disable-line react-hooks/exhaustive-deps
+  // A própria lista também é observadora: recarrega quando a agenda muda.
+  useEffect(() => maintenanceSubject.subscribe({ update: load }), [equipmentId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function save(data) {
-    if (editing?.id) await api.updateSchedule(editing.id, data)
-    else await api.createSchedule(data)
-    setEditing(null); load()
+    const saved = editing?.id ? await api.updateSchedule(editing.id, data) : await api.createSchedule(data)
+    setEditing(null)
+    maintenanceSubject.notify({ type: 'schedule-saved', scheduleId: saved?.id ?? editing?.id })
   }
   async function remove() {
     if (!window.confirm(`Excluir a manutenção "${editing.title}"?`)) return
     await api.deleteSchedule(editing.id)
-    setEditing(null); load()
+    setEditing(null)
+    maintenanceSubject.notify({ type: 'schedule-deleted', scheduleId: editing.id })
   }
 
   async function exportCsv() {

@@ -4,6 +4,7 @@ import ThemeToggle from './ThemeToggle'
 import UserMenu from './UserMenu'
 import { useAuth } from '../../context/AuthContext'
 import { FEATURES, hasFeature } from '../../lib/features'
+import PlannedMaintenanceBadge from './PlannedMaintenanceBadge'
 
 /*
   App shell for /dashboard and /account.
@@ -37,7 +38,7 @@ export default function AppLayout() {
           ].filter(([, , feature]) => !feature || hasFeature(user, feature)).map(([to, label]) => (
             <NavLink key={to} to={to} className="px-3 py-1.5 rounded text-[11px] text-center no-underline"
               style={({ isActive }) => ({ color: isActive ? 'var(--text-strong)' : 'var(--muted-foreground)', background: isActive ? 'var(--overlay)' : 'transparent', textDecoration: 'none' })}>
-              {label}
+              {label}{to === '/schedules' && <PlannedMaintenanceBadge />}
             </NavLink>
           ))}
         </nav>
