@@ -4,7 +4,7 @@ import { api, ApiError } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import { canDelete } from '../lib/permissions'
 import { SearchBox, State, Surface } from './OperationsPage'
-import FormModal, { Field, TextArea, TextInput } from '../components/ui/FormModal'
+import { FormModal, Field, TextArea, TextInput } from '@deviante/ui'
 
 /*
   CRUD de Atividade (catálogo de etapas reutilizado pelos processos).

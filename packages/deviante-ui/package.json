@@ -1,0 +1,20 @@
+{
+  "name": "@deviante/ui",
+  "version": "1.0.0",
+  "description": "Moldura de formulário em modal e campos reutilizáveis do Deviante (FormModal, Field, TextInput, Select, TextArea).",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "lucide-react": ">=0.474.0",
+    "react": ">=18"
+  },
+  "keywords": ["deviante", "react", "form", "modal", "reuso"],
+  "license": "MIT"
+}

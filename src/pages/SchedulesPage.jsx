@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import { canDelete } from '../lib/permissions'
 import { FEATURES, hasFeature } from '../lib/features'
 import { maintenanceSubject } from '../lib/maintenanceSubject'
-import FormModal, { Field, Select, TextArea, TextInput } from '../components/ui/FormModal'
+import { FormModal, Field, Select, TextArea, TextInput } from '@deviante/ui'
 import { State, Surface } from './OperationsPage'
 
 const VIEWS = [{ id: 'list', label: 'Lista', icon: List }, { id: 'kanban', label: 'Kanban', icon: Columns3 }, { id: 'calendar', label: 'Calendário', icon: CalendarDays }]

@@ -4,7 +4,7 @@ import { Cpu, Pencil, Plus, Trash2 } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import { canDelete } from '../lib/permissions'
-import FormModal, { Field, Select, TextInput } from '../components/ui/FormModal'
+import { FormModal, Field, Select, TextInput } from '@deviante/ui'
 import { FilterSelect, SearchBox, State, Surface } from './OperationsPage'
 
 // Campos aceitos por POST/PUT /api/equipment (EquipmentRequest). O PUT grava
