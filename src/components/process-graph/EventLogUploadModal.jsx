@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AlertCircle, ArrowRight, Check, Loader2, Pencil, Plus, Upload, X } from 'lucide-react'
 import { api, ApiError } from '../../lib/api'
+import { useAuth } from '../../context/AuthContext'
+import { canManageCatalog } from '../../lib/permissions'
 
 /*
   UC4 (upload) + UC5 (resolve mapping) in one modal, opened over the process.
@@ -23,6 +25,9 @@ const ACCEPTED_EXT = new Set(['xes', 'csv'])
 
 export default function EventLogUploadModal({ processId, onClose, onMappingComplete }) {
   const inputRef = useRef(null)
+  const { user } = useAuth()
+  // Criar atividade é do administrador; o gestor só escolhe do catálogo.
+  const mayCreate = canManageCatalog(user)
 
   const [file, setFile] = useState(null)
   const [uploading, setUploading] = useState(false)
@@ -41,6 +46,13 @@ export default function EventLogUploadModal({ processId, onClose, onMappingCompl
     [rows],
   )
   const allValidated = rows.length > 0 && validatedCount === rows.length
+
+  // Nome aceito: qualquer um para o administrador, só do catálogo para o gestor.
+  function accepts(name) {
+    const key = name?.trim().toLocaleLowerCase('pt-BR')
+    if (!key) return false
+    return mayCreate || activityCatalog.some((activity) => activity.name.toLocaleLowerCase('pt-BR') === key)
+  }
 
   useEffect(() => {
     let active = true
@@ -96,7 +108,7 @@ export default function EventLogUploadModal({ processId, onClose, onMappingCompl
         meanDurationSeconds: operation.meanDurationSeconds,
         activityName: operation.suggestedActivityName,
         activityDescription: '',
-        rowState: operation.suggestedActivityName?.trim() ? 'suggested' : 'pending',
+        rowState: accepts(operation.suggestedActivityName) ? 'suggested' : 'pending',
       })))
     } catch (err) {
       setUploadError(err instanceof ApiError ? err.message : 'Não foi possível enviar o arquivo.')
@@ -118,12 +130,12 @@ export default function EventLogUploadModal({ processId, onClose, onMappingCompl
         return {
           ...row,
           rowState: row.rowState === 'editing'
-            ? (row.activityName.trim() ? 'suggested' : 'pending')
+            ? (accepts(row.activityName) ? 'suggested' : 'pending')
             : 'editing',
         }
       }
       return row.rowState === 'editing'
-        ? { ...row, rowState: row.activityName.trim() ? 'suggested' : 'pending' }
+        ? { ...row, rowState: accepts(row.activityName) ? 'suggested' : 'pending' }
         : row
     }))
     setConfirmError('')
@@ -135,7 +147,7 @@ export default function EventLogUploadModal({ processId, onClose, onMappingCompl
       if (row.rowState === 'validated') return { ...row, rowState: 'suggested' }
       return {
         ...row,
-        rowState: row.activityName.trim() ? 'validated' : 'pending',
+        rowState: accepts(row.activityName) ? 'validated' : 'pending',
       }
     }))
     setConfirmError('')
@@ -232,6 +244,7 @@ export default function EventLogUploadModal({ processId, onClose, onMappingCompl
             <MappingSection
               rows={rows}
               activityCatalog={activityCatalog}
+              mayCreate={mayCreate}
               onChange={updateRow}
               onEdit={editRow}
               onValidate={validateRow}
@@ -413,7 +426,7 @@ function UploadArea({ inputRef, file, uploading, eventLog, formatError, error, o
   )
 }
 
-function MappingSection({ rows, activityCatalog, onChange, onEdit, onValidate }) {
+function MappingSection({ rows, activityCatalog, mayCreate, onChange, onEdit, onValidate }) {
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
@@ -422,6 +435,7 @@ function MappingSection({ rows, activityCatalog, onChange, onEdit, onValidate })
         </h3>
         <p style={{ margin: 0, fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--muted-foreground)' }}>
           Associe cada evento encontrado no log a uma atividade do catálogo.
+          {!mayCreate && ' Atividades novas são cadastradas pelo administrador.'}
         </p>
       </div>
 
@@ -448,6 +462,7 @@ function MappingSection({ rows, activityCatalog, onChange, onEdit, onValidate })
             <ActivityCard
               row={row}
               activityCatalog={activityCatalog}
+              mayCreate={mayCreate}
               onChange={onChange}
               onEdit={onEdit}
               onValidate={onValidate}
@@ -489,7 +504,7 @@ function EventCell({ row }) {
   )
 }
 
-function ActivityCard({ row, activityCatalog, onChange, onEdit, onValidate }) {
+function ActivityCard({ row, activityCatalog, mayCreate, onChange, onEdit, onValidate }) {
   const inputRef = useRef(null)
   const [query, setQuery] = useState(row.activityName)
   const [showDropdown, setShowDropdown] = useState(false)
@@ -519,7 +534,7 @@ function ActivityCard({ row, activityCatalog, onChange, onEdit, onValidate }) {
     activity.name.toLocaleLowerCase('pt-BR').includes(normalizedQuery)
     && activity.name.toLocaleLowerCase('pt-BR') !== normalizedQuery
   ))
-  const canCreate = normalizedQuery.length > 0 && !catalogNames.some(
+  const canCreate = mayCreate && normalizedQuery.length > 0 && !catalogNames.some(
     (name) => name.toLocaleLowerCase('pt-BR') === normalizedQuery,
   )
 

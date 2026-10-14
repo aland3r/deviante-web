@@ -24,10 +24,11 @@ export default function VariabilityHints() {
       body: <>
         O nome da empresa ao lado do seu nome e o menu vêm da variante do produto. Plano <b>{essencial ? 'Essencial' : 'Manutenção'}</b>:
         {essencial
-          ? ' só as funções comuns (Processos, Atividades e análise de drift). Equipamentos e Agendamentos somem do menu; se digitar /schedules, volta para o painel.'
+          ? ' só as funções comuns (Processos e análise de drift). Equipamentos e Agendamentos somem do menu; se digitar /schedules, volta para o painel.'
           : ' funções comuns mais o módulo de manutenção (Equipamentos e Agendamentos).'}
+        {' Operações e Atividades (o catálogo da empresa) aparecem só para o administrador; o gestor mapeia eventos para atividades que já existem.'}
       </>,
-      where: 'API: variability/ProductLine.kt + application.yaml (productLine) · GET /api/manager/me · Web: lib/features.js, AppLayout.jsx, FeatureRoute.jsx',
+      where: 'API: variability/ProductLine.kt + application.yaml (productLine) · GET /api/manager/me · Web: lib/features.js, lib/permissions.js, AppLayout.jsx, FeatureRoute.jsx, CatalogRoute.jsx',
     },
     pathname.startsWith('/dashboard') && {
       id: `dados-${seesAll ? 'todos' : company}`,

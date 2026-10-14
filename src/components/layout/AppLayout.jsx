@@ -4,6 +4,7 @@ import ThemeToggle from './ThemeToggle'
 import UserMenu from './UserMenu'
 import { useAuth } from '../../context/AuthContext'
 import { FEATURES, hasFeature } from '../../lib/features'
+import { canManageCatalog } from '../../lib/permissions'
 import PlannedMaintenanceBadge from './PlannedMaintenanceBadge'
 import VariabilityHints from '../variability/VariabilityHints'
 
@@ -32,11 +33,11 @@ export default function AppLayout() {
         <nav className="hidden md:flex items-center justify-center gap-2" aria-label="Navegação principal">
           {[
             ['/dashboard', 'Projetos'],
-            ['/operations', 'Operações'],
-            ['/activities', 'Atividades'],
+            ['/operations', 'Operações', 'catalog'],
+            ['/activities', 'Atividades', 'catalog'],
             ['/equipment', 'Equipamentos', FEATURES.equipment],
             ['/schedules', 'Agendamentos', FEATURES.schedules],
-          ].filter(([, , feature]) => !feature || hasFeature(user, feature)).map(([to, label]) => (
+          ].filter(([, , feature]) => !feature || (feature === 'catalog' ? canManageCatalog(user) : hasFeature(user, feature))).map(([to, label]) => (
             <NavLink key={to} to={to} className="px-3 py-1.5 rounded text-[11px] text-center no-underline"
               style={({ isActive }) => ({ color: isActive ? 'var(--text-strong)' : 'var(--muted-foreground)', background: isActive ? 'var(--overlay)' : 'transparent', textDecoration: 'none' })}>
               {label}{to === '/schedules' && <PlannedMaintenanceBadge />}
