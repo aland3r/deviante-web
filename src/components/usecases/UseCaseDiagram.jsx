@@ -96,8 +96,11 @@ export default function UseCaseDiagram({ useCases, activeId, onSelect }) {
 
       {/* actor */}
       <g opacity={dim('actor') ? 0.35 : 1} style={{ transition: 'opacity 0.15s' }}>
-        <circle cx={ACTOR.x} cy={ACTOR.y - 46} r="22" fill="#5b6b7d" />
-        <path d={`M${ACTOR.x - 36} ${ACTOR.y + 30} v-14 a22 22 0 0 1 22 -22 h28 a22 22 0 0 1 22 22 v14 z`} fill="#5b6b7d" />
+        {/* UML stick figure */}
+        <g fill="none" stroke={C.strong} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx={ACTOR.x} cy={ACTOR.y - 58} r="14" />
+          <path d={`M${ACTOR.x} ${ACTOR.y - 44} V${ACTOR.y + 4} M${ACTOR.x - 26} ${ACTOR.y - 28} H${ACTOR.x + 26} M${ACTOR.x - 22} ${ACTOR.y + 38} L${ACTOR.x} ${ACTOR.y + 4} L${ACTOR.x + 22} ${ACTOR.y + 38}`} />
+        </g>
         {actor.split(' de ').map((part, i, all) => (
           <text key={i} x={ACTOR.x} y={ACTOR.y + 58 + i * 20} textAnchor="middle" fill={C.strong} fontSize="15" fontWeight="600">
             {i < all.length - 1 ? `${part} de` : part}
