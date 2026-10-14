@@ -6,10 +6,10 @@
 // registro guarda no banco a empresa dona). A Deviante não entra aqui: é a
 // empresa de quem entra pelo Google.
 export const COMPANIES = [
-  { name: 'Metalúrgica Alfa', plan: 'Manutenção', exclusive: ['CSV'] },
-  { name: 'Metalúrgica Beta', plan: 'Essencial', exclusive: [] },
-  { name: 'Metalúrgica Gama', plan: 'Manutenção', exclusive: [] },
-  { name: 'Metalúrgica Delta', plan: 'Essencial', exclusive: [] },
+  { name: 'Alfa', plan: 'Manutenção', exclusive: ['CSV'] },
+  { name: 'Beta', plan: 'Essencial', exclusive: [] },
+  { name: 'Gama', plan: 'Manutenção', exclusive: [] },
+  { name: 'Delta', plan: 'Essencial', exclusive: [] },
 ]
 
 const KEY = 'deviante.demoCompany'

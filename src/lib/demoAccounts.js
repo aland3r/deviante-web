@@ -10,7 +10,7 @@ export const DEMO_ACCOUNTS = [
   {
     role: 'admin',
     name: 'Ana Carvalho',
-    company: 'Metalúrgica Delta',
+    company: 'Delta',
     email: 'demo-administrador@deviante.alander.io',
     description: 'Acesso total · gerencia tenants',
     color: '#dc2626',
@@ -18,7 +18,7 @@ export const DEMO_ACCOUNTS = [
   {
     role: 'gestor',
     name: 'Carlos Ribeiro',
-    company: 'Metalúrgica Alfa',
+    company: 'Alfa',
     email: 'demo-gestor@deviante.alander.io',
     description: 'Cria processos, análises e monitoramentos',
     color: '#4d8fc0',
@@ -26,7 +26,7 @@ export const DEMO_ACCOUNTS = [
   {
     role: 'operador',
     name: 'Fernanda Souza',
-    company: 'Metalúrgica Beta',
+    company: 'Beta',
     email: 'demo-operador@deviante.alander.io',
     description: 'Visualiza e opera · sem criação',
     color: '#10b981',
@@ -34,7 +34,7 @@ export const DEMO_ACCOUNTS = [
   {
     role: 'tecnico',
     name: 'Diego Martins',
-    company: 'Metalúrgica Gama',
+    company: 'Gama',
     email: 'demo-tecnico@deviante.alander.io',
     description: 'Registra manutenções em campo',
     color: '#f59e0b',

@@ -41,14 +41,14 @@ export default function VariabilityHints() {
       id: `csv-${csv ? 'sim' : 'nao'}`,
       title: csv ? 'Função exclusiva: Exportar CSV' : 'Sem a função exclusiva',
       body: csv
-        ? <>O botão <b>Exportar CSV</b> foi feito só para um cliente, a Metalúrgica Alfa. Na Metalúrgica Gama, mesmo plano, ele não aparece.</>
-        : <>Esta empresa tem o módulo de manutenção, mas não contratou o <b>Exportar CSV</b>, exclusivo da Metalúrgica Alfa. Mesma tela, variante diferente.</>,
+        ? <>O botão <b>Exportar CSV</b> foi feito só para um cliente, a Alfa. Na Gama, mesmo plano, ele não aparece.</>
+        : <>Esta empresa tem o módulo de manutenção, mas não contratou o <b>Exportar CSV</b>, exclusivo da Alfa. Mesma tela, variante diferente.</>,
       where: 'API: /api/schedules/export.csv com requireFeature(SCHEDULE_EXPORT) → 403 · Web: SchedulesPage.jsx (hasFeature)',
     },
     pathname.startsWith('/equipment') && {
       id: 'equipamentos-opcional',
       title: 'Módulo opcional',
-      body: <>Equipamentos faz parte do plano Manutenção. A Metalúrgica Beta (Essencial) não tem esta tela, e a API responde 403 se alguém chamar a rota direto.</>,
+      body: <>Equipamentos faz parte do plano Manutenção. A Beta (Essencial) não tem esta tela, e a API responde 403 se alguém chamar a rota direto.</>,
       where: 'API: route("/equipment") { requireFeature(Feature.EQUIPMENT) } · Web: FeatureRoute em App.jsx',
     },
   ]} />
