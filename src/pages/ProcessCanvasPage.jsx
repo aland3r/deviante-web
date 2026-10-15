@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Upload } from 'lucide-react'
+import { ArrowLeft, ListTree, Upload } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import { canDelete } from '../lib/permissions'
@@ -9,6 +9,7 @@ import BrandMark from '../components/layout/BrandMark'
 import ThemeToggle from '../components/layout/ThemeToggle'
 import ProcessGraphTab from '../components/process-graph/ProcessGraphTab'
 import EventLogUploadModal from '../components/process-graph/EventLogUploadModal'
+import ProcessOperationsModal from '../components/process-graph/ProcessOperationsModal'
 import ProcessAnalysisView from '../components/process-analysis/ProcessAnalysisView'
 import ProjectActionsMenu from '../components/projects/ProjectActionsMenu'
 
@@ -50,6 +51,8 @@ export default function ProcessCanvasPage() {
   const [graphStats, setGraphStats] = useState(null)
 
   const [uploadOpen, setUploadOpen] = useState(false)
+  const [operationsOpen, setOperationsOpen] = useState(false)
+  const operationsChanged = useRef(false)
   const [analysisOpen, setAnalysisOpen] = useState(
     () => new URLSearchParams(location.search).get('view') === 'analysis',
   )
@@ -206,6 +209,11 @@ export default function ProcessCanvasPage() {
 
         <ThemeToggle />
 
+        <button type="button" title="Operações do log" onClick={() => { operationsChanged.current = false; setOperationsOpen(true) }}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium border border-border text-muted-foreground hover:text-foreground transition-colors shrink-0">
+          <ListTree size={12} /><span className="hidden sm:inline">Operações</span>
+        </button>
+
         <button type="button" title="Carregar log de eventos (UC4)" onClick={() => setUploadOpen(true)}
           className="lg:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium border border-border text-muted-foreground hover:text-foreground transition-colors shrink-0">
           <Upload size={12} /><span className="hidden sm:inline">Carregar log</span>
@@ -221,6 +229,18 @@ export default function ProcessCanvasPage() {
             // close the modal and land the Manager on the graph.
             setUploadOpen(false)
             setMappingVersion((v) => v + 1)
+          }}
+        />
+      )}
+
+      {operationsOpen && (
+        <ProcessOperationsModal
+          processId={processId}
+          onChanged={() => { operationsChanged.current = true }}
+          onClose={() => {
+            setOperationsOpen(false)
+            // The graph labels nodes by activity, so a remap redraws it.
+            if (operationsChanged.current) setMappingVersion((v) => v + 1)
           }}
         />
       )}

@@ -362,6 +362,15 @@ export const api = {
   uploadEventLog: (processId, file) => upload(`/processes/${processId}/event-logs`, file),
   listEventLogs: (processId) => request(`/processes/${processId}/event-logs`),
   listOperations: (processId) => request(processId ? `/processes/${processId}/operations` : '/operations'),
+  // Operations CRUD inside a process: map to (create/update) or unmap from
+  // (delete) an activity of the company's catalog. Any role that sees the process.
+  mapProcessOperation: (processId, operationId, activityId) => request(`/processes/${processId}/operations/${operationId}/activity`, {
+    method: 'PUT',
+    body: JSON.stringify({ activityId }),
+  }),
+  unmapProcessOperation: (processId, operationId) => request(`/processes/${processId}/operations/${operationId}/activity`, {
+    method: 'DELETE',
+  }),
   // UC7 — graph + variants derived from what was actually ingested. No mock
   // counterpart on purpose: an invented graph is exactly what this replaces.
   getProcessGraph: (processId, eventLogIds = []) => {
