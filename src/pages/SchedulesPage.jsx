@@ -22,7 +22,11 @@ export default function SchedulesPage() {
   const { user } = useAuth()
   const allowEdit = canEdit(user)
   const technician = isTechnician(user)
-  const load = () => api.listSchedules({ equipmentId }).then((data) => setRows(Array.isArray(data) ? data : data?.items ?? [])).catch((err) => setError(err instanceof ApiError ? err.message : 'Não foi possível carregar os agendamentos.')).finally(() => setLoading(false))
+  // A agenda guarda só o id da máquina; o nome vem da lista de equipamentos.
+  const load = () => Promise.all([api.listSchedules({ equipmentId }), api.listAllMachines().catch(() => [])]).then(([data, machines]) => {
+    const names = new Map((Array.isArray(machines) ? machines : machines?.items ?? []).map((item) => [item.id, item.name]))
+    setRows((Array.isArray(data) ? data : data?.items ?? []).map((row) => ({ ...row, equipmentName: row.equipmentName ?? names.get(row.equipmentId) })))
+  }).catch((err) => setError(err instanceof ApiError ? err.message : 'Não foi possível carregar os agendamentos.')).finally(() => setLoading(false))
   useEffect(() => { load() }, [equipmentId]) // eslint-disable-line react-hooks/exhaustive-deps
   // A própria lista também é observadora: recarrega quando a agenda muda.
   useEffect(() => maintenanceSubject.subscribe({ update: load }), [equipmentId]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -74,23 +78,26 @@ const toIso = (local) => local ? new Date(local).toISOString() : null
 
 function ScheduleModal({ initial, onClose, onSave, onDelete }) {
   const [equipment, setEquipment] = useState([])
+  const [processes, setProcesses] = useState([])
   const [values, setValues] = useState({
-    equipmentId: initial.equipmentId ?? '', title: initial.title ?? '', notes: initial.notes ?? '',
+    equipmentId: initial.equipmentId ?? '', processId: initial.processId ?? '', title: initial.title ?? '', notes: initial.notes ?? '',
     scheduledStart: toLocalInput(initial.scheduledStart), scheduledEnd: toLocalInput(initial.scheduledEnd), status: initial.status ?? 'planned',
   })
   const [busy, setBusy] = useState(false); const [error, setError] = useState('')
+  useEffect(() => { api.listProcesses().then((data) => setProcesses(Array.isArray(data) ? data : [])).catch(() => setProcesses([])) }, [])
   useEffect(() => { api.listAllMachines().then((data) => setEquipment(Array.isArray(data) ? data : data?.items ?? [])).catch(() => setEquipment([])) }, [])
   const set = (key) => (event) => setValues((current) => ({ ...current, [key]: event.target.value }))
   const valid = Boolean(values.equipmentId && values.title.trim() && values.scheduledStart && (!values.scheduledEnd || values.scheduledEnd >= values.scheduledStart))
   const run = async (action) => { setBusy(true); setError(''); try { await action() } catch (err) { setError(err instanceof ApiError ? err.message : 'Não foi possível salvar a manutenção.') } finally { setBusy(false) } }
   const submit = () => run(() => onSave({
-    equipmentId: values.equipmentId, processId: initial.processId ?? null, recommendationId: initial.recommendationId ?? null,
+    equipmentId: values.equipmentId, processId: values.processId || null, recommendationId: initial.recommendationId ?? null,
     title: values.title.trim(), notes: values.notes.trim(), scheduledStart: toIso(values.scheduledStart), scheduledEnd: toIso(values.scheduledEnd), status: values.status,
   }))
   const remove = onDelete && <button type="button" disabled={busy} onClick={() => run(onDelete)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs" style={{ color: 'var(--crit-soft)' }}><Trash2 size={12} />Excluir</button>
   return <FormModal title={initial.id ? 'Editar manutenção' : 'Nova manutenção'} onClose={onClose} onSubmit={submit} busy={busy} canSubmit={valid} error={error} footerStart={remove}>
     <Field label="Título *" wide><TextInput value={values.title} onChange={set('title')} placeholder="Ex.: Troca de rolamentos" /></Field>
     <Field label="Equipamento *" wide><Select value={values.equipmentId} onChange={set('equipmentId')}><option value="">Selecione…</option>{equipment.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</Select></Field>
+    <Field label="Processo de origem" wide><Select value={values.processId} onChange={set('processId')}><option value="">Nenhum</option>{processes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</Select></Field>
     <Field label="Início *"><TextInput type="datetime-local" value={values.scheduledStart} onChange={set('scheduledStart')} /></Field>
     <Field label="Fim"><TextInput type="datetime-local" value={values.scheduledEnd} onChange={set('scheduledEnd')} /></Field>
     <Field label="Situação"><Select value={values.status} onChange={set('status')}>{Object.entries(STATUS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}</Select></Field>
