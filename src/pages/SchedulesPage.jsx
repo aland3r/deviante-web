@@ -108,7 +108,19 @@ function ScheduleStatusModal({ schedule, onClose, onSave }) {
     setBusy(true); setError('')
     try { await onSave({ status, notes: notes.trim() }) } catch (err) { setError(err instanceof ApiError ? err.message : 'Não foi possível atualizar a manutenção.') } finally { setBusy(false) }
   }
-  const origin = schedule.processId && <Link to={`/processes/${schedule.processId}?view=analysis`} className="flex items-center gap-1.5 text-[11px] text-emerald-400 hover:text-emerald-300"><ExternalLink size={11} />Ver análise de origem</Link>
+  // A análise salva mais recente do processo: o técnico só lê, não roda uma nova.
+  const [analysisId, setAnalysisId] = useState(null)
+  useEffect(() => {
+    if (!schedule.processId) return
+    api.listAnalyses()
+      .then((rows) => {
+        const latest = rows.filter((row) => row.processId === schedule.processId && row.hasResult)
+          .sort((x, y) => String(y.updatedAt).localeCompare(String(x.updatedAt)))[0]
+        setAnalysisId(latest?.id ?? null)
+      })
+      .catch(() => setAnalysisId(null))
+  }, [schedule.processId])
+  const origin = schedule.processId && analysisId && <Link to={`/processes/${schedule.processId}?view=analysis&analysisId=${analysisId}`} className="flex items-center gap-1.5 text-[11px] text-emerald-400 hover:text-emerald-300"><ExternalLink size={11} />Ver análise de origem</Link>
   return <FormModal title={schedule.title || 'Manutenção'} subtitle={`${schedule.equipmentName || 'Equipamento'} · ${fmt(schedule.scheduledStart)}`} onClose={onClose} onSubmit={submit} busy={busy} error={error} columns={1} footerStart={origin}>
     <Field label="Situação"><Select value={status} onChange={(event) => setStatus(event.target.value)}>{Object.entries(STATUS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}</Select></Field>
     <Field label="Observações"><TextArea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="O que foi feito, peças trocadas, pendências…" /></Field>
