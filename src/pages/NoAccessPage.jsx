@@ -5,6 +5,7 @@ import AuthSplitLayout from '../components/layout/AuthSplitLayout'
 import Alert from '../components/ui/LegacyAlert'
 import LegacyButton from '../components/ui/LegacyButton'
 import { useAuth } from '../context/AuthContext'
+import { homePath } from '../lib/permissions'
 
 /**
  * Deviante is invite-only. A Google account that authenticates but has no grant
@@ -25,9 +26,9 @@ export default function NoAccessPage() {
     if (!isAuthenticated) {
       navigate('/login', { replace: true })
     } else if (hasAccess) {
-      navigate('/dashboard', { replace: true })
+      navigate(homePath(user), { replace: true })
     }
-  }, [authReady, isAuthenticated, hasAccess, navigate])
+  }, [authReady, isAuthenticated, hasAccess, navigate, user])
 
   async function handleSubmit(event) {
     event.preventDefault()

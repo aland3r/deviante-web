@@ -17,6 +17,8 @@ import EquipmentPage from './pages/EquipmentPage'
 import ActivitiesPage from './pages/ActivitiesPage'
 import FeatureRoute from './components/auth/FeatureRoute'
 import CatalogRoute from './components/auth/CatalogRoute'
+import RoleRoute from './components/auth/RoleRoute'
+import { canSeeDashboard, canSeeEquipment, canSeeSchedules } from './lib/permissions'
 import { FEATURES } from './lib/features'
 import { MonitoringProvider } from './context/MonitoringContext'
 import SchedulesPage from './pages/SchedulesPage'
@@ -78,7 +80,10 @@ export default function App() {
             <Route path="/processes/:processId" element={<ProcessCanvasPage />} />
             <Route path="/processes/:processId/mining" element={<Navigate to=".." relative="path" replace />} />
             <Route element={<AppLayout />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
+              {/* Papel: o técnico cai na agenda; o operador não abre equipamentos nem agenda. */}
+              <Route element={<RoleRoute allow={canSeeDashboard} />}>
+                <Route path="/dashboard" element={<DashboardPage />} />
+              </Route>
               <Route path="/monitoring/:monitoringId" element={<MonitoringPage />} />
               <Route path="/monitoring/:monitoringId/machines/:machineId" element={<MachineDetailPage />} />
               <Route element={<CatalogRoute />}>
@@ -86,11 +91,15 @@ export default function App() {
                 <Route path="/activities" element={<ActivitiesPage />} />
               </Route>
               <Route element={<FeatureRoute feature={FEATURES.equipment} />}>
-                <Route path="/equipment" element={<EquipmentPage />} />
-                <Route path="/equipment/:machineId" element={<MachineDetailPage />} />
+                <Route element={<RoleRoute allow={canSeeEquipment} />}>
+                  <Route path="/equipment" element={<EquipmentPage />} />
+                  <Route path="/equipment/:machineId" element={<MachineDetailPage />} />
+                </Route>
               </Route>
               <Route element={<FeatureRoute feature={FEATURES.schedules} />}>
-                <Route path="/schedules" element={<SchedulesPage />} />
+                <Route element={<RoleRoute allow={canSeeSchedules} />}>
+                  <Route path="/schedules" element={<SchedulesPage />} />
+                </Route>
               </Route>
               <Route path="/account" element={<AccountSettingsPage />} />
             </Route>

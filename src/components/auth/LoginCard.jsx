@@ -4,6 +4,7 @@ import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { DEMO_ACCOUNTS } from '../../lib/demoAccounts'
 import { COMPANIES, getDemoCompany } from '../../lib/demoCompany'
+import { homePath } from '../../lib/permissions'
 
 export function GoogleLogo({ size = 18 }) {
   return (
@@ -51,8 +52,8 @@ export default function LoginCard() {
     setPending(account.role)
     setError('')
     try {
-      await loginAsDemo(account.email, company.name)
-      navigate('/dashboard')
+      const loggedIn = await loginAsDemo(account.email, company.name)
+      navigate(homePath(loggedIn?.role ? loggedIn : account))
     } catch (err) {
       setError(err?.message || 'Não foi possível entrar com a conta de demonstração.')
       setPending(null)
@@ -78,7 +79,7 @@ export default function LoginCard() {
           <div style={{ padding: '20px 28px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
             <button
               type="button"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate(homePath(user))}
               style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '12px 20px', borderRadius: 10, border: '1px solid rgba(220,38,38,0.35)', background: 'rgba(220,38,38,0.12)', color: '#f1f5f9', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
             >
               Continuar como {user?.fullName || user?.email || 'usuário'}

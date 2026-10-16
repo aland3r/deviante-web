@@ -418,6 +418,20 @@ export const api = {
     method: 'PUT',
     body: JSON.stringify(filter),
   }),
+  // Detalhe de um trace numa atividade (operador, gestor, administrador).
+  listTraceNotes: (processId) => request(`/processes/${processId}/trace-notes`).then((payload) => (
+    Array.isArray(payload) ? payload : payload?.items ?? []
+  )),
+  createTraceNote: (processId, { traceId, activityName, note }) => request(`/processes/${processId}/trace-notes`, {
+    method: 'POST', body: JSON.stringify({ traceId, activityName, note }),
+  }),
+  deleteTraceNote: (processId, noteId) => request(`/processes/${processId}/trace-notes/${noteId}`, { method: 'DELETE' }),
+  // Visibilidade por papel: objectType é 'process' ou 'equipment'; hiddenRoles
+  // lista os papéis ('operator', 'technician') que não enxergam o objeto.
+  getVisibility: (objectType, objectId) => request(`/visibility/${objectType}/${objectId}`),
+  setVisibility: (objectType, objectId, hiddenRoles) => request(`/visibility/${objectType}/${objectId}`, {
+    method: 'PUT', body: JSON.stringify({ hiddenRoles }),
+  }),
   resolveMapping: (processId, mappings) => request(`/processes/${processId}/mapping`, {
     method: 'POST',
     body: JSON.stringify({ mappings }),
@@ -524,6 +538,10 @@ export const api = {
   deleteSchedule: (id) => request(`/schedules/${id}`, { method: 'DELETE' }),
   // Função exclusiva de alguns clientes (variabilidade): a API responde 403 para os demais.
   exportSchedulesCsv: () => download('/schedules/export.csv'),
+  // Técnico: muda só a situação e as observações da manutenção (não a agenda inteira).
+  updateScheduleStatus: (id, { status, notes }) => request(`/schedules/${id}/status`, {
+    method: 'PATCH', body: JSON.stringify({ status, notes: notes ?? '' }),
+  }),
   recordMaintenanceOccurrence: (scheduleId, data) => request(`/schedules/${scheduleId}/occurrences`, {
     method: 'POST', body: JSON.stringify(data),
   }),

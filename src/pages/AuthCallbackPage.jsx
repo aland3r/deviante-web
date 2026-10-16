@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Alert from '../components/ui/LegacyAlert'
 import { useAuth } from '../context/AuthContext'
+import { homePath } from '../lib/permissions'
 import { completeOAuthCallback, isOAuthReturn } from '../lib/auth'
 
 function mapCallbackError(message) {
@@ -17,7 +18,7 @@ function mapCallbackError(message) {
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate()
-  const { isAuthenticated, hasAccess, authReady } = useAuth()
+  const { user, isAuthenticated, hasAccess, authReady } = useAuth()
   const [error, setError] = useState('')
   const [wasOAuthReturn] = useState(() => isOAuthReturn())
   const [exchangeDone, setExchangeDone] = useState(() => !wasOAuthReturn)
@@ -59,14 +60,14 @@ export default function AuthCallbackPage() {
     if (!ready || error) return
 
     if (isAuthenticated) {
-      navigate(hasAccess ? '/dashboard' : '/no-access', { replace: true })
+      navigate(hasAccess ? homePath(user) : '/no-access', { replace: true })
       return
     }
 
     if (!wasOAuthReturn) {
       navigate('/login', { replace: true })
     }
-  }, [error, isAuthenticated, hasAccess, ready, navigate, wasOAuthReturn])
+  }, [error, isAuthenticated, hasAccess, ready, navigate, wasOAuthReturn, user])
 
   useEffect(() => {
     if (!ready || error || isAuthenticated) return

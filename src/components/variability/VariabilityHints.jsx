@@ -7,6 +7,14 @@ import { HintStack } from './HintWindow'
 // aparece na tela e em que arquivo ela está. O conteúdo muda com a página e
 // com a variante (empresa e plano) do usuário logado.
 const SEES_ALL = ['admin', 'owner', 'mentor']
+const ROLE_LABEL = { owner: 'Proprietário', admin: 'Administrador', manager: 'Gestor', operator: 'Operador', technician: 'Técnico', mentor: 'Mentor' }
+const ROLE_HINT = {
+  owner: <>Vê todas as empresas, cria, edita, exclui e decide em <b>Visibilidade</b> o que operador e técnico enxergam.</>,
+  admin: <>Vê todas as empresas, cria, edita, exclui e decide em <b>Visibilidade</b> o que operador e técnico enxergam.</>,
+  manager: <>Vê tudo da própria empresa, cria, edita, exclui e usa <b>Visibilidade</b> em processos e equipamentos para esconder itens do operador ou do técnico.</>,
+  operator: <>Só <b>Projetos</b>: abre o processo para ler, sem criar, carregar log, renomear ou excluir. No grafo, passe o mouse numa atividade e use <b>Editar</b> para anotar o detalhe de um trace.</>,
+  technician: <>Entra direto em <b>Agendamentos</b>. Não cria nem exclui: ao abrir uma manutenção, muda só a situação e as observações, e pode ver a análise de origem da recomendação.</>,
+}
 
 export default function VariabilityHints() {
   const { user } = useAuth()
@@ -29,6 +37,12 @@ export default function VariabilityHints() {
         {' Operações e Atividades (o catálogo da empresa) aparecem só para o administrador; o gestor mapeia eventos para atividades que já existem.'}
       </>,
       where: 'API: variability/ProductLine.kt + application.yaml (productLine) · GET /api/manager/me · Web: lib/features.js, lib/permissions.js, AppLayout.jsx, FeatureRoute.jsx, CatalogRoute.jsx',
+    },
+    {
+      id: `papel-${user.role}`,
+      title: `Papel: ${ROLE_LABEL[user.role] ?? user.role}`,
+      body: ROLE_HINT[user.role] ?? <>Seu papel segue só as regras de plano e de empresa.</>,
+      where: 'API: 403 por papel nas rotas de escrita + /api/visibility e /api/processes/{id}/trace-notes · Web: lib/permissions.js (canEdit, canWriteTraceNotes, homePath), RoleRoute.jsx, AppLayout.jsx',
     },
     pathname.startsWith('/dashboard') && {
       id: `dados-${seesAll ? 'todos' : company}`,

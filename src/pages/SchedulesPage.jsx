@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { CalendarDays, Columns3, Download, List, Plus, Trash2, Wrench } from 'lucide-react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { CalendarDays, Columns3, Download, ExternalLink, List, Plus, Trash2, Wrench } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
-import { canDelete } from '../lib/permissions'
+import { canDelete, canEdit, isTechnician } from '../lib/permissions'
 import { FEATURES, hasFeature } from '../lib/features'
 import { maintenanceSubject } from '../lib/maintenanceSubject'
 import { FormModal, Field, Select, TextArea, TextInput } from '@deviante/ui'
@@ -18,7 +18,10 @@ export default function SchedulesPage() {
   const [searchParams] = useSearchParams()
   const equipmentId = searchParams.get('equipmentId')
   const [editing, setEditing] = useState(null) // null = fechado, {} = nova, linha = edição
+  const [statusTarget, setStatusTarget] = useState(null) // técnico: só situação e observações
   const { user } = useAuth()
+  const allowEdit = canEdit(user)
+  const technician = isTechnician(user)
   const load = () => api.listSchedules({ equipmentId }).then((data) => setRows(Array.isArray(data) ? data : data?.items ?? [])).catch((err) => setError(err instanceof ApiError ? err.message : 'Não foi possível carregar os agendamentos.')).finally(() => setLoading(false))
   useEffect(() => { load() }, [equipmentId]) // eslint-disable-line react-hooks/exhaustive-deps
   // A própria lista também é observadora: recarrega quando a agenda muda.
@@ -47,10 +50,17 @@ export default function SchedulesPage() {
     }
   }
 
-  const open = (row) => setEditing(row)
-  const actions = <div className="flex items-center gap-2">{hasFeature(user, FEATURES.scheduleExport) && <button onClick={exportCsv} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-xs text-foreground" style={{ background: 'var(--surface-raised)' }}><Download size={12} />Exportar CSV</button>}<button onClick={() => setEditing({ equipmentId })} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-white" style={{ background: 'var(--ok-strong)' }}><Plus size={12} />Nova manutenção</button><div className="flex rounded-lg border border-border overflow-hidden">{VIEWS.map(({ id, label, icon: Icon }) => <button key={id} onClick={() => setView(id)} className="flex items-center gap-1.5 px-3 py-2 text-[11px]" style={{ border: 0, background: view === id ? 'var(--surface-inset)' : 'var(--surface-raised)', color: view === id ? 'var(--text-strong)' : 'var(--muted-foreground)' }}><Icon size={11} />{label}</button>)}</div></div>
+  // Quem edita abre a manutenção inteira; o técnico, só a situação; os demais só leem.
+  const open = (row) => { if (allowEdit) setEditing(row); else if (technician) setStatusTarget(row) }
+  async function saveStatus(data) {
+    await api.updateScheduleStatus(statusTarget.id, data)
+    setStatusTarget(null)
+    maintenanceSubject.notify({ type: 'schedule-saved', scheduleId: statusTarget.id })
+  }
+  const actions = <div className="flex items-center gap-2">{hasFeature(user, FEATURES.scheduleExport) && <button onClick={exportCsv} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-xs text-foreground" style={{ background: 'var(--surface-raised)' }}><Download size={12} />Exportar CSV</button>}{allowEdit && <button onClick={() => setEditing({ equipmentId })} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-white" style={{ background: 'var(--ok-strong)' }}><Plus size={12} />Nova manutenção</button>}<div className="flex rounded-lg border border-border overflow-hidden">{VIEWS.map(({ id, label, icon: Icon }) => <button key={id} onClick={() => setView(id)} className="flex items-center gap-1.5 px-3 py-2 text-[11px]" style={{ border: 0, background: view === id ? 'var(--surface-inset)' : 'var(--surface-raised)', color: view === id ? 'var(--text-strong)' : 'var(--muted-foreground)' }}><Icon size={11} />{label}</button>)}</div></div>
   return <Surface title="Agendamentos" subtitle="Manutenções planejadas e ocorrências por equipamento." icon={Wrench} actions={actions}>{loading ? <State>Carregando…</State> : error ? <State error>{error}</State> : view === 'kanban' ? <Kanban rows={rows} onOpen={open} /> : view === 'calendar' ? <Calendar rows={rows} onOpen={open} /> : <ScheduleList rows={rows} onOpen={open} />}
-    {editing && <ScheduleModal initial={editing} onClose={() => setEditing(null)} onSave={save} onDelete={editing.id && canDelete(user) ? remove : null} />}</Surface>
+    {editing && <ScheduleModal initial={editing} onClose={() => setEditing(null)} onSave={save} onDelete={editing.id && canDelete(user) ? remove : null} />}
+    {statusTarget && <ScheduleStatusModal schedule={statusTarget} onClose={() => setStatusTarget(null)} onSave={saveStatus} />}</Surface>
 }
 
 function Card({ row, onOpen }) { return <div role="button" tabIndex={0} onClick={() => onOpen(row)} onKeyDown={(event) => { if (event.key === 'Enter') onOpen(row) }} className="rounded-lg border border-border p-3 cursor-pointer hover:border-emerald-700" style={{ background: 'var(--surface-raised)' }}><div className="flex justify-between gap-2"><p className="text-xs font-semibold text-foreground truncate">{row.title || row.recommendation || 'Manutenção preventiva'}</p><span className="text-[9px] text-muted-foreground shrink-0">{STATUS[row.status] || row.status}</span></div><p className="text-[10px] text-muted-foreground mt-1 truncate">{row.equipmentName || 'Equipamento'} · {fmt(row.scheduledStart)}{row.scheduledEnd ? ` – ${fmt(row.scheduledEnd)}` : ''}</p></div> }
@@ -88,3 +98,19 @@ function ScheduleModal({ initial, onClose, onSave, onDelete }) {
   </FormModal>
 }
 
+
+/** Técnico: muda a situação e anota observações; o resto da manutenção fica como o gestor deixou. */
+function ScheduleStatusModal({ schedule, onClose, onSave }) {
+  const [status, setStatus] = useState(schedule.status ?? 'planned')
+  const [notes, setNotes] = useState(schedule.notes ?? '')
+  const [busy, setBusy] = useState(false); const [error, setError] = useState('')
+  const submit = async () => {
+    setBusy(true); setError('')
+    try { await onSave({ status, notes: notes.trim() }) } catch (err) { setError(err instanceof ApiError ? err.message : 'Não foi possível atualizar a manutenção.') } finally { setBusy(false) }
+  }
+  const origin = schedule.processId && <Link to={`/processes/${schedule.processId}?view=analysis`} className="flex items-center gap-1.5 text-[11px] text-emerald-400 hover:text-emerald-300"><ExternalLink size={11} />Ver análise de origem</Link>
+  return <FormModal title={schedule.title || 'Manutenção'} subtitle={`${schedule.equipmentName || 'Equipamento'} · ${fmt(schedule.scheduledStart)}`} onClose={onClose} onSubmit={submit} busy={busy} error={error} columns={1} footerStart={origin}>
+    <Field label="Situação"><Select value={status} onChange={(event) => setStatus(event.target.value)}>{Object.entries(STATUS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}</Select></Field>
+    <Field label="Observações"><TextArea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="O que foi feito, peças trocadas, pendências…" /></Field>
+  </FormModal>
+}

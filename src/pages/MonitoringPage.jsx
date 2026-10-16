@@ -7,6 +7,8 @@ import { api, ApiError } from '../lib/api'
 import { MACHINE_KINDS, deriveMachineStatus } from '../lib/monitoring'
 import MachineIllustration from '../components/monitoring/MachineIllustration'
 import ProjectActionsMenu from '../components/projects/ProjectActionsMenu'
+import { useAuth } from '../context/AuthContext'
+import { canDelete, canEdit } from '../lib/permissions'
 
 const STATUS = {
   healthy: { label: 'Saudável', color: 'var(--success)', soft: 'rgba(16,185,129,0.14)' },
@@ -149,6 +151,8 @@ function MachineCard({ machine, focused }) {
 }
 
 export default function MonitoringPage() {
+  const { user } = useAuth()
+  const allowEdit = canEdit(user)
   const { monitoringId } = useParams()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -260,11 +264,11 @@ export default function MonitoringPage() {
                   onKeyDown={(e) => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') { setNameDraft(monitoring.name); setEditingName(false) } }}
                   style={{ ...inputBase, fontSize: 20, fontWeight: 700, maxWidth: 420, padding: '4px 8px' }} />
               ) : (
-                <button type="button" onClick={() => setEditingName(true)} className="text-left" style={{ background: 'transparent', border: 0, cursor: 'text' }}>
+                <button type="button" onClick={() => { if (allowEdit) setEditingName(true) }} className="text-left" style={{ background: 'transparent', border: 0, cursor: allowEdit ? 'text' : 'default' }}>
                   <h1 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: 20, color: 'var(--text-strong)', letterSpacing: '-0.01em' }}>{monitoring.name}</h1>
                 </button>
               )}
-              <ProjectActionsMenu onDelete={deleteMonitoring} deleteLabel="Excluir monitoramento" />
+              {canDelete(user) && <ProjectActionsMenu onDelete={deleteMonitoring} deleteLabel="Excluir monitoramento" />}
             </div>
             <p className="text-xs text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
               {machines.length} máquina{machines.length !== 1 ? 's' : ''}
@@ -272,16 +276,16 @@ export default function MonitoringPage() {
               {worstCount.watch > 0 && <span style={{ color: 'var(--warn)' }}> · {worstCount.watch} em atenção</span>}
             </p>
           </div>
-          <div className="flex gap-2"><button type="button" onClick={openLinkEquipment} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold shrink-0" style={{ background: 'var(--surface-raised)', color: 'var(--text)', border: '1px solid var(--overlay-strong)' }}><Cpu size={16} />Associar existente</button><button type="button" onClick={() => setShowAdd(true)} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold shrink-0" style={{ background: 'var(--ok-strong)', color: 'white' }}><Plus size={16} />Novo equipamento</button></div>
+          {allowEdit && <div className="flex gap-2"><button type="button" onClick={openLinkEquipment} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold shrink-0" style={{ background: 'var(--surface-raised)', color: 'var(--text)', border: '1px solid var(--overlay-strong)' }}><Cpu size={16} />Associar existente</button><button type="button" onClick={() => setShowAdd(true)} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold shrink-0" style={{ background: 'var(--ok-strong)', color: 'white' }}><Plus size={16} />Novo equipamento</button></div>}
         </div>
 
         {machines.length === 0 ? (
           <div style={{ padding: '64px 0', textAlign: 'center' }}>
             <RadioTower size={26} className="mx-auto mb-3" color="var(--text-slate)" />
             <p className="text-sm text-muted-foreground">Nenhuma máquina neste monitoramento ainda.</p>
-            <button type="button" onClick={() => setShowAdd(true)} className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold" style={{ background: 'var(--ok-strong)', color: 'white' }}>
+            {allowEdit && <button type="button" onClick={() => setShowAdd(true)} className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold" style={{ background: 'var(--ok-strong)', color: 'white' }}>
               <Plus size={16} />Adicionar a primeira máquina
-            </button>
+            </button>}
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>

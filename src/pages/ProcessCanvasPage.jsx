@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ListTree, Upload } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
-import { canDelete } from '../lib/permissions'
+import { canDelete, canEdit, canWriteTraceNotes, homePath, isTechnician } from '../lib/permissions'
 import { useProcessDriftStatus } from '../context/MonitoringContext'
 import BrandMark from '../components/layout/BrandMark'
 import ThemeToggle from '../components/layout/ThemeToggle'
@@ -40,6 +40,9 @@ export default function ProcessCanvasPage() {
   const driftStatus = useProcessDriftStatus(processId)
   const navigate = useNavigate()
   const location = useLocation()
+  // Operador e técnico abrem o processo só para ler: sem renomear, carregar log,
+  // remapear operações, excluir ou gerar análise.
+  const allowEdit = canEdit(user)
 
   const [process, setProcess] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -139,6 +142,7 @@ export default function ProcessCanvasPage() {
     )
   }
 
+  // O técnico chega à análise pela agenda ("Ver análise de origem") e volta para ela.
   if (analysisOpen) {
     const analysisId = new URLSearchParams(location.search).get('analysisId') || undefined
     return (
@@ -155,8 +159,9 @@ export default function ProcessCanvasPage() {
             window.alert(err instanceof ApiError ? err.message : 'Não foi possível excluir a análise.')
           }
         } : undefined}
-        onBack={() => navigate(`/processes/${processId}`, { replace: true })}
-        onGoHome={() => navigate('/dashboard')}
+        readOnly={!allowEdit}
+        onBack={() => (isTechnician(user) ? navigate(homePath(user)) : navigate(`/processes/${processId}`, { replace: true }))}
+        onGoHome={() => navigate(homePath(user))}
       />
     )
   }
@@ -168,7 +173,7 @@ export default function ProcessCanvasPage() {
 
         <BrandMark />
 
-        <button onClick={() => navigate('/dashboard')}
+        <button onClick={() => navigate(homePath(user))}
           style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px', borderRadius: 6, border: 'none', background: 'var(--overlay)', color: 'var(--text)', cursor: 'pointer', fontSize: 11, fontFamily: "'Inter',sans-serif", transition: 'background 0.15s' }}
           onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--overlay-strong)'; e.currentTarget.style.color = 'white' }}
           onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--overlay)'; e.currentTarget.style.color = 'var(--text)' }}>
@@ -188,6 +193,10 @@ export default function ProcessCanvasPage() {
               }}
               className="text-[13px] font-semibold bg-transparent border-0 outline-none text-foreground"
               style={{ borderBottom: '1px solid var(--accent-strong)', paddingBottom: '1px', minWidth: '180px', letterSpacing: '-0.01em' }} />
+          ) : !allowEdit ? (
+            <span className="text-[13px] font-semibold text-foreground truncate" style={{ letterSpacing: '-0.01em' }}>
+              {process.name || 'Processo sem nome'}
+            </span>
           ) : (
             <button onClick={() => { setTitleError(''); setEditingTitle(true) }} title="Renomear processo"
               className="text-[13px] font-semibold text-left text-foreground hover:text-white hover:bg-white/[0.06] rounded px-1.5 -mx-1.5 py-0.5 transition-colors truncate"
@@ -209,6 +218,7 @@ export default function ProcessCanvasPage() {
 
         <ThemeToggle />
 
+        {allowEdit && <>
         <button type="button" title="Operações do log" onClick={() => { operationsChanged.current = false; setOperationsOpen(true) }}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium border border-border text-muted-foreground hover:text-foreground transition-colors shrink-0">
           <ListTree size={12} /><span className="hidden sm:inline">Operações</span>
@@ -218,9 +228,10 @@ export default function ProcessCanvasPage() {
           className="lg:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium border border-border text-muted-foreground hover:text-foreground transition-colors shrink-0">
           <Upload size={12} /><span className="hidden sm:inline">Carregar log</span>
         </button>
+        </>}
       </header>
 
-      {uploadOpen && (
+      {allowEdit && uploadOpen && (
         <EventLogUploadModal
           processId={processId}
           onClose={() => setUploadOpen(false)}
@@ -233,7 +244,7 @@ export default function ProcessCanvasPage() {
         />
       )}
 
-      {operationsOpen && (
+      {allowEdit && operationsOpen && (
         <ProcessOperationsModal
           processId={processId}
           onChanged={() => { operationsChanged.current = true }}
@@ -251,7 +262,9 @@ export default function ProcessCanvasPage() {
           processId={processId}
           isMobile={isMobile}
           onStats={handleGraphStats}
-          onUploadLog={() => setUploadOpen(true)}
+          readOnly={!allowEdit}
+          canWriteNotes={canWriteTraceNotes(user)}
+          onUploadLog={allowEdit ? () => setUploadOpen(true) : undefined}
           onAnalyze={async (scope) => {
             try {
               const analysis = await api.createAnalysis(processId)

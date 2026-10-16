@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Cpu, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Cpu, EyeOff, Pencil, Plus, Trash2 } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
-import { canDelete } from '../lib/permissions'
+import { canDelete, canEdit, canManageVisibility } from '../lib/permissions'
+import VisibilityModal from '../components/visibility/VisibilityModal'
 import { FormModal, Field, Select, TextInput } from '@deviante/ui'
 import { FilterSelect, SearchBox, State, Surface } from './OperationsPage'
 
@@ -24,8 +25,11 @@ export default function EquipmentPage() {
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState(null)
+  const [visibilityTarget, setVisibilityTarget] = useState(null)
   const { user } = useAuth()
   const allowDelete = canDelete(user)
+  const allowEdit = canEdit(user)
+  const allowVisibility = canManageVisibility(user)
   const load = () => api.listAllMachines().then((data) => setRows(Array.isArray(data) ? data : data?.items ?? [])).catch((err) => setError(err instanceof ApiError ? err.message : 'Não foi possível carregar os equipamentos.')).finally(() => setLoading(false))
   useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -50,9 +54,10 @@ export default function EquipmentPage() {
     catch (err) { setError(err instanceof ApiError ? err.message : 'Não foi possível excluir o equipamento.') }
   }
 
-  const actions = <button onClick={() => setCreating(true)} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-white" style={{ background: 'var(--ok-strong)' }}><Plus size={12} />Novo equipamento</button>
+  const actions = allowEdit && <button onClick={() => setCreating(true)} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-white" style={{ background: 'var(--ok-strong)' }}><Plus size={12} />Novo equipamento</button>
   return <Surface title="Equipamentos" subtitle={`${rows.length} ativos cadastrados com histórico, análises e vínculos.`} icon={Cpu} actions={actions}>
     {creating && <CreateEquipmentModal onClose={() => setCreating(false)} onCreate={async (data) => { await api.createEquipment(toEquipmentRequest(data)); setCreating(false); load() }} />}
+    {visibilityTarget && <VisibilityModal objectType="equipment" objectId={visibilityTarget.id} objectName={visibilityTarget.name} onClose={() => setVisibilityTarget(null)} />}
     {editing && <CreateEquipmentModal initial={editing} onClose={() => setEditing(null)} onCreate={async (data) => { await api.updateMachine(editing.id, toEquipmentRequest({ ...editing, ...data })); setEditing(null); load() }} />}
     <div className="grid gap-2 mb-4 sm:grid-cols-[minmax(220px,1fr)_190px_190px_150px]">
       <SearchBox value={query} onChange={setQuery} placeholder="Buscar equipamento, TAG, processo ou local…" compact />
@@ -78,7 +83,8 @@ export default function EquipmentPage() {
             <Cell right mono>{formatProbability(machine.latestFailureProbability)}</Cell>
             <Cell><span className="inline-flex px-2 py-0.5 rounded-full text-[10px]" style={{ color: meta[1], background: `${meta[1]}1f` }}>{meta[0]}</span></Cell>
             <Cell right><div className="flex justify-end gap-1">
-              <button type="button" onClick={() => setEditing(machine)} aria-label={`Editar ${machine.name}`} className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground"><Pencil size={12} /></button>
+              {allowVisibility && <button type="button" onClick={() => setVisibilityTarget(machine)} title="Visibilidade" aria-label={`Visibilidade de ${machine.name}`} className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground"><EyeOff size={12} /></button>}
+              {allowEdit && <button type="button" onClick={() => setEditing(machine)} aria-label={`Editar ${machine.name}`} className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground"><Pencil size={12} /></button>}
               {allowDelete && <button type="button" onClick={() => removeEquipment(machine)} aria-label={`Excluir ${machine.name}`} className="p-1.5 rounded hover:bg-red-950/40" style={{ color: 'var(--crit-soft)' }}><Trash2 size={12} /></button>}
             </div></Cell>
           </tr>

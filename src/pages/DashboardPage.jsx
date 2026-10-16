@@ -4,6 +4,7 @@ import {
   Activity,
   BarChart3,
   ChevronRight,
+  EyeOff,
   Plus,
   RadioTower,
   X,
@@ -11,6 +12,8 @@ import {
 import { api, ApiError } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import MachineIllustration from '../components/monitoring/MachineIllustration'
+import VisibilityModal from '../components/visibility/VisibilityModal'
+import { canEdit, canManageVisibility } from '../lib/permissions'
 
 /*
   Ported from the Figma Make export "Process Mining Canvas Design"
@@ -218,7 +221,7 @@ function AnalysisProcessPicker({ processes, onClose, onPick }) {
   )
 }
 
-function ProjectCard({ item }) {
+function ProjectCard({ item, onVisibility }) {
   const isAnalysis = item.type === 'analise'
   const isMonitoring = item.type === 'monitoramento'
   const to = isMonitoring
@@ -237,6 +240,7 @@ function ProjectCard({ item }) {
       : `Editado ${timeAgo(item.updatedAt)}`
 
   return (
+    <div style={{ position: 'relative' }}>
     <Link
       to={to}
       style={{ display: 'block', background: 'var(--surface-panel)', border: '1px solid var(--hairline)', borderRadius: 8, overflow: 'hidden', textDecoration: 'none', transition: 'border-color 0.15s' }}
@@ -265,6 +269,15 @@ function ProjectCard({ item }) {
         ) : null}
       </div>
     </Link>
+    {/* Fora do Link: o clique abre o modal sem navegar para o processo. */}
+    {onVisibility ? (
+      <button type="button" onClick={() => onVisibility(item)} title="Visibilidade" aria-label={`Visibilidade de ${item.name}`}
+        className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded text-[10px] border border-border text-muted-foreground hover:text-foreground"
+        style={{ background: 'var(--surface-raised)' }}>
+        <EyeOff size={11} />Visibilidade
+      </button>
+    ) : null}
+    </div>
   )
 }
 
@@ -319,6 +332,9 @@ export default function DashboardPage() {
   const [search, setSearch] = useState('')
   
   const [analysisPickerOpen, setAnalysisPickerOpen] = useState(false)
+  const [visibilityTarget, setVisibilityTarget] = useState(null)
+  const allowEdit = canEdit(user)
+  const allowVisibility = canManageVisibility(user)
 
   useEffect(() => {
     let cancelled = false
@@ -433,6 +449,10 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col" style={{ background: 'var(--surface-base)', margin: '-2rem calc(-50vw + 50%)', padding: '0 calc(50vw - 50%)', minHeight: 'calc(100vh - 52px)' }}>
+      {visibilityTarget && (
+        <VisibilityModal objectType="process" objectId={visibilityTarget.id} objectName={visibilityTarget.name}
+          onClose={() => setVisibilityTarget(null)} />
+      )}
       {analysisPickerOpen && (
         <AnalysisProcessPicker
           processes={processes}
@@ -455,7 +475,8 @@ export default function DashboardPage() {
             />
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end" style={{ gap: 8 }}>
+          {/* Criar processo, análise ou monitoramento é só de quem edita. */}
+          {allowEdit && <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end" style={{ gap: 8 }}>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', width: '100%' }}>
               <NewProjectButton
                 type="processo"
@@ -479,7 +500,7 @@ export default function DashboardPage() {
                 onClick={handleCreateMonitoring}
               />
             </div>
-          </div>
+          </div>}
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-3 mb-4">
@@ -499,7 +520,8 @@ export default function DashboardPage() {
         ) : visible.length ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {visible.map((item) => (
-              <ProjectCard key={item.id} item={item} />
+              <ProjectCard key={item.id} item={item}
+                onVisibility={allowVisibility && item.type === 'processo' ? setVisibilityTarget : null} />
             ))}
           </div>
         ) : (

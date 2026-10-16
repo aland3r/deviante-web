@@ -5,6 +5,8 @@ import {
   Link2, Play, Plus, RefreshCw, Scan, Trash2, Unlink, Upload, X,
 } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
+import { useAuth } from '../context/AuthContext'
+import { canEdit } from '../lib/permissions'
 import { parameterLatest, parameterStatus } from '../lib/monitoring'
 import MachineIllustration from '../components/monitoring/MachineIllustration'
 import HealthDriftChart from '../components/monitoring/HealthDriftChart'
@@ -200,10 +202,10 @@ function ParameterRow({ parameter, selected, onSelect, onDelete }) {
         </span>
       </span>
       <span className="hidden sm:block shrink-0"><Sparkline series={parameter.series} color={meta.color} /></span>
-      <span className="w-6 h-6 rounded flex items-center justify-center shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100"
+      {onDelete && <span className="w-6 h-6 rounded flex items-center justify-center shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100"
         onClick={(e) => { e.stopPropagation(); onDelete(parameter.id) }} title="Remover parâmetro" role="button">
         <Trash2 size={12} />
-      </span>
+      </span>}
     </button>
   )
 }
@@ -213,7 +215,7 @@ const TREATMENTS = [
   { id: 'raw', label: 'Crua' },
 ]
 
-function AnalysisPanel({ machineId, parameter, savedAnalysis, onSaved }) {
+function AnalysisPanel({ machineId, parameter, savedAnalysis, onSaved, readOnly = false }) {
   const [result, setResult] = useState(null)
   const [running, setRunning] = useState(false)
   const [error, setError] = useState('')
@@ -320,9 +322,9 @@ function AnalysisPanel({ machineId, parameter, savedAnalysis, onSaved }) {
           <input type="number" step="0.0001" min="0.0001" max="0.9999" value={params.delta} onChange={(e) => setParams((p) => ({ ...p, delta: e.target.value }))}
             className="px-2 py-1 rounded text-[10px] text-foreground border border-border" style={{ background: 'var(--surface-base)', width: 84, fontFamily: "'JetBrains Mono',monospace" }} />
         </label>
-        <button type="button" onClick={run} disabled={running} className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-medium text-white disabled:opacity-60" style={{ background: 'var(--ok-strong)' }}>
+        {!readOnly && <button type="button" onClick={run} disabled={running} className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-medium text-white disabled:opacity-60" style={{ background: 'var(--ok-strong)' }}>
           {running ? <><RefreshCw size={11} className="animate-spin" />Detectando…</> : <><Play size={11} />Detectar deriva</>}
-        </button>
+        </button>}
       </div>
 
       {error && (
@@ -396,6 +398,8 @@ function AnalysisPanel({ machineId, parameter, savedAnalysis, onSaved }) {
 export default function MachineDetailPage() {
   const { monitoringId, machineId } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const allowEdit = canEdit(user)
   const [searchParams, setSearchParams] = useSearchParams()
   const fileInputRef = useRef(null)
   const [machine, setMachine] = useState(null)
@@ -533,26 +537,26 @@ export default function MachineDetailPage() {
                   <h1 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: 19, color: 'var(--text-strong)', letterSpacing: '-0.01em' }} className="truncate">{machine.name}</h1>
                   <p className="text-[11px] text-muted-foreground mt-0.5">Saúde do equipamento · {machine.parameters?.length ?? 0} parâmetro{(machine.parameters?.length ?? 0) !== 1 ? 's' : ''} monitorado{(machine.parameters?.length ?? 0) !== 1 ? 's' : ''}</p>
                 </div>
-                <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || !(machine.parameters?.length)} title="Enviar log de leituras"
+                {allowEdit && <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || !(machine.parameters?.length)} title="Enviar log de leituras"
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium shrink-0" style={{ border: '1px solid var(--overlay-strong)', color: 'var(--text-strong)', background: 'var(--overlay-soft)', opacity: uploading || !(machine.parameters?.length) ? 0.5 : 1 }}>
                   {uploading ? <RefreshCw size={12} className="animate-spin" /> : <Upload size={12} />}<span className="hidden sm:inline">Enviar log</span>
-                </button>
+                </button>}
               </div>
 
               {/* Related process — bidirectional navigation. */}
               <div className="flex items-center gap-2 mb-3 flex-wrap">
                 {(machine.processes ?? []).map((process) => <span key={process.id} className="inline-flex items-center gap-1">
                   <button type="button" onClick={() => navigate(`/processes/${process.id}`)} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px]" style={{ background: 'rgba(40,112,168,0.14)', color: 'var(--graph-node)', border: '1px solid rgba(40,112,168,0.28)' }}><Cpu size={11} />{process.name}<ChevronRight size={11} /></button>
-                  <button type="button" onClick={() => handleUnlinkProcess(process.id)} className="text-muted-foreground hover:text-foreground" title="Desvincular processo" style={{ background: 'transparent', border: 0, cursor: 'pointer' }}><Unlink size={12} /></button>
+                  {allowEdit && <button type="button" onClick={() => handleUnlinkProcess(process.id)} className="text-muted-foreground hover:text-foreground" title="Desvincular processo" style={{ background: 'transparent', border: 0, cursor: 'pointer' }}><Unlink size={12} /></button>}
                 </span>)}
-                <button type="button" onClick={() => setShowLinkProcess(true)} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] text-muted-foreground hover:text-foreground" style={{ border: '1px dashed var(--hairline-strong)', background: 'transparent' }}><Link2 size={11} />Vincular processo</button>
+                {allowEdit && <button type="button" onClick={() => setShowLinkProcess(true)} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] text-muted-foreground hover:text-foreground" style={{ border: '1px dashed var(--hairline-strong)', background: 'transparent' }}><Link2 size={11} />Vincular processo</button>}
               </div>
 
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[10px] uppercase text-muted-foreground" style={{ fontFamily: "'JetBrains Mono',monospace" }}>Parâmetros</p>
-                <button type="button" onClick={() => setShowAddParam(true)} className="flex items-center gap-1 text-[11px] text-emerald-400 hover:text-emerald-300" style={{ background: 'transparent', border: 0, cursor: 'pointer' }}>
+                {allowEdit && <button type="button" onClick={() => setShowAddParam(true)} className="flex items-center gap-1 text-[11px] text-emerald-400 hover:text-emerald-300" style={{ background: 'transparent', border: 0, cursor: 'pointer' }}>
                   <Plus size={12} />Adicionar parâmetro
-                </button>
+                </button>}
               </div>
 
               <div className="flex flex-col gap-2 overflow-y-auto" style={{ maxHeight: 260 }}>
@@ -560,7 +564,7 @@ export default function MachineDetailPage() {
                   <ParameterRow key={param.id} parameter={param}
                     selected={selectedParam === param.id}
                     onSelect={(id) => { setSelectedParam(id); setOpenAnalysis(null); setSearchParams({}) }}
-                    onDelete={handleDeleteParameter} />
+                    onDelete={allowEdit ? handleDeleteParameter : null} />
                 )) : (
                   <div className="rounded-lg border border-dashed border-border p-5 text-center" style={{ borderColor: 'var(--overlay-strong)' }}>
                     <Gauge size={18} className="mx-auto mb-2" color="var(--text-dim)" />
@@ -575,7 +579,7 @@ export default function MachineDetailPage() {
         {/* Analysis for the selected parameter. */}
         {parameter && (
           <div className="mb-5">
-            <AnalysisPanel machineId={machineId} parameter={parameter} savedAnalysis={openAnalysis}
+            <AnalysisPanel machineId={machineId} parameter={parameter} savedAnalysis={openAnalysis} readOnly={!allowEdit}
               onSaved={(record) => { if (record?.id) setSearchParams({ analysisId: record.id }); reload() }} />
           </div>
         )}

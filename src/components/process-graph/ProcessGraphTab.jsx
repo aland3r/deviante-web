@@ -10,6 +10,7 @@ import {
 } from './graph-core'
 import { buildGraphModel, layoutGraph, formatDuration, formatCount } from './graph-layout'
 import { api, ApiError } from '../../lib/api'
+import TraceNoteModal from './TraceNoteModal'
 
 const MIN_ANALYSIS_TRACES = Number(import.meta.env.VITE_MIN_ANALYSIS_TRACES ?? 32)
 
@@ -494,7 +495,32 @@ function EmptyCanvas({ message, eventLog, onUploadLog }) {
 
 // ─── Tab body ───────────────────────────────────────────────────────────────
 
-export default function ProcessGraphTab({ processId, isMobile, onStats, onUploadLog, onAnalyze }) {
+// Link "Editar" ao lado do nó (detalhe do trace): largura em coordenadas do grafo.
+const NOTE_LINK_W = 46
+const NOTE_LINK_GAP = 6
+
+/** Atividade sob o cursor, contando a faixa do link "Editar" à direita do nó. */
+function noteHoverHit(n, cx, cy) {
+  return !n.isStart && !n.isEnd
+    && cx >= n.x && cx <= n.x + NODE_W + NOTE_LINK_GAP + NOTE_LINK_W
+    && cy >= n.y && cy <= n.y + NODE_H
+}
+
+function NoteLink({ onOpen }) {
+  return (
+    <g transform={`translate(${NODE_W + NOTE_LINK_GAP},${NODE_H / 2 - 10})`} style={{ cursor: 'pointer' }}
+      role="button" aria-label="Editar detalhe do trace"
+      onMouseDown={(event) => event.stopPropagation()}
+      onMouseUp={(event) => event.stopPropagation()}
+      onTouchStart={(event) => event.stopPropagation()}
+      onClick={(event) => { event.stopPropagation(); onOpen() }}>
+      <rect x={0} y={0} width={NOTE_LINK_W} height={20} rx={4} fill="var(--surface-raised)" stroke="var(--graph-node)" strokeWidth={1} />
+      <text x={NOTE_LINK_W / 2} y={10} textAnchor="middle" dominantBaseline="middle" fontSize={10} fontFamily="'Inter',sans-serif" fontWeight="500" fill="var(--graph-node)">Editar</text>
+    </g>
+  )
+}
+
+export default function ProcessGraphTab({ processId, isMobile, onStats, onUploadLog, onAnalyze, readOnly = false, canWriteNotes = false }) {
   const [pan, setPan] = useState(() => getInitialView().pan)
   const [zoom, setZoom] = useState(() => getInitialView().zoom)
   const [selectedId, setSelectedId] = useState(null)
@@ -514,6 +540,9 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
   // silently expanding back to the whole process.
   const [explicitActivityIds, setExplicitActivityIds] = useState(null)
   const [analysisRunning, setAnalysisRunning] = useState(false)
+  // Detalhe do trace: nó sob o cursor (mostra "Editar") e nó com o modal aberto.
+  const [noteHoverId, setNoteHoverId] = useState(null)
+  const [noteNode, setNoteNode] = useState(null)
 
   const [eventLogs, setEventLogs] = useState([])
   const [selectedEventLogIds, setSelectedEventLogIds] = useState(null)
@@ -869,6 +898,11 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
     dragOrigin.current = { mx: e.clientX, my: e.clientY, px: pan.x, py: pan.y }
   }
   function onMouseMove(e) {
+    if (canWriteNotes && !isDragging.current && !selectionRect) {
+      const { x, y } = toCanvas(e.clientX, e.clientY)
+      const hit = visNodes.find((n) => noteHoverHit(n, x, y))?.id ?? null
+      if (hit !== noteHoverId) setNoteHoverId(hit)
+    }
     if (selectionRect) {
       const rect = containerRef.current?.getBoundingClientRect(); if (!rect) return
       setSelectionRect((current) => current ? ({ ...current, x1: e.clientX - rect.left, y1: e.clientY - rect.top }) : null)
@@ -968,11 +1002,11 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
           </div>
           <div className="shrink-0 mt-auto px-3 pb-3 space-y-1.5">
             <EventLogSelector eventLogs={eventLogs} selectedIds={selectedEventLogIds ?? new Set()} onToggle={toggleEventLog} />
-            <button type="button" onClick={onUploadLog}
+            {onUploadLog && <button type="button" onClick={onUploadLog}
               className="w-full flex items-center justify-center gap-2 py-2 rounded-md text-[11px] font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-white/[0.05] transition-colors"
               style={{ fontFamily: "'JetBrains Mono',monospace" }}>
               <Upload size={12} />Adicionar log
-            </button>
+            </button>}
           </div>
         </aside>
       )}
@@ -994,11 +1028,11 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
                   <p className="text-[10px] text-muted-foreground truncate">Vinculadas ao processo</p>
                 </div>
               </div>
-              <button type="button" onClick={(e) => { e.stopPropagation(); setShowMachinePicker((open) => !open) }}
+              {!readOnly && <button type="button" onClick={(e) => { e.stopPropagation(); setShowMachinePicker((open) => !open) }}
                 className="rounded-full p-1 border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors shrink-0"
                 title="Vincular máquina">
                 <Plus size={14} />
-              </button>
+              </button>}
             </div>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {linkedMachines.length ? linkedMachines.map((machine) => (
@@ -1012,7 +1046,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
                 <p className="text-[10px] text-muted-foreground">Nenhuma máquina vinculada.</p>
               )}
             </div>
-            {showMachinePicker && (
+            {!readOnly && showMachinePicker && (
               <div className="mt-2 rounded-lg border border-border bg-[var(--surface-deep)] p-2">
                 <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-2">Escolher máquina</p>
                 {allMachines.filter((machine) => !linkedMachines.some((item) => item.id === machine.id)).length ? (
@@ -1062,7 +1096,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
         <svg ref={svgRef} className="w-full h-full"
           style={{ cursor: cursorGrab ? 'grabbing' : 'grab', touchAction: 'none' }}
           onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp}
-          onMouseLeave={() => { isDragging.current = false; setCursorGrab(false); if (selectionRect) setSelectionRect(null) }}
+          onMouseLeave={() => { isDragging.current = false; setCursorGrab(false); setNoteHoverId(null); if (selectionRect) setSelectionRect(null) }}
           onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
           <SvgDefs />
           <rect width="100%" height="100%" fill="url(#dots)" />
@@ -1134,6 +1168,9 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
                 {node.isStart ? <StartNode node={node} isSelected={selectedId === node.id} />
                   : node.isEnd ? <EndNode node={node} isSelected={selectedId === node.id} />
                     : <ActivityNode node={node} isSelected={selectedId === node.id} analysisSelected={analysisScope.selectionExplicit && analysisScope.selectedActivityNodeIds.has(node.id)} />}
+                {canWriteNotes && !node.isStart && !node.isEnd && (noteHoverId === node.id || (isMobile && selectedId === node.id)) && (
+                  <NoteLink onOpen={() => setNoteNode(node)} />
+                )}
               </g>
             ))}
           </g>
@@ -1149,10 +1186,10 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
             {mobileFilters && (
               <div className="absolute top-full right-0 mt-2 p-4 rounded-xl border border-border space-y-5"
                 style={{ background: 'var(--surface)', width: '270px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
-                <button type="button" onClick={onUploadLog}
+                {onUploadLog && <button type="button" onClick={onUploadLog}
                   className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded text-xs font-medium border border-border text-muted-foreground">
                   <Upload size={12} />Adicionar log
-                </button>
+                </button>}
                 <EventLogSelector eventLogs={eventLogs} selectedIds={selectedEventLogIds ?? new Set()} onToggle={toggleEventLog} />
                 <Slider label="Atividades" value={actSlider} onChange={setActSlider} />
                 <Slider label="Caminhos" value={pathSlider} onChange={setPathSlider} />
@@ -1192,7 +1229,7 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
           <div className="shrink-0 p-3 border-t border-border mt-auto space-y-3 sticky bottom-0 z-20"
             style={{ background: 'var(--surface-raised)', boxShadow: '0 -10px 24px rgba(0,0,0,.28)' }}>
             {graph?.eventLog && <AnalysisFlightDeck scope={analysisScope} onReset={useAllAnalysisInput} />}
-            <button type="button" onClick={startAnalysis}
+            {!readOnly && <button type="button" onClick={startAnalysis}
               disabled={!analysisEligible || analysisRunning}
               title={!analysisScope.selectedLogCount
                 ? 'Selecione ao menos um log parseado'
@@ -1210,12 +1247,12 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
               onMouseEnter={(e) => { if (!e.currentTarget.disabled) { e.currentTarget.style.background = 'rgba(180,83,9,0.30)'; e.currentTarget.style.borderColor = 'rgba(217,119,6,0.72)' } }}
               onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(180,83,9,0.16)'; e.currentTarget.style.borderColor = 'rgba(180,83,9,0.42)' }}>
               <Scan size={12} />{analysisRunning ? 'Processando recorte…' : 'Gerar análise de desvios'}
-            </button>
+            </button>}
           </div>
         </aside>
       )}
 
-      {isMobile && graph?.eventLog && (
+      {isMobile && !readOnly && graph?.eventLog && (
         <div className="fixed left-3 right-3 bottom-3 z-30 flex items-center gap-3 rounded-xl p-2.5"
           style={{ background: 'rgba(17,21,32,.97)', border: '1px solid rgba(245,158,11,.28)', boxShadow: '0 14px 36px rgba(0,0,0,.55)', backdropFilter: 'blur(12px)' }}>
           <div className="min-w-0 flex-1 pl-1">
@@ -1243,6 +1280,13 @@ export default function ProcessGraphTab({ processId, isMobile, onStats, onUpload
               onClose={() => setSelectedId(null)} /></div>}
           </div>
         </>
+      )}
+
+      {noteNode && (
+        <TraceNoteModal processId={processId} activityName={noteNode.label} onClose={() => setNoteNode(null)}
+          traces={variants
+            .filter((variant) => variant.nodeIds?.includes(noteNode.id) || variant.sequence?.includes(noteNode.label))
+            .flatMap((variant) => variant.cases ?? [])} />
       )}
     </div>
   )

@@ -115,13 +115,13 @@ function TraceList({ points, driftIndexes, outliers, excluded, selectedTrace, on
             <span className={`${T.caption} shrink-0`} style={{ fontFamily: MONO }}>
               {formatSeconds(point.durationSeconds)}
             </span>
-            <button type="button"
+            {onToggleExclude && <button type="button"
               title={isDismissed ? 'Reincluir trace na próxima análise' : 'Desconsiderar trace na próxima análise'}
               onClick={(event) => { event.stopPropagation(); onToggleExclude(point.traceId) }}
               className={`shrink-0 w-4 h-4 flex items-center justify-center transition-opacity ${isDismissed ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
               style={{ color: isDismissed ? 'var(--text-slate)' : 'var(--graph-node)' }}>
               <CircleDot size={12} strokeWidth={isDismissed ? 1.5 : 2} />
-            </button>
+            </button>}
           </div>
         )
       })}
@@ -416,7 +416,7 @@ function DeltaKnob({ value, onChange }) {
   )
 }
 
-export default function ProcessAnalysisView({ processId, processName, analysisId, onBack, onGoHome, onDelete }) {
+export default function ProcessAnalysisView({ processId, processName, analysisId, onBack, onGoHome, onDelete, readOnly = false }) {
   const [analysis, setAnalysis] = useState(null)
   const [runState, setRunState] = useState('running')
   const [error, setError] = useState('')
@@ -528,7 +528,7 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
   // the value we just hydrated or the run applied.
   const filterSynced = useRef(false)
   useEffect(() => {
-    if (!analysisId || !analysis) return undefined
+    if (!analysisId || !analysis || readOnly) return undefined
     if (!filterSynced.current) { filterSynced.current = true; return undefined }
     const handle = setTimeout(() => {
       api.updateAnalysisFilter(analysisId, {
@@ -537,7 +537,7 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
       }).catch(() => {})
     }, 500)
     return () => clearTimeout(handle)
-  }, [excludedActivities, excludedTraces, analysisId, analysis])
+  }, [excludedActivities, excludedTraces, analysisId, analysis, readOnly])
 
   const points = analysis?.points ?? EMPTY_LIST
   const drifts = analysis?.drifts ?? EMPTY_LIST
@@ -646,7 +646,8 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
             <SlidersHorizontal size={12} className="text-muted-foreground" />
             <p className={`${T.caption} uppercase text-muted-foreground`} style={{ fontFamily: MONO }}>Parâmetros</p>
           </div>
-          <div className="px-4 py-4 space-y-5">
+          {/* Só leitura (operador, técnico): os parâmetros aparecem, mas não mudam. */}
+          <div className="px-4 py-4 space-y-5" style={readOnly ? { pointerEvents: 'none', opacity: 0.75 } : undefined} aria-disabled={readOnly || undefined}>
             <div className="flex flex-col gap-2">
               <span className={`${T.caption} uppercase text-muted-foreground`} style={{ fontFamily: MONO }}>
                 Atividades na análise
@@ -778,7 +779,7 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
           </div>
           {points.length > 0 ? (
             <TraceList points={points} driftIndexes={driftIndexes} outliers={outliers} excluded={excludedTraces}
-              selectedTrace={selectedTrace} onSelect={setSelectedTrace} onToggleExclude={toggleExcludedTrace} />
+              selectedTrace={selectedTrace} onSelect={setSelectedTrace} onToggleExclude={readOnly ? null : toggleExcludedTrace} />
           ) : (
             <div className="flex-1 min-h-0 flex items-center justify-center p-6 text-center">
               <p className={`${T.caption} text-muted-foreground`}>
@@ -786,7 +787,7 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
               </p>
             </div>
           )}
-          <div className="shrink-0 p-3 border-t border-border mt-auto sticky bottom-0 z-20"
+          {!readOnly && <div className="shrink-0 p-3 border-t border-border mt-auto sticky bottom-0 z-20"
             style={{ background: 'var(--surface-raised)', boxShadow: '0 -10px 24px rgba(0,0,0,.28)' }}>
             <button type="button" onClick={() => runAnalysis()} disabled={runState === 'running'}
               title={pendingChanges ? 'Parâmetros alterados — reexecute para aplicá-los' : 'Reexecutar a análise'}
@@ -799,7 +800,7 @@ export default function ProcessAnalysisView({ processId, processName, analysisId
               }}>
               <Scan size={12} />{runState === 'running' ? 'Processando…' : pendingChanges ? 'Aplicar alterações' : 'Reexecutar análise'}
             </button>
-          </div>
+          </div>}
         </aside>
       </div>
     </div>
