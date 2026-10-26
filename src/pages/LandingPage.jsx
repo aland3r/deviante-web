@@ -28,10 +28,10 @@ const NAV_ITEMS = [
 ]
 
 const FEATURES = [
-  'Grafo de processo interativo com DFG',
-  'Análise de drift e desvios automática',
-  'Visualizador 3D de máquinas industriais',
-  'Process mining com logs XES/CSV',
+  'Grafo do processo (DFG) a partir de logs XES ou CSV',
+  'Detecção de desvios no tempo das atividades (IPDD/ADWIN)',
+  'Cada desvio ligado ao processo, à atividade e à máquina',
+  'Manutenção agendada no próprio sistema, a partir do alerta',
 ]
 
 function NavButton({ to, label, Icon }) {
@@ -82,16 +82,16 @@ export default function LandingPage() {
         <div style={{ maxWidth: 460, flexShrink: 1 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 12px', borderRadius: 20, background: 'rgba(220,38,38,0.10)', border: '1px solid rgba(220,38,38,0.22)', marginBottom: 28 }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#dc2626' }} />
-            <span style={{ fontSize: 11, fontWeight: 600, color: '#fca5a5', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Process Mining · Industrial SaaS</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#fca5a5', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Mineração de processos · Manutenção baseada em condição</span>
           </div>
 
           <h1 style={{ fontFamily: "'Inter',sans-serif", fontSize: 46, fontWeight: 800, color: '#f1f5f9', lineHeight: 1.08, letterSpacing: '-0.03em', margin: '0 0 20px' }}>
             Identifique desvios.<br />
-            <span style={{ color: '#dc2626' }}>Antes que custam.</span>
+            <span style={{ color: '#dc2626' }}>Antes da falha.</span>
           </h1>
 
           <p style={{ fontSize: 15, color: '#64748b', lineHeight: 1.65, margin: '0 0 40px' }}>
-            Plataforma de process mining para indústrias. Detecte desvios operacionais, analise variantes de processos e visualize máquinas em 3D — tudo em tempo real.
+            O Deviante minera o log de eventos da produção e acompanha o tempo de cada atividade. Quando esse tempo muda de padrão, o detector IPDD/ADWIN aponta o desvio e avisa o gestor a tempo de agir. É manutenção baseada em condição: decidida pelo estado do processo e da máquina, não pelo calendário.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
