@@ -134,12 +134,12 @@ export default function LoginCard() {
                 <div style={{ flex: 1, textAlign: 'center', minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0' }}>{company.name}</div>
                   <div style={{ fontSize: 10, color: '#64748b', fontFamily: "'JetBrains Mono',monospace" }}>
-                    plano {company.plan}{company.exclusive.length ? ' + CSV exclusivo' : ''} · {companyIndex + 1}/{COMPANIES.length}
+                    plano {company.plan} · {companyIndex + 1}/{COMPANIES.length}
                   </div>
                 </div>
                 <button type="button" aria-label="Próxima empresa" disabled={busy} onClick={() => stepCompany(1)} style={arrowStyle}><ChevronRight size={14} /></button>
               </div>
-              {/* Restrição R10 do modelo de características: o técnico só trabalha na
+              {/* Restrição R09 do modelo de características: o técnico só trabalha na
                   agenda (R03), então ele só aparece em empresa com o módulo de manutenção. */}
               {DEMO_ACCOUNTS.filter((u) => u.role !== 'tecnico' || company.plan !== 'Essencial').map((u) => {
                 const isHov = hovered === u.role

@@ -267,16 +267,6 @@ async function request(path, options = {}) {
   return response.json()
 }
 
-/** Baixa um arquivo da API (com o token) e devolve o Blob. */
-async function download(path) {
-  const response = await fetch(`${API_BASE}${path}`, { headers: await authHeader() })
-  if (!response.ok) {
-    const payload = await response.json().catch(() => ({}))
-    throw new ApiError(payload.message ?? 'Falha no download.', payload.fieldErrors ?? {})
-  }
-  return response.blob()
-}
-
 /**
  * Multipart upload: the browser must set its own `Content-Type` so the
  * boundary is included, which is why this does not go through `request`.
@@ -537,7 +527,6 @@ export const api = {
   updateSchedule: (id, patch) => request(`/schedules/${id}`, { method: 'PUT', body: JSON.stringify(patch) }),
   deleteSchedule: (id) => request(`/schedules/${id}`, { method: 'DELETE' }),
   // Função exclusiva de alguns clientes (variabilidade): a API responde 403 para os demais.
-  exportSchedulesCsv: () => download('/schedules/export.csv'),
   // Técnico: muda só a situação e as observações da manutenção (não a agenda inteira).
   updateScheduleStatus: (id, { status, notes }) => request(`/schedules/${id}/status`, {
     method: 'PATCH', body: JSON.stringify({ status, notes: notes ?? '' }),

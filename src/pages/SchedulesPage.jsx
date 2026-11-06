@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { CalendarDays, Columns3, Download, ExternalLink, List, Plus, Trash2, Wrench } from 'lucide-react'
+import { CalendarDays, Columns3, ExternalLink, List, Plus, Trash2, Wrench } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import { canDelete, canEdit, isTechnician } from '../lib/permissions'
-import { FEATURES, hasFeature } from '../lib/features'
 import { maintenanceSubject } from '../lib/maintenanceSubject'
 import { FormModal, Field, Select, TextArea, TextInput } from '@deviante/ui'
 import { State, Surface } from './OperationsPage'
@@ -43,17 +42,6 @@ export default function SchedulesPage() {
     maintenanceSubject.notify({ type: 'schedule-deleted', scheduleId: editing.id })
   }
 
-  async function exportCsv() {
-    try {
-      const url = URL.createObjectURL(await api.exportSchedulesCsv())
-      const link = Object.assign(document.createElement('a'), { href: url, download: 'agenda-de-manutencao.csv' })
-      link.click()
-      URL.revokeObjectURL(url)
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Não foi possível exportar a agenda.')
-    }
-  }
-
   // Quem edita abre a manutenção inteira; o técnico, só a situação; os demais só leem.
   const open = (row) => { if (allowEdit) setEditing(row); else if (technician) setStatusTarget(row) }
   async function saveStatus(data) {
@@ -61,7 +49,7 @@ export default function SchedulesPage() {
     setStatusTarget(null)
     maintenanceSubject.notify({ type: 'schedule-saved', scheduleId: statusTarget.id })
   }
-  const actions = <div className="flex items-center gap-2">{hasFeature(user, FEATURES.scheduleExport) && <button onClick={exportCsv} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-xs text-foreground" style={{ background: 'var(--surface-raised)' }}><Download size={12} />Exportar CSV</button>}{allowEdit && <button onClick={() => setEditing({ equipmentId })} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-white" style={{ background: 'var(--ok-strong)' }}><Plus size={12} />Nova manutenção</button>}<div className="flex rounded-lg border border-border overflow-hidden">{VIEWS.map(({ id, label, icon: Icon }) => <button key={id} onClick={() => setView(id)} className="flex items-center gap-1.5 px-3 py-2 text-[11px]" style={{ border: 0, background: view === id ? 'var(--surface-inset)' : 'var(--surface-raised)', color: view === id ? 'var(--text-strong)' : 'var(--muted-foreground)' }}><Icon size={11} />{label}</button>)}</div></div>
+  const actions = <div className="flex items-center gap-2">{allowEdit && <button onClick={() => setEditing({ equipmentId })} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-white" style={{ background: 'var(--ok-strong)' }}><Plus size={12} />Nova manutenção</button>}<div className="flex rounded-lg border border-border overflow-hidden">{VIEWS.map(({ id, label, icon: Icon }) => <button key={id} onClick={() => setView(id)} className="flex items-center gap-1.5 px-3 py-2 text-[11px]" style={{ border: 0, background: view === id ? 'var(--surface-inset)' : 'var(--surface-raised)', color: view === id ? 'var(--text-strong)' : 'var(--muted-foreground)' }}><Icon size={11} />{label}</button>)}</div></div>
   return <Surface title="Agendamentos" subtitle="Manutenções planejadas e ocorrências por equipamento." icon={Wrench} actions={actions}>{loading ? <State>Carregando…</State> : error ? <State error>{error}</State> : view === 'kanban' ? <Kanban rows={rows} onOpen={open} /> : view === 'calendar' ? <Calendar rows={rows} onOpen={open} /> : <ScheduleList rows={rows} onOpen={open} />}
     {editing && <ScheduleModal initial={editing} onClose={() => setEditing(null)} onSave={save} onDelete={editing.id && canDelete(user) ? remove : null} />}
     {statusTarget && <ScheduleStatusModal schedule={statusTarget} onClose={() => setStatusTarget(null)} onSave={saveStatus} />}</Surface>

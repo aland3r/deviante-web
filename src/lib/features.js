@@ -4,7 +4,6 @@
 export const FEATURES = {
   equipment: 'equipment',
   schedules: 'schedules',
-  scheduleExport: 'schedule-export',
 }
 
 export const hasFeature = (user, feature) => !user?.features?.length || user.features.includes(feature)
