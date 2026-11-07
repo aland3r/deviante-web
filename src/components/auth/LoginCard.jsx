@@ -140,7 +140,7 @@ export default function LoginCard() {
                 <button type="button" aria-label="Próxima empresa" disabled={busy} onClick={() => stepCompany(1)} style={arrowStyle}><ChevronRight size={14} /></button>
               </div>
               {/* Restrição R08 do modelo de características: o técnico só trabalha na
-                  agenda (R03), então ele só aparece em empresa com o módulo de manutenção. */}
+                  agenda (R01), então ele só aparece em empresa com Agendamento. */}
               {DEMO_ACCOUNTS.filter((u) => u.role !== 'tecnico' || company.plan !== 'Essencial').map((u) => {
                 const isHov = hovered === u.role
                 return (
